@@ -91,4 +91,7 @@ Di UI: buka http://localhost:3000 → pilih brand di kanan atas → ketik perint
 
 ## Berikutnya (Sprint 2+)
 
-Lihat [TECH_SPEC_MVP.md §11](TECH_SPEC_MVP.md): Brand Voice extraction → Research Agent (IG + Meta Ads Library) → Script → Carousel → Video.
+MVP = **Content Engine** (lihat [Handbook](CONTENT_ENGINE_HANDBOOK.md) & [TECH_SPEC_MVP.md §11](TECH_SPEC_MVP.md)):
+Intake + Brand Profile → Prompt Engine (system prompt + playbook + compliance) → Generator inti (script + carousel copy) → Generator lengkap (storyboard/caption/ide) → Compliance & QA.
+
+> Pilar berat (Research/Meta Ads, desain Canva, Video Higgsfield) = **Fase 2+**.
