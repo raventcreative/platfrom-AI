@@ -1,10 +1,11 @@
 # PRD — AI Content Automation Platform untuk Multi-Brand
 
-> **Status:** Draft v2.0
+> **Status:** Draft v2.1
 > **Tanggal:** 2026-06-30
 > **Pemilik Produk:** raventcreative
 > **Nama kerja produk:** **ProdPilot** _(sementara — bisa diganti)_
 > **Model bisnis:** Hybrid — mulai sebagai agency/done-for-you, lalu produktisasi menjadi SaaS
+> **Spec MVP:** [Content Engine — Handbook](CONTENT_ENGINE_HANDBOOK.md) — yang dibangun lebih dulu (lihat §1.1)
 
 ---
 
@@ -12,7 +13,7 @@
 
 ProdPilot adalah **platform otomasi produksi konten untuk banyak brand sekaligus**. AI agent menjalankan seluruh rantai kerja — dari **riset kompetitor**, menyusun strategi, menulis **script**, membuat **carousel**, sampai memproduksi **video AI** — sehingga satu tim bisa menjalankan puluhan brand secara paralel.
 
-Empat pilar produk (semua masuk lingkup v1):
+Empat pilar produk (**visi penuh**):
 
 1. **Competitor & Market Intelligence** — riset organik + iklan kompetitor (Meta Ads Library) jadi insight & ide.
 2. **Script Engine** — naskah video (Reels/TikTok) otomatis: hook → body → CTA + shot list.
@@ -22,6 +23,24 @@ Empat pilar produk (semua masuk lingkup v1):
 **Strategi go-to-market (Hybrid):** dipakai dulu secara internal untuk melayani brand klien (done-for-you) — ini sekaligus jadi validasi & sumber revenue awal — lalu fitur yang sudah matang dibuka sebagai **self-serve SaaS** untuk brand langsung.
 
 **Platform fokus v1:** Instagram & TikTok.
+
+### 1.1 Visi vs MVP
+
+PRD ini mendeskripsikan **visi penuh** ProdPilot (4 pilar). Yang **dibangun lebih dulu** adalah MVP-nya: **Content Engine** — mesin konten harian multi-brand untuk agency. Spec lengkap & siap-implementasi: **[Content Engine — Handbook](CONTENT_ENGINE_HANDBOOK.md)**.
+
+**Alur MVP:**
+
+```
+Intake brand (1x/klien) → Daily input (tiap pagi) → AI generate → Review & approve → Posting
+```
+
+**Lingkup MVP (Content Engine):**
+- **Generator:** script Reels/TikTok, carousel IG (copy), storyboard video (shoot pakai HP), caption+hashtag, ide konten mingguan.
+- **Knowledge Playbook** (hook, struktur retensi, copywriting, carousel, caption, hashtag, konteks pasar Indonesia) disuntik ke prompt tiap generate.
+- **Compliance-first** per vertikal: BPOM (skincare), halal/lokasi/channel order (F&B), anti-SARA/body-shaming (umum).
+- **Multi-brand** profil + brand voice; **manusia approver** sebelum posting.
+
+**Di luar MVP (menyusul — lihat §13):** Competitor & Market Intelligence (Meta Ads Library), AI Video Engine penuh (Higgsfield), orkestrasi end-to-end, scheduler & auto-publish, report otomatis, produktisasi SaaS.
 
 ---
 
@@ -106,6 +125,8 @@ Competitor + Trend Research → Strategy & Calendar → Script / Carousel / Vide
 ---
 
 ## 6. Empat Pilar Produk
+
+> **Catatan lingkup MVP:** Di Content Engine, yang aktif lebih dulu adalah **produksi konten** — Pilar 2 (Script) & Pilar 3 (Carousel, bagian copy) plus generator storyboard/caption/ide — dengan knowledge playbook + compliance. **Pilar 1 (Competitor Intelligence)** dan **Pilar 4 (AI Video penuh)** menyusul pasca-MVP; di MVP, video cukup berupa **storyboard siap-shoot pakai HP**. Detail per-generator: [Content Engine Handbook §8](CONTENT_ENGINE_HANDBOOK.md).
 
 ### Pilar 1 — Competitor & Market Intelligence
 
@@ -193,6 +214,12 @@ Competitor + Trend Research → Strategy & Calendar → Script / Carousel / Vide
 ### 7.5 Kolaborasi & Ops (mode agency)
 - Project/folder per klien, komentar & approval multi-user.
 - Pitch deck → **Gamma**; notulen meeting → **Notion** (dari **Zoom**); jadwal → **Google Calendar**; komunikasi → **Gmail**.
+
+### 7.6 Compliance & Brand Safety _(aktif sejak MVP)_
+- **Aturan per vertikal** disuntik ke tiap generate: skincare ikut **BPOM** (tanpa klaim menyembuhkan/memutihkan/superlatif; hasil dibingkai "tampak/membantu"); **F&B** sebut halal/lokasi/jam/channel order/harga; **umum** hindari SARA, body shaming, testimoni & scarcity palsu.
+- **Knowledge Playbook** terpusat (best-practice + konteks pasar Indonesia) → sumber kualitas yang konsisten antar brand.
+- **Self-check** otomatis sebelum output final: hook kuat di 3 detik, tepat 1 CTA, klaim aman, sesuai voice & kata terlarang brand, tidak mengarang angka.
+- Detail: [Content Engine Handbook §6–§7](CONTENT_ENGINE_HANDBOOK.md).
 
 ---
 
@@ -313,25 +340,30 @@ Competitor + Trend Research → Strategy & Calendar → Script / Carousel / Vide
 ### Fase 0 — Validasi (1–2 mgg)
 Finalisasi PRD, mockup alur, uji dengan 1–2 brand klien nyata.
 
-### Fase 1 — MVP Internal (Done-for-you) (6–8 mgg)
-Empat pilar versi inti + multi-brand workspace + approval, dipakai tim sendiri:
-- **Research Agent** (organik IG + Meta Ads Library) → insight & ide.
-- **Script Engine** (multi-varian, per platform).
-- **Carousel Engine** (copy + desain Canva).
-- **AI Video Engine** (script→video + voice-over, Higgsfield).
-- Brand kit per workspace + export.
-> Build order disarankan: Riset → Script → Carousel → Video (video paling berat, ship terakhir di fase ini).
+### Fase 1 — MVP: Content Engine (Done-for-you) (4–6 mgg)
+Mesin konten harian multi-brand, dipakai tim sendiri (spec: [Handbook](CONTENT_ENGINE_HANDBOOK.md)):
+- **Intake brand** (profil 1x/klien) + **daily input** + multi-brand profil & brand voice.
+- **Generator:** script, carousel (copy), storyboard, caption+hashtag, ide mingguan.
+- **Knowledge Playbook** + **compliance per vertikal** disuntik ke tiap generate.
+- Output **teks enak-dibaca + JSON terstruktur**, review & approve, copy/export.
+> Build order: prompt + playbook + compliance → 1–2 generator → multi-brand → sisanya. Video di fase ini = **storyboard** (belum render).
 
-### Fase 2 — Orkestrasi & Distribusi (4–5 mgg)
+### Fase 2 — Pilar Berat & Desain (4–5 mgg)
+Tambah pilar yang butuh integrasi tool:
+- **Research Agent** (organik IG + Meta Ads Library) → insight & ide otomatis nge-feed ke generator.
+- **Carousel desain** (Canva, brand-consistent) + export gambar.
+- **AI Video Engine** (script→video + voice-over + subtitle + assembly, Higgsfield).
+
+### Fase 3 — Orkestrasi & Distribusi (4–5 mgg)
 Workflow end-to-end, approval gate, status real-time, publish IG, scheduler, report ke klien (Notion/Gamma).
 
-### Fase 3 — Skala Multi-Brand (4 mgg)
+### Fase 4 — Skala Multi-Brand (4 mgg)
 Banyak brand paralel, template per brand, asset library, kolaborasi multi-user, integrasi TikTok (riset + publish via pihak ketiga).
 
-### Fase 4 — Produktisasi SaaS (6–8 mgg)
+### Fase 5 — Produktisasi SaaS (6–8 mgg)
 Onboarding mandiri, billing & kuota kredit, self-serve workspace, paywall fitur, analytics pengguna.
 
-### Fase 5 — Penyempurnaan
+### Fase 6 — Penyempurnaan
 Optimisasi biaya, A/B test creative & ads, rekomendasi berbasis performa.
 
 ---
