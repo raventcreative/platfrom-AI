@@ -17,18 +17,28 @@ export class JobsService {
     @InjectQueue(AGENT_QUEUE) private readonly queue: Queue,
   ) {}
 
-  /** Persist a Job row and enqueue it for a worker to pick up. */
-  async enqueue(brandId: string, agent: JobAgent, input: Prisma.InputJsonValue) {
-    const job = await this.prisma.job.create({
-      data: { brandId, agent, input },
-    });
+  /** Persist a Job row (QUEUED) without pushing to the queue yet. */
+  async create(brandId: string, agent: JobAgent, input: Prisma.InputJsonValue) {
+    return this.prisma.job.create({ data: { brandId, agent, input } });
+  }
 
+  /** Push an existing job onto the worker queue. */
+  async enqueue(jobId: string, agent: JobAgent) {
     await this.queue.add(
       agent,
-      { jobId: job.id },
+      { jobId },
       { attempts: 3, backoff: { type: 'exponential', delay: 2000 } },
     );
+  }
 
+  /** Convenience: create + enqueue in one call. */
+  async createAndEnqueue(
+    brandId: string,
+    agent: JobAgent,
+    input: Prisma.InputJsonValue,
+  ) {
+    const job = await this.create(brandId, agent, input);
+    await this.enqueue(job.id, agent);
     return job;
   }
 

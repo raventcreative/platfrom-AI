@@ -31,6 +31,31 @@ export function ChatShell({ brandId }: { brandId?: string }) {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  function patchMessage(id: string, content: string) {
+    setMessages((m) => m.map((x) => (x.id === id ? { ...x, content } : x)));
+  }
+
+  // Poll the generation job until it finishes, then show the result.
+  async function pollJob(messageId: string, jobId: string) {
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 1500));
+      try {
+        const job = await api.getJob(jobId);
+        if (job.status === 'SUCCEEDED') {
+          patchMessage(messageId, job.output?.readable ?? '(kosong)');
+          return;
+        }
+        if (job.status === 'FAILED') {
+          patchMessage(messageId, `Generate gagal: ${job.error ?? 'unknown'}`);
+          return;
+        }
+      } catch {
+        // keep polling
+      }
+    }
+    patchMessage(messageId, 'Timeout menunggu hasil. Coba cek lagi nanti.');
+  }
+
   async function send() {
     if (!conversationId || !input.trim() || busy) return;
     setBusy(true);
@@ -39,6 +64,9 @@ export function ChatShell({ brandId }: { brandId?: string }) {
     try {
       const res = await api.postMessage(conversationId, content);
       setMessages((m) => [...m, res.userMessage, res.assistantMessage]);
+      if (res.jobId) {
+        void pollJob(res.assistantMessage.id, res.jobId);
+      }
     } catch (e) {
       setMessages((m) => [
         ...m,
@@ -58,14 +86,15 @@ export function ChatShell({ brandId }: { brandId?: string }) {
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && (
           <div className="text-sm text-neutral-400">
-            Mulai dengan perintah, mis. &ldquo;Riset 3 kompetitor: @brandA @brandB
-            @brandC&rdquo; atau &ldquo;Buatkan 3 script Reels 30 detik&rdquo;.
+            Mulai dengan perintah, mis. &ldquo;Buatkan script Reels 30 detik promo
+            bundling&rdquo;, &ldquo;Carousel 7 slide tips skincare&rdquo;, atau
+            &ldquo;7 ide konten minggu ini&rdquo;.
           </div>
         )}
         {messages.map((m) => (
           <div key={m.id} className={m.role === 'USER' ? 'text-right' : 'text-left'}>
             <span
-              className={`inline-block max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+              className={`inline-block max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2 text-left text-sm ${
                 m.role === 'USER'
                   ? 'bg-blue-600 text-white'
                   : 'border border-neutral-200 bg-white'

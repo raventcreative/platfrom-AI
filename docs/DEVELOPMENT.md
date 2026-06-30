@@ -10,16 +10,22 @@ docs/    PRD, tech spec, dokumen ini
 docker-compose.yml   Postgres + Redis untuk dev lokal
 ```
 
-## Yang sudah ada di Sprint 1
+## Yang sudah ada
 
 - **Auth** — Bearer token = `User.apiToken` (`AuthGuard`).
 - **Multi-tenant** — semua query ter-scope ke `orgId`.
-- **Org/Brand/User** — model + endpoint `GET /me`, CRUD brand dasar.
+- **Org/Brand/User** — model + endpoint `GET /me`, CRUD brand dasar + `category`/`profile` intake.
 - **Brand Voice Profile & Brand Kit** — sudah di schema + diisi oleh seed.
-- **Chat shell** — `Conversation`/`Message`, kirim pesan → buat Job → balasan placeholder.
-- **Job queue** — BullMQ (`agent-jobs`) + worker stub (`JobsProcessor`).
+- **Chat shell** — `Conversation`/`Message`, kirim pesan → deteksi jenis output → buat Job.
+- **Job queue** — BullMQ (`agent-jobs`) + worker generator (`JobsProcessor`).
+- **Content Engine (otak)** — `src/content` (playbook + compliance + generators + prompt builder)
+  & `src/llm` (Anthropic caller + mode demo). Worker merakit system prompt (profil brand +
+  playbook + compliance), memanggil LLM, menyimpan hasil (teks + JSON) & menampilkannya di chat.
 
-> Agent asli (research/script/carousel/video) **belum** diimplementasi — itu Sprint 3+. Worker saat ini hanya menandai job `SUCCEEDED` dengan output placeholder.
+**Generator yang aktif:** script · carousel · storyboard · caption · ide mingguan.
+
+> Tanpa `ANTHROPIC_API_KEY` worker jalan di **mode demo** (output contoh) — alur tetap bisa diuji.
+> Pilar berat (Research/Meta Ads, desain Canva, Video Higgsfield) = **Fase 2+**.
 
 ## Prasyarat
 
@@ -38,6 +44,7 @@ npm install
 # 3. Env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.local.example apps/web/.env.local
+# (opsional) isi ANTHROPIC_API_KEY di apps/api/.env untuk hasil sungguhan; kosong = mode demo
 
 # 4. DB: generate client, migrate, seed
 npm run prisma:generate -w @prodpilot/api
@@ -66,7 +73,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
   -d '{"brandId":"BRAND_ID","title":"Tes"}' $BASE/conversations
 
 curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"content":"Riset kompetitor @brandA"}' $BASE/conversations/CONVO_ID/messages
+  -d '{"content":"Buatkan script Reels 30 detik promo bundling"}' $BASE/conversations/CONVO_ID/messages
 
 # Cek status job (jobId dari respons di atas)
 curl -H "Authorization: Bearer $TOKEN" $BASE/jobs/JOB_ID

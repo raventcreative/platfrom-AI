@@ -95,20 +95,25 @@ Ditutup dengan orkestrasi end-to-end, scheduler/publish, report ke klien, lalu p
 
 ## Status
 
-🚧 **Sprint 1 (Fondasi) — scaffold selesai.**
+🚧 **Fondasi + Content Engine generator (otak) sudah jalan.**
 
 | Area | Status |
 |---|---|
 | Auth (Bearer token = `User.apiToken`) | ✅ |
 | Multi-tenant (semua query ter-scope `orgId`) | ✅ |
-| Model Org/Brand/User + Brand Voice + Brand Kit (Prisma) | ✅ |
+| Model Org/Brand/User + Brand Voice + Brand Kit + kategori/profil intake | ✅ |
 | Chat shell (Conversation/Message → Job) | ✅ |
-| Job queue (BullMQ) + worker | ⚠️ stub (job ditandai `SUCCEEDED`, output placeholder) |
-| Web UI chat-first + brand switcher | ✅ |
-| Generator / agent asli (script/carousel/dst) | ⬜ belum |
+| **Prompt Engine** (system prompt = profil + playbook + compliance) | ✅ |
+| **Generator**: script · carousel · storyboard · caption · ide mingguan | ✅ via chat |
+| **LLM caller** (Anthropic, Sonnet default) + **mode demo** tanpa API key | ✅ |
+| Worker generator (rakit prompt → LLM → simpan hasil → update chat) | ✅ |
+| Web UI chat-first + brand switcher + polling hasil | ✅ |
+| Pilar berat: Research (Meta Ads) · desain Canva · Video (Higgsfield) | ⬜ Fase 2+ |
 
-> Worker saat ini **belum memanggil LLM**. Implementasi generator (sesuai handbook) menyusul
-> di sprint berikutnya. Roadmap build ada di [Tech Spec §11](docs/TECH_SPEC_MVP.md).
+> Ketik perintah di chat (mis. _"Buatkan script Reels 30 detik promo bundling"_) → worker
+> mendeteksi jenis output, merakit system prompt dari profil brand + playbook + compliance,
+> memanggil LLM, lalu menampilkan hasil (teks + JSON) di chat. Tanpa `ANTHROPIC_API_KEY`
+> jalan di **mode demo**. Roadmap build: [Tech Spec §11](docs/TECH_SPEC_MVP.md).
 
 ---
 
