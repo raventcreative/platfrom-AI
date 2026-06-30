@@ -16,6 +16,9 @@ Platform di mana **AI agent mengotomasi produksi konten untuk banyak brand sekal
 ## Dokumen
 
 - 📄 [Product Requirements Document (PRD)](docs/PRD.md) — visi, model bisnis, empat pilar, arsitektur agent, integrasi, roadmap.
+- 🛠️ [Technical Spec — MVP Fase 1](docs/TECH_SPEC_MVP.md) — arsitektur, data model, desain agent, kontrak API, model routing, rencana build.
+
+Referensi produk sejenis: [Vamos AI](https://getvamos.ai/) — chat-first, brand voice profile, riset terintegrasi, multi-brand.
 
 ## Status
 
