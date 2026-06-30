@@ -1,329 +1,375 @@
-# PRD — AI Agent Production Automation Platform
+# PRD — AI Content Automation Platform untuk Multi-Brand
 
-> **Status:** Draft v1.0
+> **Status:** Draft v2.0
 > **Tanggal:** 2026-06-30
 > **Pemilik Produk:** raventcreative
 > **Nama kerja produk:** **ProdPilot** _(sementara — bisa diganti)_
+> **Model bisnis:** Hybrid — mulai sebagai agency/done-for-you, lalu produktisasi menjadi SaaS
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-ProdPilot adalah platform di mana **AI agent menjalankan otomasi end-to-end** untuk tim produksi konten/kreatif. Pengguna cukup memberi **satu prompt tingkat tinggi** (mis. _"buatkan kampanye untuk produk kecantikan X"_), lalu serangkaian AI agent mengubahnya menjadi **deliverable siap-produksi**: konsep, **naskah (skrip)**, storyboard, **video dari skrip tersebut**, voice-over, hingga aset siap publikasi.
+ProdPilot adalah **platform otomasi produksi konten untuk banyak brand sekaligus**. AI agent menjalankan seluruh rantai kerja — dari **riset kompetitor**, menyusun strategi, menulis **script**, membuat **carousel**, sampai memproduksi **video AI** — sehingga satu tim bisa menjalankan puluhan brand secara paralel.
 
-Tujuannya: memangkas waktu dari _ide → aset produksi_ dari hitungan hari menjadi hitungan menit, sambil tetap memberi tim produksi kontrol penuh (review, edit, approve) di setiap tahap.
+Empat pilar produk (semua masuk lingkup v1):
 
-**Contoh alur inti (happy path):**
+1. **Competitor & Market Intelligence** — riset organik + iklan kompetitor (Meta Ads Library) jadi insight & ide.
+2. **Script Engine** — naskah video (Reels/TikTok) otomatis: hook → body → CTA + shot list.
+3. **Carousel Engine** — copy slide-per-slide + desain carousel yang konsisten brand.
+4. **AI Video Engine** — video dari script + voice-over + subtitle + assembly.
 
-```
-Prompt: "Buatkan produk kecantikan — serum vitamin C untuk usia 25-35.
-          Buatkan skrip iklan 30 detik dan video dari skrip itu."
-   │
-   ▼
-[Agent Brief]    → menyusun brief produk, target audiens, tone, angle
-   │
-   ▼
-[Agent Skrip]    → menghasilkan skrip (hook, body, CTA) + shot list
-   │
-   ▼  (review tim produksi — approve / revisi)
-   │
-   ▼
-[Agent Storyboard] → storyboard / scene breakdown per shot
-   │
-   ▼
-[Agent Video]    → generate video per scene (Higgsfield) + voice-over
-   │
-   ▼
-[Agent Assembly] → gabung scene, subtitle, musik, export
-   │
-   ▼
-Output: skrip final + video jadi + aset, dikirim ke tim produksi / publishing
-```
+**Strategi go-to-market (Hybrid):** dipakai dulu secara internal untuk melayani brand klien (done-for-you) — ini sekaligus jadi validasi & sumber revenue awal — lalu fitur yang sudah matang dibuka sebagai **self-serve SaaS** untuk brand langsung.
+
+**Platform fokus v1:** Instagram & TikTok.
 
 ---
 
 ## 2. Latar Belakang & Masalah
 
-Tim produksi konten (agency, brand, UMKM, content house) saat ini menghadapi:
+Mengelola konten untuk **banyak brand** itu mahal dan lambat karena:
 
 | Masalah | Dampak |
 |---|---|
-| Pembuatan skrip & konsep manual, berulang | Lambat, mahal, bottleneck di copywriter |
-| Loncat-loncat antar tool (doc → desain → video → publish) | Konteks hilang, kerja ganda, error |
-| Sulit menjaga konsistensi brand di banyak aset | Kualitas tidak seragam |
-| Iterasi konten butuh waktu lama | Kalah cepat dengan tren pasar |
-| Skala produksi terbatas oleh jumlah orang | Tidak bisa produksi banyak varian sekaligus |
+| Riset kompetitor manual & tidak konsisten | Strategi nebak-nebak, kalah cepat dari tren |
+| Tiap brand butuh script, carousel, video terpisah | Produksi tidak terskala, bottleneck di tim kreatif |
+| Loncat antar tool (riset → doc → desain → video → publish) | Konteks hilang, kerja ganda, lambat |
+| Sulit jaga konsistensi voice & visual per brand | Kualitas tidak seragam, brand "bocor" antar klien |
+| Skala produksi terbatas jumlah orang | Tidak bisa tambah banyak brand tanpa tambah headcount |
 
-**Peluang:** AI generatif (teks, gambar, video, suara) sekarang cukup matang untuk merangkai pipeline produksi otomatis — yang dibutuhkan adalah **orkestrasi** (agent yang tahu urutan kerja) + **human-in-the-loop** (kontrol tim) + **integrasi tool nyata**.
+**Peluang:** AI generatif (teks, gambar, video, suara) + data kompetitor publik (organik + Meta Ads Library) memungkinkan **pabrik konten ber-skala** — yang dibutuhkan: orkestrasi agent + workspace per-brand + human-in-the-loop.
+
+**Diferensiasi (moat):** bukan sekadar generator konten, tapi **loop tertutup riset → produksi → publish → report** yang berjalan per brand secara otomatis.
+
+```
+Competitor + Trend Research → Strategy & Calendar → Script / Carousel / Video AI
+       → Produksi & Desain → Schedule & Publish → Report
+                     ↑__________ feedback performa __________↓
+```
 
 ---
 
-## 3. Tujuan & Metrik Keberhasilan
+## 3. Model Bisnis & Positioning
 
-### 3.1 Tujuan Produk
-1. Mengubah satu prompt menjadi paket deliverable produksi (skrip + video) secara otomatis.
-2. Memberi tim produksi kontrol review/approve di tiap tahap (bukan black box).
-3. Menjaga konsistensi brand (tone, visual, logo, warna) lintas aset.
-4. Memungkinkan produksi banyak varian konten secara paralel.
+**Hybrid: Agency-first → SaaS.**
 
-### 3.2 Metrik Keberhasilan (KPI)
+| Fase | Mode | Pengguna | Sumber revenue |
+|---|---|---|---|
+| Awal | Done-for-you (internal tool) | Tim sendiri melayani brand klien | Retainer/proyek per brand |
+| Lanjut | Self-serve SaaS | Brand/bisnis langsung | Subscription / pay-per-credit |
+
+**Implikasi desain:**
+- Bangun **multi-brand workspace** dan **approval + report ke klien** sejak awal (kebutuhan agency).
+- Rancang fitur agar **bisa di-"selfserve-kan"** nanti (onboarding mandiri, billing, kuota kredit) — siapkan fondasinya, aktifkan belakangan.
+- Hindari fitur yang hanya relevan untuk salah satu mode dan sulit dilepas.
+
+---
+
+## 4. Tujuan & Metrik Keberhasilan
+
+### 4.1 Tujuan Produk
+1. Satu tim bisa menjalankan **banyak brand** dengan output konsisten & terskala.
+2. Dari **riset kompetitor → ide & strategi** otomatis, bukan manual.
+3. Produksi **script, carousel, video AI** dari satu alur, per brand.
+4. Jaga konsistensi voice & visual per brand (brand kit).
+
+### 4.2 KPI
 
 | Metrik | Target v1 |
 |---|---|
-| Waktu prompt → draft skrip | < 2 menit |
-| Waktu prompt → video draft jadi | < 15 menit |
+| Brand yang bisa dikelola per 1 operator | ≥ 10 |
+| Waktu riset kompetitor 1 brand (otomatis) | < 10 menit |
+| Waktu prompt → draft script | < 2 menit |
+| Waktu prompt → carousel (copy+desain) | < 5 menit |
+| Waktu script → video draft | < 15 menit |
 | % deliverable diterima tanpa revisi besar | ≥ 60% |
-| Jumlah varian konten per 1 prompt | ≥ 3 |
-| Retensi pengguna (W4) | ≥ 30% |
 | Penghematan waktu vs alur manual | ≥ 70% |
 
-### 3.3 Non-Goals (di luar cakupan awal)
-- Bukan video editor profesional manual (kita generate + assembly, bukan timeline editor frame-by-frame).
-- Bukan tool manajemen iklan penuh (integrasi publishing ada, tapi optimisasi ads bukan fokus v1).
-- Tidak menggantikan tim produksi — memperkuatnya (assistive, bukan autonomous penuh tanpa approval).
+### 4.3 Non-Goals (v1)
+- Bukan video editor timeline manual frame-by-frame.
+- Bukan platform manajemen iklan penuh (insight & creative ada; optimisasi ads mendalam menyusul).
+- Bukan menggantikan tim kreatif — assistive + human-in-the-loop.
 
 ---
 
-## 4. Target Pengguna & Persona
+## 5. Persona
 
 | Persona | Peran | Kebutuhan utama |
 |---|---|---|
-| **Content Producer / Creative Lead** | Memimpin produksi konten | Cepat menghasilkan skrip & video dari brief, jaga kualitas |
-| **Copywriter / Scriptwriter** | Menulis naskah | Draft awal otomatis untuk dikembangkan, bukan dari nol |
-| **Social Media / Brand Manager** | Kelola channel & kampanye | Banyak varian konten konsisten brand, siap publish |
-| **UMKM / Solo Creator** | Produksi sendiri tanpa tim besar | Pipeline lengkap dalam satu tempat, murah, cepat |
-| **Agency Operator** | Layani banyak klien | Skala produksi, template per klien/brand |
+| **Content Strategist / Account Lead** (agency) | Pegang banyak brand klien | Riset cepat, strategi, jaga kualitas, report ke klien |
+| **Copywriter / Scriptwriter** | Tulis naskah & carousel | Draft awal otomatis dari riset, multi-varian |
+| **Designer / Editor** | Visual & video | Desain carousel & video AI brand-consistent, tinggal poles |
+| **Brand Owner / Marketer** (SaaS, fase lanjut) | Kelola brand sendiri | Pipeline lengkap mandiri, murah, cepat |
 
-**Persona utama v1:** Content Producer & Social Media Manager di brand/agency skala kecil-menengah.
-
----
-
-## 5. User Stories
-
-**Epik A — Dari prompt ke skrip**
-- Sebagai produser, saya ingin mengetik prompt produk dan mendapat **skrip terstruktur** (hook/body/CTA + shot list) agar bisa langsung dipakai/diedit.
-- Sebagai copywriter, saya ingin meminta **beberapa varian skrip** (tone berbeda) agar bisa pilih yang terbaik.
-
-**Epik B — Dari skrip ke video**
-- Sebagai produser, saya ingin agent **mengubah skrip yang sudah disetujui menjadi video** per scene secara otomatis.
-- Sebagai produser, saya ingin **voice-over otomatis** sesuai skrip dengan pilihan suara.
-
-**Epik C — Kontrol & review (human-in-the-loop)**
-- Sebagai produser, saya ingin **menyetujui/merevisi** tiap tahap sebelum lanjut, agar hasil sesuai harapan.
-- Sebagai brand manager, saya ingin agent **mematuhi brand kit** (warna, font, logo, tone) otomatis.
-
-**Epik D — Output & distribusi**
-- Sebagai produser, saya ingin **mengekspor** skrip & video, atau mengirimnya ke Notion/Drive.
-- Sebagai social media manager, saya ingin **draft posting** ke Instagram/Facebook dari aset jadi.
-
-**Epik E — Skala & template**
-- Sebagai agency, saya ingin **menyimpan template alur & brand** per klien agar produksi konsisten.
-- Sebagai produser, saya ingin **menjalankan 1 prompt jadi banyak varian** (mis. 5 hook berbeda) sekaligus.
+**Persona utama v1:** Content Strategist/Account Lead di agency (mode done-for-you).
 
 ---
 
-## 6. Lingkup Fungsional (Functional Requirements)
+## 6. Empat Pilar Produk
 
-### 6.1 Modul Prompt & Brief
-- Input prompt natural language + form opsional (produk, audiens, durasi, platform, tone).
-- Agent menyusun **brief terstruktur** yang bisa diedit sebelum lanjut.
-- Mendukung upload referensi (gambar produk, brand kit, contoh konten).
+### Pilar 1 — Competitor & Market Intelligence
 
-### 6.2 Modul Skrip (Scriptwriting Agent)
-- Output skrip terstruktur: **Hook → Body → CTA**, dengan durasi/timestamp.
-- **Shot list** otomatis (per scene: visual, narasi, durasi).
-- Multi-varian skrip (N varian dengan tone berbeda).
-- Editor inline + komentar + versi (history).
+**Input:** akun/brand kompetitor, niche, kata kunci.
 
-### 6.3 Modul Storyboard / Scene Breakdown
-- Pecah skrip menjadi scene dengan deskripsi visual tiap shot.
-- Generate gambar referensi/storyboard per scene (opsional).
+**Yang diotomasi:**
+- **Riset organik (IG/TikTok\*)** — konten top-performing kompetitor: hook, format (reels/carousel), frekuensi & jam posting, pola engagement, tema berulang.
+- **Riset iklan (Meta Ads Library)** — iklan **aktif** kompetitor: angle, creative, copy, sudah berapa lama berjalan (proksi "iklan yang menang").
+- **Trend & gap analysis** — tren format/topik per niche + celah konten yang belum digarap kompetitor.
+- **Swipe file & hook bank** — kumpulan hook/angle terbaik untuk dipakai ulang.
+- **Output:** laporan insight + daftar ide konten + rekomendasi angle, langsung bisa masuk ke Script/Carousel Engine.
 
-### 6.4 Modul Video (Video Generation Agent)
-- Generate video per scene dari deskripsi shot (teks → video / gambar → video).
-- **Voice-over** dari skrip (text-to-speech, pilihan suara/bahasa).
-- Tambah subtitle, musik latar, transisi.
-- **Assembly**: gabung scene → video utuh → export (rasio 9:16, 1:1, 16:9).
+**Tools:** Instagram (Composio), **Meta Ads Library** (`ads_library_search`), Higgsfield virality predictor, insights/benchmark Meta.
 
-### 6.5 Modul Brand & Konsistensi
-- Brand kit: logo, palet warna, font, tone of voice, do/don't.
-- Agent mematuhi brand kit di skrip & visual.
-
-### 6.6 Modul Orkestrasi Agent (inti platform)
-- **Workflow engine**: definisi tahap (brief → skrip → storyboard → video → assembly).
-- Tiap tahap punya **gate approval** (auto / manual).
-- **Status & progress** real-time tiap job.
-- Re-run / revisi parsial (ulang 1 tahap tanpa mengulang semua).
-- Riwayat & audit (siapa approve apa, versi mana).
-
-### 6.7 Modul Output & Integrasi
-- Export: skrip (PDF/Docs), video (MP4), aset (zip).
-- Integrasi: simpan ke Notion/Drive, draft posting ke Instagram/Facebook.
-- Kirim notifikasi ke tim (email/notifikasi) saat deliverable siap.
-
-### 6.8 Modul Kolaborasi & Manajemen
-- Project & folder per klien/kampanye.
-- Komentar & approval multi-user.
-- Library aset yang reusable.
-- Template alur produksi.
+> \***Catatan integrasi TikTok:** belum ada integrasi resmi TikTok di environment ini. Untuk riset & publishing TikTok diperlukan integrasi tambahan / penyedia data pihak ketiga (lihat §11).
 
 ---
 
-## 7. Arsitektur Agent (Konseptual)
+### Pilar 2 — Script Engine
+
+**Input:** brief/produk/angle (bisa otomatis dari hasil riset).
+
+**Yang diotomasi:**
+- Naskah video **per platform** (gaya Reels ≠ gaya TikTok), struktur **Hook → Body → CTA** + timestamp.
+- **Shot list** per scene (visual, narasi, durasi).
+- **Multi-varian & multi-tone** sekaligus (mis. 3 hook berbeda).
+- Tarik hook dari **hook bank** hasil riset kompetitor.
+- Editor inline + versi + komentar + approval.
+
+**Tools:** LLM (model Claude terbaru).
+
+---
+
+### Pilar 3 — Carousel Engine
+
+**Input:** topik/angle/produk.
+
+**Yang diotomasi:**
+- **Copy slide-per-slide**: slide cover (hook), slide isi (value/edukasi), slide CTA.
+- **Desain carousel** brand-consistent (warna, font, logo) — auto-layout per slide.
+- Multi-varian + rasio (4:5 / 1:1).
+- Export siap unggah.
+
+**Tools:** **Canva** (generate-design, brand templates, export), Higgsfield (gambar pendukung).
+
+---
+
+### Pilar 4 — AI Video Engine
+
+**Input:** script yang sudah di-approve.
+
+**Yang diotomasi:**
+- **Storyboard / scene breakdown** dari script.
+- **Generate video per scene** (text→video / image→video).
+- **Voice-over** multi-suara & multi-bahasa; **dubbing** untuk varian bahasa.
+- **Subtitle**, musik, transisi, **assembly** jadi video utuh.
+- **Reframe** 9:16 (Reels/TikTok) & **upscale** kualitas.
+
+**Tools:** **Higgsfield** (generate_video, generate_image, generate_audio/voice, dubbing, reframe, upscale, virality_predictor).
+
+---
+
+## 7. Fitur Lintas-Pilar (cross-cutting)
+
+### 7.1 Multi-Brand Workspace
+- **Workspace terpisah per brand**: brand kit (logo, warna, font, tone, do/don't), aset, template, kompetitor yang dipantau.
+- **Asset library** reusable per brand.
+- Isolasi data antar brand/klien (penting untuk agency & SaaS).
+
+### 7.2 Orkestrasi & Human-in-the-Loop
+- **Workflow engine**: Riset → Strategi → Script/Carousel/Video → Publish → Report.
+- **Approval gate** tiap tahap (auto/manual).
+- Status real-time, retry per tahap, riwayat & audit.
+
+### 7.3 Distribusi & Publishing
+- **Schedule + posting Instagram** (tool tersedia).
+- **TikTok**: butuh integrasi tambahan (lihat §11) — sementara bisa export + posting manual.
+- Alur draft → approval → publish.
+
+### 7.4 Analytics & Reporting
+- Tracking performa per brand/post.
+- **Auto-report** ke klien → **Notion / Gamma deck / Google Drive**.
+- Competitor benchmark report.
+
+### 7.5 Kolaborasi & Ops (mode agency)
+- Project/folder per klien, komentar & approval multi-user.
+- Pitch deck → **Gamma**; notulen meeting → **Notion** (dari **Zoom**); jadwal → **Google Calendar**; komunikasi → **Gmail**.
+
+---
+
+## 8. User Stories (ringkas, per pilar)
+
+**Riset**
+- Sebagai strategist, saya masukkan 3 akun kompetitor → dapat laporan hook & iklan aktif mereka + 20 ide konten, agar strategi berbasis data.
+
+**Script**
+- Sebagai copywriter, saya minta 3 varian script Reels 30 detik dari satu angle → tinggal pilih & poles.
+
+**Carousel**
+- Sebagai designer, saya minta carousel 7 slide tentang topik X → dapat copy + desain brand-consistent siap unggah.
+
+**Video AI**
+- Sebagai editor, saya approve script → agent hasilkan video 9:16 + voice-over Indonesia otomatis.
+
+**Multi-brand**
+- Sebagai account lead, saya jalankan alur yang sama untuk 10 brand dengan brand kit masing-masing, paralel.
+
+**Report**
+- Sebagai account lead, saya generate report bulanan per brand → kirim ke klien lewat Notion/Gamma.
+
+---
+
+## 9. Arsitektur Agent (Konseptual)
 
 ```
-                      ┌──────────────────────────────┐
-                      │        ORCHESTRATOR           │
-                      │  (workflow engine + state)    │
-                      │  - urutan tahap               │
-                      │  - approval gates             │
-                      │  - retry / branching          │
-                      └──────────────┬───────────────┘
-                                     │
-        ┌─────────────┬──────────────┼──────────────┬─────────────┐
-        ▼             ▼              ▼              ▼             ▼
-  ┌──────────┐ ┌──────────┐  ┌────────────┐ ┌──────────┐ ┌──────────┐
-  │  Brief   │ │  Skrip   │  │ Storyboard │ │  Video   │ │ Assembly │
-  │  Agent   │ │  Agent   │  │   Agent    │ │  Agent   │ │  Agent   │
-  └──────────┘ └──────────┘  └────────────┘ └──────────┘ └──────────┘
-        │             │              │              │             │
-        └─────────────┴──────────────┴──────────────┴─────────────┘
-                                     │
-                        ┌────────────▼────────────┐
-                        │      TOOL LAYER          │
-                        │  LLM (skrip/brief)       │
-                        │  Higgsfield (video/voice)│
-                        │  Canva/Gamma (desain)    │
-                        │  Notion/Drive (simpan)   │
-                        │  Instagram/FB (publish)  │
-                        └─────────────────────────┘
+                       ┌───────────────────────────────┐
+                       │         ORCHESTRATOR           │
+                       │   workflow + state + approval  │
+                       └───────────────┬───────────────┘
+                                       │
+   ┌──────────┬──────────┬─────────────┼────────────┬──────────┬──────────┐
+   ▼          ▼          ▼             ▼            ▼          ▼          ▼
+┌────────┐┌────────┐┌──────────┐ ┌──────────┐┌──────────┐┌────────┐┌────────┐
+│Research││Strategy││  Script  │ │ Carousel ││  Video   ││Publish ││ Report │
+│ Agent  ││ Agent  ││  Agent   │ │  Agent   ││  Agent   ││ Agent  ││ Agent  │
+└────────┘└────────┘└──────────┘ └──────────┘└──────────┘└────────┘└────────┘
+   │          │          │             │            │          │          │
+   └──────────┴──────────┴─────────────┴────────────┴──────────┴──────────┘
+                                       │
+                    ┌──────────────────▼──────────────────┐
+                    │             TOOL LAYER                │
+                    │  IG/Composio + Meta Ads Library (riset)│
+                    │  LLM (script/strategy/copy)            │
+                    │  Canva (carousel/desain)               │
+                    │  Higgsfield (video/voice/gambar)       │
+                    │  Notion/Gamma/Drive (report/arsip)     │
+                    │  IG (publish) · TikTok (perlu integrasi)│
+                    └───────────────────────────────────────┘
+                                       │
+                    ┌──────────────────▼──────────────────┐
+                    │   BRAND CONTEXT (per workspace)       │
+                    │   brand kit · voice · kompetitor · aset│
+                    └───────────────────────────────────────┘
 ```
 
-**Prinsip desain:**
-- **Setiap agent = satu peran jelas** (single responsibility), mudah ditambah/ganti.
-- **Orchestrator stateful** → bisa pause di approval gate, resume, retry per tahap.
-- **Human-in-the-loop** sebagai default, bukan pengecualian.
-- **Tool-agnostic** → backend video/LLM bisa diganti tanpa ubah alur.
+**Prinsip:** tiap agent satu peran; orchestrator stateful (pause di approval, resume, retry); semua agent membaca **Brand Context** agar output konsisten per brand; tool-agnostic (provider bisa diganti).
 
 ---
 
-## 8. Integrasi Tool (sudah tersedia di environment)
-
-Environment ini sudah terhubung ke MCP server berikut — kandidat integrasi langsung:
-
-| Tool | Fungsi di pipeline |
-|---|---|
-| **Higgsfield** | Generate video, gambar, voice-over/dubbing, upscale, virality predictor |
-| **Canva** | Desain grafis, thumbnail, brand template, export |
-| **Gamma** | Deck/presentasi/halaman dari konten |
-| **Instagram / Facebook Meta Ads** | Publishing & kampanye iklan |
-| **Notion** | Simpan brief, skrip, dokumentasi project |
-| **Google Drive / Gmail / Calendar** | Penyimpanan aset, notifikasi, jadwal produksi |
-| **Miro** | Storyboard/whiteboard kolaboratif |
-| **Zoom** | Sumber rekaman/aset meeting (opsional) |
-
-> Catatan: ketersediaan tiap tool bergantung pada otorisasi akun pengguna. Sebagian butuh login/OAuth.
-
----
-
-## 9. Kebutuhan Non-Fungsional
+## 10. Kebutuhan Non-Fungsional
 
 | Aspek | Kebutuhan |
 |---|---|
-| **Performa** | Draft skrip < 2 mnt; video draft < 15 mnt; UI responsif |
-| **Skalabilitas** | Job async/antrian; banyak job paralel per user |
-| **Keandalan** | Retry otomatis tahap gagal; tidak kehilangan progress |
-| **Keamanan** | Enkripsi data, isolasi data antar klien/tenant, kelola kredensial tool aman |
-| **Hak cipta & kepatuhan** | Jejak sumber aset; pelabelan konten AI; filter konten sesuai kebijakan platform |
-| **Biaya** | Pantau pemakaian kredit (video/LLM mahal) + estimasi biaya per job |
-| **Auditability** | Riwayat versi & approval lengkap |
-| **Multi-bahasa** | Skrip & voice-over minimal ID + EN |
+| Performa | Riset < 10 mnt; script < 2 mnt; carousel < 5 mnt; video < 15 mnt |
+| Skala | Job async/antrian; banyak brand & job paralel |
+| Multi-tenant | Isolasi data per brand/klien (wajib untuk agency & SaaS) |
+| Keandalan | Retry per tahap; progress tidak hilang |
+| Biaya | Pantau kredit (video/LLM mahal) + estimasi biaya per job/brand |
+| Kepatuhan | Pelabelan konten AI; patuhi kebijakan IG/TikTok/Meta; data kompetitor hanya yang publik |
+| Auditability | Riwayat versi & approval per brand |
+| Multi-bahasa | Script & voice-over minimal ID + EN |
 
 ---
 
-## 10. Rekomendasi Tech Stack (usulan, bisa disesuaikan)
+## 11. Integrasi Tool & Celah
+
+**Sudah tersedia (MCP terhubung di environment):**
+
+| Tool | Peran |
+|---|---|
+| Instagram (Composio) | Riset organik + publishing IG |
+| **Meta Ads Library** | Riset iklan aktif kompetitor |
+| Facebook/Meta Ads | Setup & insight iklan |
+| Higgsfield | Video, gambar, voice-over, dubbing, reframe, upscale, virality predictor |
+| Canva | Desain carousel, thumbnail, brand template |
+| Gamma | Deck/report/pitch |
+| Notion / Google Drive | Arsip & report |
+| Zoom / Gmail / Calendar | Ops internal |
+
+**Celah yang perlu diputuskan/diadakan:**
+- ⚠️ **TikTok** — belum ada integrasi resmi. Butuh: (a) penyedia data pihak ketiga untuk riset TikTok, dan (b) TikTok Content Posting API / tool pihak ketiga untuk publishing. Sementara: export manual.
+- ⚠️ **Penjadwalan/scheduler** lintas platform — perlu komponen scheduler sendiri.
+- ⚠️ **Manajemen kredit/billing** (untuk fase SaaS).
+
+---
+
+## 12. Rekomendasi Tech Stack (usulan)
 
 | Lapisan | Usulan |
 |---|---|
 | Frontend | Next.js + React + Tailwind |
 | Backend/API | Node.js (NestJS) atau Python (FastAPI) |
-| Orkestrasi agent | LLM orchestration (mis. arsitektur agent + MCP tools), workflow engine + job queue |
-| Antrian/async | Redis + worker queue (BullMQ/Celery) |
-| Database | PostgreSQL (data) + object storage/S3 (aset video) |
-| LLM | Model Claude terbaru untuk skrip/brief/orkestrasi |
-| Video/Voice | Higgsfield (via MCP) |
-| Auth | OAuth + multi-tenant |
-
-> Stack final akan ditetapkan saat fase desain teknis (lihat Roadmap).
+| Orkestrasi agent | Agent + MCP tools; workflow engine + job queue |
+| Async | Redis + worker queue (BullMQ/Celery) |
+| Database | PostgreSQL + object storage (S3) untuk aset |
+| LLM | Model Claude terbaru (script/strategi/riset) |
+| Video/Voice/Gambar | Higgsfield (MCP) |
+| Desain | Canva (MCP) |
+| Multi-tenant/Auth | OAuth + isolasi per workspace |
 
 ---
 
-## 11. Roadmap & Milestone
+## 13. Roadmap (Hybrid: Agency-first → SaaS)
 
-### Fase 0 — Validasi (1–2 minggu)
-- Finalisasi PRD, mockup alur, validasi dengan 2–3 calon pengguna.
+### Fase 0 — Validasi (1–2 mgg)
+Finalisasi PRD, mockup alur, uji dengan 1–2 brand klien nyata.
 
-### Fase 1 — MVP "Prompt → Skrip" (3–4 minggu)
-- Input prompt + brief agent + skrip agent (multi-varian) + editor + export.
-- **Deliverable:** dari prompt jadi skrip siap pakai.
+### Fase 1 — MVP Internal (Done-for-you) (6–8 mgg)
+Empat pilar versi inti + multi-brand workspace + approval, dipakai tim sendiri:
+- **Research Agent** (organik IG + Meta Ads Library) → insight & ide.
+- **Script Engine** (multi-varian, per platform).
+- **Carousel Engine** (copy + desain Canva).
+- **AI Video Engine** (script→video + voice-over, Higgsfield).
+- Brand kit per workspace + export.
+> Build order disarankan: Riset → Script → Carousel → Video (video paling berat, ship terakhir di fase ini).
 
-### Fase 2 — "Skrip → Video" (4–6 minggu)
-- Storyboard agent + video agent (Higgsfield) + voice-over + assembly + export MP4.
-- **Deliverable:** dari skrip jadi video draft otomatis (= contoh kasus produk kecantikan).
+### Fase 2 — Orkestrasi & Distribusi (4–5 mgg)
+Workflow end-to-end, approval gate, status real-time, publish IG, scheduler, report ke klien (Notion/Gamma).
 
-### Fase 3 — Orkestrasi & Kontrol (3–4 minggu)
-- Approval gates, status real-time, retry per tahap, brand kit, project/folder.
+### Fase 3 — Skala Multi-Brand (4 mgg)
+Banyak brand paralel, template per brand, asset library, kolaborasi multi-user, integrasi TikTok (riset + publish via pihak ketiga).
 
-### Fase 4 — Skala & Distribusi (4 minggu)
-- Multi-varian paralel, template per klien, integrasi publishing (IG/FB), kolaborasi multi-user.
+### Fase 4 — Produktisasi SaaS (6–8 mgg)
+Onboarding mandiri, billing & kuota kredit, self-serve workspace, paywall fitur, analytics pengguna.
 
 ### Fase 5 — Penyempurnaan
-- Analytics, virality predictor, optimisasi biaya, multi-tenant penuh.
+Optimisasi biaya, A/B test creative & ads, rekomendasi berbasis performa.
 
 ---
 
-## 12. Risiko & Mitigasi
+## 14. Risiko & Mitigasi
 
 | Risiko | Dampak | Mitigasi |
 |---|---|---|
-| Biaya generate video/LLM tinggi | Margin tipis | Estimasi biaya per job, tier kredit, cache, draft resolusi rendah dulu |
-| Kualitas video AI belum konsisten | Hasil ditolak | Human-in-the-loop, regenerate per scene, kurasi model |
-| Ketergantungan pada tool pihak ke-3 | Vendor lock / downtime | Arsitektur tool-agnostic, fallback provider |
-| Isu hak cipta / kebijakan platform | Aset ditolak/diblokir | Pelabelan AI, filter konten, jejak sumber |
-| Kompleksitas orkestrasi | Sulit di-maintain | Mulai linear sederhana, agent modular, tambah branching bertahap |
-| Ekspektasi "full otomatis tanpa orang" | Kecewa | Posisikan sebagai assistive + kontrol manusia |
+| Biaya video/LLM tinggi | Margin tipis | Estimasi biaya per job/brand, draft resolusi rendah dulu, kuota kredit |
+| Integrasi TikTok belum ada | Fitur tak lengkap | Mulai dari IG; adakan pihak ketiga untuk TikTok; export manual sementara |
+| Kebijakan platform (scraping/posting) | Akun diblokir | Pakai API resmi & data publik; pelabelan AI; hormati ToS |
+| Kualitas video AI belum konsisten | Hasil ditolak | Human-in-the-loop, regenerate per scene |
+| Kompleksitas multi-brand | Sulit maintain | Mulai linear, agent modular, Brand Context terpusat |
+| Loncat ke SaaS terlalu cepat | Produk belum matang | Validasi via agency dulu, produktisasi yang sudah terbukti |
 
 ---
 
-## 13. Pertanyaan Terbuka (perlu keputusan)
+## 15. Pertanyaan Terbuka (sisa keputusan)
 
-1. **Target pengguna utama v1**: agency, brand in-house, atau UMKM/solo creator? (memengaruhi prioritas fitur)
-2. **Jenis konten prioritas**: iklan pendek (TikTok/Reels), video panjang (YouTube), atau gambar/desain?
-3. **Tingkat otomasi**: seberapa banyak approval manual yang diinginkan di v1?
-4. **Model bisnis**: subscription, pay-per-credit, atau per-seat?
-5. **Bahasa prioritas**: Indonesia saja dulu, atau multi-bahasa sejak awal?
-6. **Output utama**: cukup skrip + video, atau langsung sampai publish ke sosmed?
-7. **Branding produk**: nama final platform (sementara: ProdPilot)?
+1. **TikTok**: setuju pakai penyedia data/posting pihak ketiga, atau cukup export manual dulu di v1?
+2. **Niche/industri awal**: fokus brand di vertikal tertentu dulu (mis. kecantikan/F&B) agar template & riset lebih tajam?
+3. **Bahasa**: Indonesia saja dulu, atau ID + EN sejak awal?
+4. **Branding**: nama final platform (sementara: ProdPilot)?
+5. **Skala awal**: target berapa brand di 3 bulan pertama (memengaruhi prioritas otomasi vs manual)?
 
 ---
 
-## 14. Lampiran — Contoh End-to-End (kasus produk kecantikan)
+## 16. Lampiran — Contoh End-to-End (produk kecantikan, IG + TikTok)
 
-**Input prompt:**
-> "Buatkan produk kecantikan: serum Vitamin C untuk wanita 25–35 yang peduli kulit kusam. Buatkan skrip iklan 30 detik untuk Instagram Reels, lalu buatkan videonya dari skrip itu. Tone: fresh, premium, meyakinkan."
+**Brand:** serum Vitamin C, target wanita 25–35.
 
-**Output yang dihasilkan platform:**
-1. **Brief** — produk, audiens, USP, tone, platform, durasi.
-2. **Skrip 30 detik** (3 varian):
-   - Hook (0–3s): _"Kulit kusam bikin nggak pede?"_
-   - Body (3–22s): manfaat serum, before/after, kandungan.
-   - CTA (22–30s): _"Coba sekarang, glowing dalam 7 hari."_
-   - + **shot list** per scene.
-3. **Storyboard** — 5–6 scene dengan deskripsi visual.
-4. **Video** — tiap scene di-generate (Higgsfield) + voice-over ID + subtitle + musik.
-5. **Assembly** — video 9:16 final, durasi 30s, siap review.
-6. **Distribusi** — draft caption + posting ke Instagram (opsional), arsip ke Notion/Drive.
+1. **Riset** — scan 3 kompetitor: hook "kulit kusam" paling sering dipakai; 4 iklan aktif di Meta Ads Library beraangle "glowing 7 hari"; gap: belum ada yang bahas "aman untuk kulit sensitif".
+2. **Strategi** — angle terpilih: "glowing tanpa iritasi" + content pillar mingguan.
+3. **Script** — 3 varian Reels/TikTok 30 detik (Hook → Body → CTA) + shot list.
+4. **Carousel** — 7 slide "5 tanda kulit butuh Vitamin C" + desain brand (Canva).
+5. **Video AI** — storyboard → generate per scene (Higgsfield) → voice-over ID → subtitle → assembly 9:16.
+6. **Publish & Report** — jadwalkan ke Instagram; export untuk TikTok; arsip + report ke klien (Notion/Gamma).
 
 ---
 
-_Dokumen ini adalah draft awal untuk diskusi. Mohon review bagian §13 (Pertanyaan Terbuka) agar bisa difinalisasi._
+_Draft untuk diskusi. Mohon review §15 (Pertanyaan Terbuka) untuk finalisasi._
