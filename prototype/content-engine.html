@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Content Engine — Prototype</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #fff; --line: #e4e7ec; --ink: #1f2430; --muted: #667085;
+    --brand: #2f6df6; --brand-d: #1f4fd0; --ok: #14924a; --warn: #b25f00; --soft: #eef2ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    color: var(--ink); background: var(--bg); }
+  header { background: var(--card); border-bottom: 1px solid var(--line); padding: 12px 20px;
+    display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 700; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  header .spacer { flex: 1; }
+  main { max-width: 920px; margin: 0 auto; padding: 20px; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--card); padding: 8px 12px; color: var(--ink); }
+  button:hover { background: #f0f2f5; }
+  button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+  button.primary:hover { background: var(--brand-d); }
+  button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .client { cursor: pointer; }
+  .client h3 { margin: 0 0 4px; font-size: 15px; }
+  .client .tag { display: inline-block; font-size: 11px; color: var(--brand-d); background: var(--soft);
+    padding: 1px 8px; border-radius: 999px; }
+  .muted { color: var(--muted); }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
+  label .req { color: #d12; }
+  input, select, textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line);
+    border-radius: 8px; background: #fff; color: var(--ink); }
+  textarea { min-height: 64px; resize: vertical; }
+  .field-hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted); margin: 22px 0 2px; }
+  .tabs { display: flex; gap: 6px; margin: 8px 0 16px; }
+  .tabs button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .gens { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+  .badge.demo { background: #fff3e0; color: var(--warn); border: 1px solid #ffd9a8; }
+  .badge.live { background: #e7f6ee; color: var(--ok); border: 1px solid #b7e3c8; }
+  .result { margin-top: 14px; }
+  .result h4 { margin: 0 0 6px; font-size: 14px; }
+  pre { background: #0e1726; color: #d7e2f5; padding: 12px; border-radius: 8px; overflow: auto;
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+  .readable { white-space: pre-wrap; background: #fbfcfe; border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px; }
+  dialog { border: 1px solid var(--line); border-radius: 12px; padding: 0; width: min(460px, 92vw); }
+  dialog .dlg-body { padding: 18px; }
+  dialog h3 { margin: 0 0 4px; }
+  .backdrop[open]::backdrop { background: rgba(15,23,42,.4); }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink);
+    color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s;
+    pointer-events: none; z-index: 50; }
+  .toast.show { opacity: 1; }
+  .note { font-size: 13px; color: var(--muted); background: var(--soft); border: 1px solid #dbe4ff;
+    border-radius: 8px; padding: 10px 12px; }
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent;
+    border-radius: 50%; animation: sp .7s linear infinite; vertical-align: -2px; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Content Engine</h1>
+  <span class="sub">prototype · AI = drafter, manusia = approver</span>
+  <span class="spacer"></span>
+  <span id="keyState" class="badge demo">mode demo</span>
+  <button id="btnSettings">⚙️ API key</button>
+</header>
+
+<main>
+  <!-- DASHBOARD -->
+  <section id="viewDashboard">
+    <div class="row" style="justify-content: space-between; margin-bottom: 14px;">
+      <h2 style="margin:0; font-size:18px;">Brand klien</h2>
+      <div class="row">
+        <button id="btnSeed">Muat contoh</button>
+        <button class="primary" id="btnAddBrand">+ Tambah brand</button>
+      </div>
+    </div>
+    <div id="clientList" class="grid"></div>
+    <p id="emptyHint" class="muted" style="margin-top:16px;">Belum ada brand. Klik <b>Muat contoh</b> untuk mulai cepat, atau <b>Tambah brand</b>.</p>
+  </section>
+
+  <!-- CLIENT -->
+  <section id="viewClient" hidden>
+    <div class="row" style="justify-content: space-between; margin-bottom: 6px;">
+      <button class="ghost" id="btnBack">← Semua brand</button>
+      <button class="ghost" id="btnDelete" style="color:#d12;">Hapus brand</button>
+    </div>
+    <h2 id="clientName" style="margin:4px 0 2px; font-size:20px;"></h2>
+    <div class="tabs">
+      <button data-tab="generate" class="active">Generate</button>
+      <button data-tab="profile">Profil brand</button>
+    </div>
+
+    <!-- TAB GENERATE -->
+    <div id="tabGenerate">
+      <div class="card">
+        <div class="section-title" style="margin-top:0;">Daily input — fokus hari ini</div>
+        <div id="dailyForm"></div>
+        <div class="section-title">Generate</div>
+        <div class="gens" id="genButtons"></div>
+        <div id="genStatus" class="muted"></div>
+      </div>
+      <div id="results"></div>
+    </div>
+
+    <!-- TAB PROFILE -->
+    <div id="tabProfile" hidden>
+      <div class="card">
+        <div id="profileForm"></div>
+        <div class="row" style="margin-top:16px;">
+          <button class="primary" id="btnSaveProfile">Simpan profil</button>
+          <span class="muted" id="saveHint"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- SETTINGS DIALOG -->
+<dialog id="dlgSettings" class="backdrop">
+  <div class="dlg-body">
+    <h3>Pengaturan LLM</h3>
+    <p class="muted" style="margin-top:2px;">Kunci disimpan di browser ini saja (localStorage). Kosongkan untuk pakai <b>mode demo</b>.</p>
+    <label>Anthropic API key</label>
+    <input id="inpKey" type="password" placeholder="sk-ant-..." autocomplete="off" />
+    <label>Model</label>
+    <select id="inpModel">
+      <option value="claude-sonnet-4-6">claude-sonnet-4-6 (hemat & cepat)</option>
+      <option value="claude-opus-4-8">claude-opus-4-8 (kualitas tertinggi)</option>
+    </select>
+    <div class="row" style="justify-content:flex-end; margin-top:18px;">
+      <button id="btnCloseSettings">Batal</button>
+      <button class="primary" id="btnSaveSettings">Simpan</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================ KNOWLEDGE PLAYBOOK ============================ */
+const KNOWLEDGE_PLAYBOOK = `PLAYBOOK KONTEN (pakai buat SEMUA output):
+
+A. HOOK (3 detik pertama = penentu; ~50% orang skip kalau lemah). Pilih pola kuat: curiosity gap, bold/contrarian, "stop ngelakuin X", pertanyaan, warning/negativity, POV relatable, listicle berangka, before/after, "gue coba X N hari", relatable struggle, angka kejut, call-out niche. Teks on-screen hook 4-7 kata, mulai dari frame paling menarik.
+
+B. STRUKTUR (retensi): Hook(0-3s) -> Build (value baru tiap 5-8 detik, ada pattern-interrupt) -> Payoff konkret (angka/hasil) -> 1 CTA. Value mulai detik 0, no "halo guys". Loop ending kalau bisa.
+
+C. PANJANG: Reels 7-15s / TikTok ~24-38s. Jangan dipanjangin kalau ide pendek.
+
+D. COPYWRITING (pilih sesuai kesadaran audiens): PAS (Problem-Agitate-Solve) buat hook; AIDA buat jualan; BAB (Before-After-Bridge) buat transformasi; FAB (Feature-Advantage-Benefit) buat fitur; 4U buat najemin judul. Hybrid: PAS->FAB->AIDA.
+
+E. CAROUSEL: 6-8 slide. Slide 1 cover/hook (5-8 kata + curiosity gap = 80% bobot). 1 ide/slide, teks ringkas. Slide akhir recap + 1 CTA. Optimalkan SAVE & SHARE (bobot 3x like) -> bikin save-worthy (checklist/framework). Kasih cue swipe.
+
+F. CAPTION: hook di 125 karakter pertama; body 150-200 kata, baris pendek; 1 CTA spesifik (= ~3x lebih banyak komen).
+
+G. HASHTAG: 3-5 saja (IG batasi 5). Campur niche + topik + branded + lokal. Mid-tier (10K-500K) > mega-tag.
+
+H. CTA per tujuan: Jualan -> "komen [KEYWORD] nanti di-DM" / "checkout link bio"; Engagement -> pertanyaan / "tim mana?"; Save -> "save dulu biar gak lupa"; Share -> "tag temen yang butuh".
+
+I. CONTENT PILLARS (80% value / 20% jualan): Edukasi, Hiburan, Promosi, Social proof/testimoni, Behind-the-scenes, Komunitas. Jangan tiap konten jualan.
+
+J. BAHASA INDONESIA: default casual & relatable (sesuai voice brand). Slang lazim bila cocok: kak/bestie/gais, racun, spill, POV, wajib cobain, gaskeun/kuy/yuk, checkout/co, glow up, cuan. Konten lokal & relatable > formal/Inggris. Autentik > over-produksi. Jam puncak belanja 19-22 WIB.`;
+
+/* ============================== COMPLIANCE ================================= */
+const COMPLY = {
+  skincare: `COMPLIANCE SKINCARE (WAJIB - aturan BPOM): Kosmetik hanya klaim PENAMPILAN, BUKAN menyembuhkan penyakit. DILARANG: "menyembuhkan/obat", "memutihkan", "menghilangkan permanen", superlatif (paling/ter-/nomor 1/100%/terbaik), persona dokter/jas lab. GANTI dgn kata aman: "membantu merawat/menyamarkan tampilan/mencerahkan", "kulit TAMPAK/TERASA lebih...". Hanya produk ber-BPOM. Jangan glorifikasi merkuri/hidrokuinon/tretinoin/steroid. Kata aman: membantu, menjaga, merawat, menyamarkan tampilan, tampak/terlihat lebih..., terasa.`,
+  fnb: `COMPLIANCE F&B (WAJIB): selalu sebut channel order (GoFood/GrabFood/ShopeeFood/dine-in) + lokasi/jam + harga transparan + status halal kalau ada. Hindari klaim sehat/medis tanpa dasar.`,
+  umum: `COMPLIANCE UMUM: hindari overclaim, scarcity palsu, testimoni palsu. Sebut harga/varian/cara beli jelas. SEMUA: hindari SARA, body shaming/colorism, menjelekkan kompetitor. Inklusif & jujur. Jangan ngarang fakta/angka di luar profil (tandai [PERLU DIISI: ...]).`,
+};
+function complianceFocus(category) {
+  if (category === 'skincare') return COMPLY.skincare + '\n\n' + COMPLY.umum;
+  if (category === 'fnb') return COMPLY.fnb + '\n\n' + COMPLY.umum;
+  return COMPLY.umum;
+}
+
+/* ============================== GENERATORS ================================= */
+const GENERATORS = {
+  script: { label: 'Script Reels/TikTok', instruction:
+`Buatkan SCRIPT video pendek (Reels/TikTok) berdasarkan DAILY INPUT. Terapkan PLAYBOOK (hook kuat, struktur Hook->Build->Payoff->CTA, panjang pas).
+{{DAILY_INPUT}}
+Ketentuan: durasi 15-45 detik; 2 OPSI HOOK (pola playbook); tiap scene kasih visual + durasi + teks on-screen; 1 CTA sesuai tujuan; bahasa lisan natural.
+Keluarkan: (1) versi enak dibaca (2 hook, tabel Scene|Visual|Voiceover|Teks on-screen|Durasi, CTA, sound, durasi); (2) blok JSON valid di dalam pagar kode \`\`\`json:
+{"type":"script","platform":"...","duration_sec":0,"hooks":["",""],"scenes":[{"scene":1,"visual":"","voiceover":"","onscreen_text":"","duration_sec":0}],"cta":"","sound_suggestion":"","caption_hint":"","compliance_notes":""}` },
+  carousel: { label: 'Carousel IG', instruction:
+`Buatkan KONSEP CAROUSEL Instagram berdasarkan DAILY INPUT. Terapkan PLAYBOOK carousel (slide 1 cover/hook kuat, 1 ide/slide, save-worthy, slide akhir 1 CTA).
+{{DAILY_INPUT}}
+Ketentuan: 6-8 slide; tiap slide headline + subteks + saran visual; caption (hook 125 karakter pertama) + 3-5 hashtag.
+Keluarkan: (1) versi enak dibaca (Judul, Slide 1..n, Caption, Hashtag); (2) blok JSON valid di dalam pagar kode \`\`\`json:
+{"type":"carousel","platform":"Instagram","title":"","slides":[{"slide":1,"role":"hook","headline":"","subtext":"","visual":""}],"caption":"","hashtags":[],"compliance_notes":""}` },
+  storyboard: { label: 'Storyboard', instruction:
+`Buatkan STORYBOARD/shot list produksi video berdasarkan DAILY INPUT. Realistis dishoot pakai HP.
+{{DAILY_INPUT}}
+Ketentuan: konsep & durasi (default 20-40s); SHOT urut (visual, angle/gerakan kamera, talent/props, voiceover, teks on-screen, sfx/musik, durasi); daftar B-ROLL & aset + catatan produksi.
+Keluarkan: (1) versi enak dibaca; (2) blok JSON valid di dalam pagar kode \`\`\`json:
+{"type":"storyboard","concept":"","duration_sec":0,"shots":[{"shot":1,"visual":"","camera":"","talent_props":"","voiceover":"","onscreen_text":"","sfx_music":"","duration_sec":0}],"broll":[],"production_notes":"","cta":"","compliance_notes":""}` },
+  caption: { label: 'Caption + Hashtag', instruction:
+`Buatkan CAPTION siap posting + hashtag + variasi hook berdasarkan DAILY INPUT. Terapkan PLAYBOOK caption.
+{{DAILY_INPUT}}
+Ketentuan: 1 caption utama (hook di 125 karakter pertama, ada CTA brand), 1 caption pendek, 5 variasi hook (1 baris each), 3-5 hashtag (niche+topik+branded+lokal).
+Keluarkan: (1) versi enak dibaca; (2) blok JSON valid di dalam pagar kode \`\`\`json:
+{"type":"caption","caption_long":"","caption_short":"","hooks":["","","","",""],"hashtags":[],"compliance_notes":""}` },
+  ideas: { label: 'Ide mingguan', instruction:
+`Buatkan 7 IDE KONTEN siap-eksekusi (~1 minggu) berdasarkan DAILY INPUT (kalau kosong, dari profil brand). Sebar ke content pillars (80% value / 20% jualan).
+{{DAILY_INPUT}}
+Tiap ide: pillar, format (Reels/Carousel/Story), hook (1 baris pola kuat), konsep singkat, CTA.
+Keluarkan: (1) tabel (No|Pillar|Format|Hook|Konsep|CTA); (2) blok JSON valid di dalam pagar kode \`\`\`json:
+{"type":"ideas","ideas":[{"no":1,"pillar":"","format":"","hook":"","concept":"","cta":""}]}` },
+};
+
+/* ============================== INTAKE SCHEMA ============================== */
+// type: text | textarea | select ; vertical: optional (skincare|fnb) shows conditionally
+const SCHEMA = [
+  { title: 'Identitas brand', fields: [
+    { id: 'name', label: 'Nama brand', type: 'text', req: true },
+    { id: 'category', label: 'Kategori', type: 'select', req: true,
+      options: ['skincare','fnb','fashion','service','other'],
+      labels: ['Skincare/Beauty','F&B/Resto','Fashion/Retail','Jasa/Service','Lainnya'] },
+    { id: 'area', label: 'Area / pasar', type: 'text' },
+    { id: 'social', label: 'Akun sosial (IG/TikTok)', type: 'text' },
+  ]},
+  { title: 'Produk / jasa', fields: [
+    { id: 'products', label: 'Produk/jasa unggulan', type: 'textarea' },
+    { id: 'price', label: 'Range harga', type: 'text' },
+    { id: 'problem', label: 'Masalah pelanggan yang diselesaikan', type: 'textarea' },
+    { id: 'usp', label: 'USP / pembeda utama', type: 'textarea' },
+    { id: 'proof', label: 'Bukti/keunggulan konkret', type: 'text' },
+  ]},
+  { title: 'Target audience', fields: [
+    { id: 'buyer', label: 'Pembeli utama (umur, gender, status)', type: 'text' },
+    { id: 'painpoint', label: 'Pain point / kekhawatiran', type: 'textarea' },
+    { id: 'desire', label: 'Keinginan / aspirasi', type: 'text' },
+  ]},
+  { title: 'Brand voice & tone', fields: [
+    { id: 'tone', label: 'Nada brand', type: 'select',
+      options: ['Edukatif','Santai/Friendly','Lucu/Relatable','Premium/Elegan','Tegas/Bold','Hangat/Caring'] },
+    { id: 'sapaan', label: 'Sapaan ke audiens', type: 'text', hint: 'kamu / kak / bestie / gais / Anda' },
+    { id: 'signature', label: 'Frasa signature (wajib dipakai)', type: 'text' },
+    { id: 'forbidden', label: 'Frasa / kata TERLARANG', type: 'text' },
+    { id: 'emoji', label: 'Penggunaan emoji', type: 'select', options: ['banyak','secukupnya','none'] },
+  ]},
+  { title: 'Tujuan & CTA', fields: [
+    { id: 'goal', label: 'Tujuan utama konten', type: 'select', options: ['Awareness','Engagement','Jualan/Konversi','Edukasi'] },
+    { id: 'cta', label: 'CTA / aksi yang diinginkan', type: 'text' },
+    { id: 'promo', label: 'Promo yang sedang jalan', type: 'text' },
+  ]},
+  { title: 'Compliance', fields: [
+    { id: 'forbiddenClaims', label: 'Klaim yang TIDAK BOLEH dipakai', type: 'textarea' },
+    { id: 'certifications', label: 'Sertifikasi yang boleh disebut', type: 'text', hint: 'BPOM, Halal MUI' },
+  ]},
+  { title: 'Modul skincare', vertical: 'skincare', fields: [
+    { id: 'sk_ingredients', label: 'Kandungan unggulan & manfaat', type: 'textarea' },
+    { id: 'sk_bpom', label: 'Status izin / no. BPOM', type: 'text' },
+  ]},
+  { title: 'Modul F&B', vertical: 'fnb', fields: [
+    { id: 'fb_menu', label: 'Menu andalan + harga', type: 'textarea' },
+    { id: 'fb_channels', label: 'Channel order', type: 'text', hint: 'GoFood/GrabFood/ShopeeFood/WA/dine-in' },
+    { id: 'fb_location', label: 'Lokasi/cabang + jam', type: 'text' },
+    { id: 'fb_halal', label: 'Status halal / alergen', type: 'text' },
+  ]},
+];
+const FIELD_LABEL = {};
+SCHEMA.forEach(s => s.fields.forEach(f => { FIELD_LABEL[f.id] = f.label; }));
+
+const DAILY_FIELDS = [
+  { id: 'focus', label: 'Fokus hari ini', type: 'text', hint: 'produk / promo / edukasi / momen / brand story' },
+  { id: 'detail', label: 'Detail fokus', type: 'textarea', hint: 'mis. "promo bundling 2 serum 99k sampai Minggu"' },
+  { id: 'dgoal', label: 'Tujuan hari ini', type: 'select', options: ['', 'Awareness','Engagement','Jualan','Edukasi'] },
+  { id: 'moment', label: 'Momen/event relevan', type: 'text', hint: 'gajian, Ramadan, weekend, tanggal cantik' },
+  { id: 'angle', label: 'Angle/hook yang mau dicoba', type: 'text', hint: 'POV, mitos vs fakta, "jangan beli kalau..."' },
+  { id: 'platform', label: 'Platform tujuan', type: 'select', options: ['IG Reels','TikTok','IG Feed'] },
+  { id: 'notes', label: 'Catatan khusus', type: 'text' },
+];
+
+/* ============================ PROMPT BUILDERS ============================= */
+function buildBrandProfile(c) {
+  const lines = [];
+  SCHEMA.forEach(s => s.fields.forEach(f => {
+    const v = c[f.id];
+    if (v && String(v).trim()) lines.push(FIELD_LABEL[f.id] + ': ' + v);
+  }));
+  return lines.join('\n');
+}
+function buildSystemPrompt(c) {
+  return [
+    'Kamu adalah Content Strategist & Copywriter senior untuk sebuah agency konten di Indonesia. Tugasmu: bikin konten media sosial harian yang nempel banget sama karakter brand klien di bawah, dengan kualitas tinggi & aman secara aturan.',
+    '',
+    '================ PROFIL BRAND ================',
+    buildBrandProfile(c),
+    '=============================================',
+    '',
+    KNOWLEDGE_PLAYBOOK,
+    '',
+    'ATURAN MAIN: pakai Bahasa Indonesia sesuai voice & tone brand; pakai sapaan brand; wajib pakai signature phrases kalau ada; HARAM pakai kata terlarang brand; selalu bicara ke target audience (sentuh pain point); tutup dengan CTA brand kecuali daily input minta lain.',
+    '',
+    complianceFocus(c.category),
+    '',
+    'OUTPUT: ikuti format yang diminta (versi enak-dibaca + blok JSON valid).',
+    '',
+    'SEBELUM FINAL, lakukan SELF-CHECK cepat: (1) hook nampol di 3 detik? (2) ada tepat 1 CTA jelas? (3) skincare: nggak ada klaim terlarang/superlatif, hasil dibingkai "tampak/membantu"? (4) sesuai voice & kata terlarang brand? (5) nggak ngarang angka? Kalau ada yang gagal, perbaiki dulu baru keluarkan.',
+  ].join('\n');
+}
+function buildDailyInput(d) {
+  const map = { focus: 'Fokus', detail: 'Detail fokus', dgoal: 'Tujuan hari ini', moment: 'Momen/event',
+    angle: 'Angle/hook', platform: 'Platform', notes: 'Catatan' };
+  const lines = ['DAILY INPUT:'];
+  Object.keys(map).forEach(k => { if (d[k] && String(d[k]).trim()) lines.push('- ' + map[k] + ': ' + d[k]); });
+  if (lines.length === 1) lines.push('- (kosong — ambil dari profil brand)');
+  return lines.join('\n');
+}
+function buildUserPrompt(type, d) {
+  return GENERATORS[type].instruction.replace('{{DAILY_INPUT}}', buildDailyInput(d));
+}
+function splitOutput(text) {
+  const m = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (!m) return { readable: text.trim(), json: null };
+  let json = null; try { json = JSON.parse(m[1].trim()); } catch (e) { json = null; }
+  const before = text.slice(0, m.index).trim();
+  return { readable: before || text.trim(), json };
+}
+
+/* ================================ LLM CALL ================================ */
+async function callLLM(system, user) {
+  const key = store.get('ce_apikey', '');
+  const model = store.get('ce_model', 'claude-sonnet-4-6');
+  if (!key) return { text: demoOutput(user), demo: true };
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({ model, max_tokens: 2000, system, messages: [{ role: 'user', content: user }] }),
+  });
+  if (!res.ok) throw new Error('Anthropic API ' + res.status + ': ' + (await res.text()).slice(0, 300));
+  const data = await res.json();
+  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  return { text, demo: false };
+}
+function demoOutput(user) {
+  const type = (user.match(/"type":"(\w+)"/) || [])[1] || 'script';
+  const samples = {
+    script: `HOOK A: "Kulit kusam? Ini 1 hal yang sering kelewat ✨"
+HOOK B: "POV: kamu udah skincare-an tapi glow gak nongol juga"
+
+Scene 1 (0-3s) — Close-up wajah, teks on-screen "Stop skip step ini" — VO: "Banyak yang lupa langkah ini."
+Scene 2 (3-12s) — Tunjukkan produk dipakai — VO: "Pakai tipis, ratakan, tunggu meresap."
+Scene 3 (12-20s) — Before/after tampilan kulit — VO: "Hasilnya kulit tampak lebih segar."
+CTA: checkout link bio.
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"script","platform":"IG Reels","duration_sec":20,"hooks":["Kulit kusam? Ini 1 hal yang sering kelewat","POV: skincare-an tapi glow gak nongol"],"scenes":[{"scene":1,"visual":"close-up wajah","voiceover":"Banyak yang lupa langkah ini.","onscreen_text":"Stop skip step ini","duration_sec":3}],"cta":"checkout link bio","sound_suggestion":"audio trending lembut","caption_hint":"hook di 125 char pertama","compliance_notes":"klaim dibingkai tampak/membantu"}
+\`\`\``,
+    carousel: `Judul: 5 tanda kulitmu butuh perhatian ekstra
+Slide 1 (hook): "5 tanda ini sering diabaikan"
+Slide 2-6: 1 tanda per slide + tips singkat
+Slide 7 (CTA): "Save dulu, checkout link bio"
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"carousel","platform":"Instagram","title":"5 tanda kulit butuh perhatian","slides":[{"slide":1,"role":"hook","headline":"5 tanda ini sering diabaikan","subtext":"swipe ->","visual":"teks bold di background bersih"}],"caption":"Kenali tandanya sebelum makin kusam...","hashtags":["#skincarepemula","#glowup","#skincarelokal"],"compliance_notes":"tanpa klaim menyembuhkan"}
+\`\`\``,
+    storyboard: `Konsep: GRWM pakai serum, 30 detik, shoot pakai HP.
+Shot 1: meja rias, tangan ambil produk (eye-level, 4s)
+Shot 2: aplikasi ke wajah (close-up, 6s)
+B-roll: tetesan serum, tekstur.
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"storyboard","concept":"GRWM serum","duration_sec":30,"shots":[{"shot":1,"visual":"meja rias","camera":"eye-level statis","talent_props":"serum","voiceover":"pagi ini coba rutinitas simpel","onscreen_text":"GRWM","sfx_music":"lofi","duration_sec":4}],"broll":["tetesan serum"],"production_notes":"cahaya jendela","cta":"checkout link bio","compliance_notes":"-"}
+\`\`\``,
+    caption: `Caption: Kulit kusam itu bukan akhir dunia ✨ Ini cara simpel biar tampak lebih segar tiap hari...
+Hook variasi: "Jangan beli serum sebelum baca ini" / "3 mitos skincare yang bikin boros" ...
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"caption","caption_long":"Kulit kusam bukan akhir dunia...","caption_short":"Glow simpel tiap hari ✨","hooks":["Jangan beli serum sebelum baca ini","3 mitos skincare bikin boros","POV kulit mulai glow","Stop buang uang buat ini","Checklist skincare pemula"],"hashtags":["#skincarelokal","#glowup","#tipskulit"],"compliance_notes":"-"}
+\`\`\``,
+    ideas: `1. Edukasi — Reels — "3 mitos skincare" — bahas mitos umum — CTA save
+2. Social proof — Carousel — "Sebelum/sesudah rutin" — testimoni — CTA DM
+... (7 ide)
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"ideas","ideas":[{"no":1,"pillar":"Edukasi","format":"Reels","hook":"3 mitos skincare yang bikin boros","concept":"bongkar mitos umum","cta":"save & share"},{"no":2,"pillar":"Social proof","format":"Carousel","hook":"Sebelum vs sesudah rutin","concept":"perjalanan kulit","cta":"DM order"}]}
+\`\`\``,
+  };
+  return '⚙️ MODE DEMO (API key belum diisi)\n\n' + (samples[type] || samples.script);
+}
+
+/* ============================== STORAGE ================================== */
+const store = {
+  get(k, def) { try { const v = localStorage.getItem(k); return v == null ? def : JSON.parse(v); } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast('Penyimpanan browser diblokir'); } },
+};
+function loadClients() { return store.get('ce_clients', []); }
+function saveClients(list) { store.set('ce_clients', list); }
+function uid() { return 'b' + Math.random().toString(36).slice(2, 9); }
+
+/* ============================== UI STATE ================================= */
+let currentId = null;
+const $ = sel => document.querySelector(sel);
+const el = (tag, props = {}, kids = []) => {
+  const n = document.createElement(tag);
+  Object.entries(props).forEach(([k, v]) => { if (k === 'class') n.className = v; else if (k === 'html') n.innerHTML = v; else if (k in n) n[k] = v; else n.setAttribute(k, v); });
+  (Array.isArray(kids) ? kids : [kids]).forEach(c => c != null && n.append(c));
+  return n;
+};
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1600); }
+
+/* ----- field rendering ----- */
+function renderField(f, val, prefix) {
+  const id = prefix + '_' + f.id;
+  const labelKids = [f.label];
+  if (f.req) labelKids.push(el('span', { class: 'req', html: ' *' }));
+  let input;
+  if (f.type === 'textarea') input = el('textarea', { id, value: val || '' });
+  else if (f.type === 'select') {
+    input = el('select', { id });
+    (f.options || []).forEach((o, i) => {
+      const text = (f.labels && f.labels[i]) || o || '(pilih)';
+      input.append(el('option', { value: o, selected: (val || '') === o, textContent: text }));
+    });
+  } else input = el('input', { id, type: 'text', value: val || '' });
+  const wrap = el('div', {}, [el('label', {}, labelKids), input]);
+  if (f.hint) wrap.append(el('div', { class: 'field-hint', textContent: f.hint }));
+  return wrap;
+}
+
+/* ----- dashboard ----- */
+function renderDashboard() {
+  const list = loadClients();
+  const box = $('#clientList'); box.innerHTML = '';
+  $('#emptyHint').hidden = list.length > 0;
+  list.forEach(c => {
+    const card = el('div', { class: 'card client' }, [
+      el('h3', { textContent: c.name || '(tanpa nama)' }),
+      el('span', { class: 'tag', textContent: (c.category || 'other') }),
+      el('div', { class: 'muted', style: 'margin-top:8px; font-size:13px;', textContent: c.usp || c.products || c.area || '—' }),
+    ]);
+    card.onclick = () => openClient(c.id);
+    box.append(card);
+  });
+}
+
+/* ----- client view ----- */
+function openClient(id) {
+  currentId = id;
+  const c = loadClients().find(x => x.id === id);
+  if (!c) return;
+  $('#viewDashboard').hidden = true;
+  $('#viewClient').hidden = false;
+  $('#clientName').textContent = c.name || '(tanpa nama)';
+  switchTab('generate');
+  renderDaily();
+  renderGenButtons();
+  $('#results').innerHTML = '';
+  renderProfileForm(c);
+}
+function switchTab(tab) {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  $('#tabGenerate').hidden = tab !== 'generate';
+  $('#tabProfile').hidden = tab !== 'profile';
+}
+function renderProfileForm(c) {
+  const box = $('#profileForm'); box.innerHTML = '';
+  const cat = c.category || 'other';
+  SCHEMA.forEach(s => {
+    if (s.vertical && s.vertical !== cat) return;
+    box.append(el('div', { class: 'section-title', textContent: s.title }));
+    s.fields.forEach(f => box.append(renderField(f, c[f.id], 'p')));
+  });
+  // re-render verticals when category changes
+  const catSel = $('#p_category');
+  if (catSel) catSel.onchange = () => { const cur = collectProfile(); openClientReRender(cur); };
+}
+function openClientReRender(partial) {
+  const list = loadClients(); const c = list.find(x => x.id === currentId) || {};
+  Object.assign(c, partial);
+  renderProfileForm(c);
+}
+function collectProfile() {
+  const out = { id: currentId };
+  SCHEMA.forEach(s => s.fields.forEach(f => { const n = $('#p_' + f.id); if (n) out[f.id] = n.value; }));
+  return out;
+}
+function saveProfile() {
+  const list = loadClients();
+  const idx = list.findIndex(x => x.id === currentId);
+  const data = collectProfile();
+  if (idx >= 0) list[idx] = Object.assign({}, list[idx], data); else list.push(data);
+  saveClients(list);
+  $('#clientName').textContent = data.name || '(tanpa nama)';
+  $('#saveHint').textContent = 'Tersimpan ✓';
+  setTimeout(() => $('#saveHint').textContent = '', 1500);
+  toast('Profil tersimpan');
+}
+
+/* ----- daily + generate ----- */
+function renderDaily() {
+  const box = $('#dailyForm'); box.innerHTML = '';
+  DAILY_FIELDS.forEach(f => box.append(renderField(f, '', 'd')));
+}
+function collectDaily() {
+  const d = {};
+  DAILY_FIELDS.forEach(f => { const n = $('#d_' + f.id); if (n) d[f.id] = n.value; });
+  return d;
+}
+function renderGenButtons() {
+  const box = $('#genButtons'); box.innerHTML = '';
+  Object.keys(GENERATORS).forEach(type => {
+    box.append(el('button', { textContent: GENERATORS[type].label, onclick: () => runGenerate([type]) }));
+  });
+  box.append(el('button', { class: 'primary', textContent: '⚡ Paket Lengkap', onclick: () => runGenerate(['script','carousel','caption']) }));
+}
+async function runGenerate(types) {
+  const c = loadClients().find(x => x.id === currentId);
+  if (!c) return;
+  if (!c.name) { toast('Isi nama brand dulu (tab Profil)'); return; }
+  const daily = collectDaily();
+  const status = $('#genStatus');
+  document.querySelectorAll('#genButtons button').forEach(b => b.disabled = true);
+  status.innerHTML = '<span class="spin"></span> Menyusun ' + types.map(t => GENERATORS[t].label).join(', ') + '…';
+  const results = $('#results');
+  try {
+    for (const type of types) {
+      const system = buildSystemPrompt(c);
+      const user = buildUserPrompt(type, daily);
+      const out = await callLLM(system, user);
+      const { readable, json } = splitOutput(out.text);
+      results.prepend(renderResult(type, readable, json, out.demo));
+    }
+    status.textContent = '';
+  } catch (e) {
+    status.textContent = '';
+    results.prepend(el('div', { class: 'card', style: 'border-color:#f3c2c2;' }, [
+      el('b', { textContent: 'Gagal: ' }), document.createTextNode(String(e.message || e)),
+    ]));
+  } finally {
+    document.querySelectorAll('#genButtons button').forEach(b => b.disabled = false);
+  }
+}
+function renderResult(type, readable, json, demo) {
+  const head = el('div', { class: 'row', style: 'justify-content:space-between;' }, [
+    el('h4', { textContent: GENERATORS[type].label }),
+    el('span', { class: 'badge ' + (demo ? 'demo' : 'live'), textContent: demo ? 'mode demo' : 'live' }),
+  ]);
+  const readBox = el('div', { class: 'readable', textContent: readable });
+  const actions = el('div', { class: 'row', style: 'margin-top:8px;' }, [
+    el('button', { textContent: 'Copy teks', onclick: () => copy(readable) }),
+  ]);
+  const kids = [head, el('div', { class: 'result' }, [readBox])];
+  if (json) {
+    const pre = el('pre', { textContent: JSON.stringify(json, null, 2) });
+    actions.append(el('button', { textContent: 'Copy JSON', onclick: () => copy(JSON.stringify(json, null, 2)) }));
+    kids.push(el('div', { class: 'result' }, [el('div', { class: 'muted', style: 'font-size:12px; margin-bottom:4px;', textContent: 'JSON terstruktur' }), pre]));
+  }
+  kids.push(actions);
+  return el('div', { class: 'card', style: 'margin-top:14px;' }, kids);
+}
+function copy(text) { navigator.clipboard.writeText(text).then(() => toast('Disalin')); }
+
+/* ============================== SEED DATA =============================== */
+function seedClients() {
+  const list = loadClients();
+  const seeds = [
+    { id: uid(), name: 'GlowUp Skincare', category: 'skincare', area: 'Nasional (online)',
+      products: 'Serum Niacinamide 10%, Sunscreen SPF50, Gentle Cleanser', price: 'Rp79k–145k',
+      problem: 'Kulit kusam, bekas jerawat, takut produk abal-abal', usp: 'Ringan, ber-BPOM, ramah pemula',
+      buyer: 'Cewek 18–28, mahasiswa/fresh grad', painpoint: 'Kusam, bekas jerawat, takut abal-abal',
+      tone: 'Santai/Friendly', sapaan: 'kak', signature: 'glow bareng GlowUp', forbidden: 'menyembuhkan, memutihkan permanen, 100% hilang',
+      emoji: 'secukupnya', goal: 'Jualan/Konversi', cta: 'checkout link bio', promo: 'Glow Bundle 149rb dari 210rb',
+      forbiddenClaims: 'menyembuhkan, memutihkan permanen, superlatif', certifications: 'BPOM terdaftar',
+      sk_ingredients: 'Niacinamide, Centella, HA', sk_bpom: 'BPOM terdaftar' },
+    { id: uid(), name: 'Mie Gacoan Corner', category: 'fnb', area: 'Bekasi, Depok, Tangerang',
+      products: 'Mie Level 1-5, Mie Keju Lava, Es Teler, dimsum', price: 'Rp10k–35k',
+      problem: 'Budget tipis, cari nongkrong kekinian', usp: 'Pedas nagih, harga ramah pelajar',
+      buyer: 'Anak muda 16–26, pelajar/mahasiswa', painpoint: 'Budget tipis, cari nongkrong kekinian',
+      tone: 'Lucu/Relatable', sapaan: 'gais', signature: 'pedasnya bikin nagih', forbidden: 'menyehatkan, klaim diet',
+      emoji: 'banyak', goal: 'Engagement', cta: 'order GoFood/GrabFood/ShopeeFood / dine-in', promo: 'Opening Bekasi diskon 20%',
+      forbiddenClaims: 'klaim menyehatkan/diet', certifications: 'Halal',
+      fb_menu: 'Mie Keju Lava 15rb, Es Teler 12rb', fb_channels: 'GoFood/GrabFood/ShopeeFood/dine-in',
+      fb_location: 'Bekasi (baru), Depok, Tangerang · 10–22', fb_halal: 'Halal; ada seafood (dimsum)' },
+  ];
+  seeds.forEach(s => { if (!list.some(x => x.name === s.name)) list.push(s); });
+  saveClients(list);
+  renderDashboard();
+  toast('2 contoh brand dimuat');
+}
+
+/* ============================== WIRING ================================= */
+function refreshKeyState() {
+  const has = !!store.get('ce_apikey', '');
+  const b = $('#keyState');
+  b.textContent = has ? ('live · ' + store.get('ce_model', 'claude-sonnet-4-6')) : 'mode demo';
+  b.className = 'badge ' + (has ? 'live' : 'demo');
+}
+$('#btnSettings').onclick = () => {
+  $('#inpKey').value = store.get('ce_apikey', '');
+  $('#inpModel').value = store.get('ce_model', 'claude-sonnet-4-6');
+  $('#dlgSettings').showModal();
+};
+$('#btnCloseSettings').onclick = () => $('#dlgSettings').close();
+$('#btnSaveSettings').onclick = () => {
+  store.set('ce_apikey', $('#inpKey').value.trim());
+  store.set('ce_model', $('#inpModel').value);
+  $('#dlgSettings').close(); refreshKeyState(); toast('Pengaturan disimpan');
+};
+$('#btnSeed').onclick = seedClients;
+$('#btnAddBrand').onclick = () => {
+  const list = loadClients();
+  const c = { id: uid(), name: '', category: 'other' };
+  list.push(c); saveClients(list); openClient(c.id); switchTab('profile');
+};
+$('#btnBack').onclick = () => { $('#viewClient').hidden = true; $('#viewDashboard').hidden = false; renderDashboard(); };
+$('#btnDelete').onclick = () => {
+  if (!confirm('Hapus brand ini?')) return;
+  saveClients(loadClients().filter(x => x.id !== currentId));
+  $('#btnBack').onclick();
+  toast('Brand dihapus');
+};
+$('#btnSaveProfile').onclick = saveProfile;
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+
+/* init */
+refreshKeyState();
+renderDashboard();
+</script>
+</body>
+</html>

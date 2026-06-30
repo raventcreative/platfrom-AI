@@ -13,8 +13,18 @@ sehingga satu tim bisa melayani puluhan brand secara paralel.
 
 ---
 
+## ⚡ Coba sekarang (prototype)
+
+Mau langsung uji coba tanpa setup? Buka **[`prototype/content-engine.html`](prototype/content-engine.html)**
+— satu file, double-click di browser, **tanpa install/DB/server**. Klik **Muat contoh** →
+pilih brand → **Generate**. Jalan di **mode demo** tanpa API key; isi Anthropic API key
+(⚙️) untuk hasil sungguhan. Detail: [prototype/README.md](prototype/README.md).
+
+---
+
 ## Daftar isi
 
+- [Coba sekarang (prototype)](#-coba-sekarang-prototype)
 - [Visi](#visi)
 - [MVP sekarang — Content Engine](#mvp-sekarang--content-engine)
 - [Roadmap jangka panjang — 4 pilar](#roadmap-jangka-panjang--4-pilar)
@@ -121,11 +131,15 @@ Ditutup dengan orkestrasi end-to-end, scheduler/publish, report ke klien, lalu p
 
 ```
 apps/
-  api/   NestJS + Prisma + BullMQ     REST API + job worker
-  web/   Next.js + Tailwind            chat-first UI
-docs/    PRD, tech spec, handbook, panduan dev
-docker-compose.yml                     Postgres + Redis (dev)
+  api/        NestJS + Prisma + BullMQ     REST API + worker generator
+  web/        Next.js + Tailwind            chat-first UI
+prototype/    content-engine.html          standalone (double-click, mode demo)
+docs/         PRD, tech spec, handbook, panduan dev
+docker-compose.yml                          Postgres + Redis (dev)
 ```
+
+> **Dua jalur:** `prototype/` untuk uji coba cepat sekarang; `apps/` jalur produksi
+> (multi-user, data tersimpan di server) untuk dikembangkan.
 
 ---
 
