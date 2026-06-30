@@ -31,10 +31,14 @@ export const api = {
       body: JSON.stringify({ brandId, title }),
     }),
   getMessages: (id: string) => req(`/conversations/${id}/messages`),
-  postMessage: (id: string, content: string) =>
+  postMessage: (
+    id: string,
+    content: string,
+    provider?: 'anthropic' | 'openai',
+  ) =>
     req(`/conversations/${id}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, ...(provider ? { provider } : {}) }),
     }),
   getJob: (id: string) => req(`/jobs/${id}`),
 };

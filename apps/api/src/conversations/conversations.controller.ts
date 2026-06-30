@@ -41,6 +41,6 @@ export class ConversationsController {
     @Param('id') id: string,
     @Body() dto: PostMessageDto,
   ) {
-    return this.convos.postMessage(auth, id, dto.content);
+    return this.convos.postMessage(auth, id, dto.content, dto.provider);
   }
 }

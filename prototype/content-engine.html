@@ -133,12 +133,23 @@
   <div class="dlg-body">
     <h3>Pengaturan LLM</h3>
     <p class="muted" style="margin-top:2px;">Kunci disimpan di browser ini saja (localStorage). Kosongkan untuk pakai <b>mode demo</b>.</p>
-    <label>Anthropic API key</label>
+    <label>Provider</label>
+    <select id="inpProvider">
+      <option value="anthropic">Anthropic (Claude)</option>
+      <option value="openai">OpenAI (ChatGPT)</option>
+    </select>
+    <label id="lblKey">Anthropic API key</label>
     <input id="inpKey" type="password" placeholder="sk-ant-..." autocomplete="off" />
     <label>Model</label>
     <select id="inpModel">
-      <option value="claude-sonnet-4-6">claude-sonnet-4-6 (hemat & cepat)</option>
-      <option value="claude-opus-4-8">claude-opus-4-8 (kualitas tertinggi)</option>
+      <optgroup id="optAnthropic" label="Claude">
+        <option value="claude-sonnet-4-6">claude-sonnet-4-6 (hemat & cepat)</option>
+        <option value="claude-opus-4-8">claude-opus-4-8 (kualitas tertinggi)</option>
+      </optgroup>
+      <optgroup id="optOpenai" label="ChatGPT">
+        <option value="gpt-4o">gpt-4o (seimbang)</option>
+        <option value="gpt-4o-mini">gpt-4o-mini (hemat & cepat)</option>
+      </optgroup>
     </select>
     <div class="row" style="justify-content:flex-end; margin-top:18px;">
       <button id="btnCloseSettings">Batal</button>
@@ -331,10 +342,22 @@ function splitOutput(text) {
 }
 
 /* ================================ LLM CALL ================================ */
+const DEFAULT_MODEL = { anthropic: 'claude-sonnet-4-6', openai: 'gpt-4o' };
+function activeProvider() { return store.get('ce_provider', 'anthropic'); }
+function keyFor(p) { return store.get('ce_key_' + p, ''); }
+function modelFor(p) { return store.get('ce_model_' + p, DEFAULT_MODEL[p]); }
+
 async function callLLM(system, user) {
-  const key = store.get('ce_apikey', '');
-  const model = store.get('ce_model', 'claude-sonnet-4-6');
+  const provider = activeProvider();
+  const key = keyFor(provider);
+  const model = modelFor(provider);
   if (!key) return { text: demoOutput(user), demo: true };
+  return provider === 'openai'
+    ? callOpenAI(key, model, system, user)
+    : callAnthropic(key, model, system, user);
+}
+
+async function callAnthropic(key, model, system, user) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -348,6 +371,21 @@ async function callLLM(system, user) {
   if (!res.ok) throw new Error('Anthropic API ' + res.status + ': ' + (await res.text()).slice(0, 300));
   const data = await res.json();
   const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  return { text, demo: false };
+}
+
+async function callOpenAI(key, model, system, user) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + key },
+    body: JSON.stringify({
+      model, max_tokens: 2000,
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+    }),
+  });
+  if (!res.ok) throw new Error('OpenAI API ' + res.status + ': ' + (await res.text()).slice(0, 300));
+  const data = await res.json();
+  const text = (data.choices || []).map(c => (c.message && c.message.content) || '').join('\n').trim();
   return { text, demo: false };
 }
 function demoOutput(user) {
@@ -609,20 +647,33 @@ function seedClients() {
 
 /* ============================== WIRING ================================= */
 function refreshKeyState() {
-  const has = !!store.get('ce_apikey', '');
+  const p = activeProvider();
+  const has = !!keyFor(p);
   const b = $('#keyState');
-  b.textContent = has ? ('live · ' + store.get('ce_model', 'claude-sonnet-4-6')) : 'mode demo';
+  b.textContent = has ? ('live · ' + modelFor(p)) : 'mode demo';
   b.className = 'badge ' + (has ? 'live' : 'demo');
 }
+// Tampilkan field key + opsi model sesuai provider yang dipilih di dialog.
+function applyDialogProvider(p) {
+  $('#lblKey').textContent = p === 'openai' ? 'OpenAI API key' : 'Anthropic API key';
+  $('#inpKey').placeholder = p === 'openai' ? 'sk-...' : 'sk-ant-...';
+  $('#inpKey').value = keyFor(p);
+  $('#optAnthropic').hidden = p !== 'anthropic';
+  $('#optOpenai').hidden = p !== 'openai';
+  $('#inpModel').value = modelFor(p);
+}
 $('#btnSettings').onclick = () => {
-  $('#inpKey').value = store.get('ce_apikey', '');
-  $('#inpModel').value = store.get('ce_model', 'claude-sonnet-4-6');
+  $('#inpProvider').value = activeProvider();
+  applyDialogProvider(activeProvider());
   $('#dlgSettings').showModal();
 };
+$('#inpProvider').onchange = (e) => applyDialogProvider(e.target.value);
 $('#btnCloseSettings').onclick = () => $('#dlgSettings').close();
 $('#btnSaveSettings').onclick = () => {
-  store.set('ce_apikey', $('#inpKey').value.trim());
-  store.set('ce_model', $('#inpModel').value);
+  const p = $('#inpProvider').value;
+  store.set('ce_provider', p);
+  store.set('ce_key_' + p, $('#inpKey').value.trim());
+  store.set('ce_model_' + p, $('#inpModel').value);
   $('#dlgSettings').close(); refreshKeyState(); toast('Pengaturan disimpan');
 };
 $('#btnSeed').onclick = seedClients;

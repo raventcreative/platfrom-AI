@@ -4,11 +4,18 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 
 type Message = { id: string; role: string; content: string; jobId?: string };
+type Provider = 'anthropic' | 'openai';
+
+const MODELS: { value: Provider; label: string }[] = [
+  { value: 'anthropic', label: 'Claude (Anthropic)' },
+  { value: 'openai', label: 'ChatGPT (OpenAI)' },
+];
 
 export function ChatShell({ brandId }: { brandId?: string }) {
   const [conversationId, setConversationId] = useState<string>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [provider, setProvider] = useState<Provider>('anthropic');
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +69,7 @@ export function ChatShell({ brandId }: { brandId?: string }) {
     const content = input.trim();
     setInput('');
     try {
-      const res = await api.postMessage(conversationId, content);
+      const res = await api.postMessage(conversationId, content, provider);
       setMessages((m) => [...m, res.userMessage, res.assistantMessage]);
       if (res.jobId) {
         void pollJob(res.assistantMessage.id, res.jobId);
@@ -109,6 +116,19 @@ export function ChatShell({ brandId }: { brandId?: string }) {
 
       <div className="border-t border-neutral-200 bg-white p-3">
         <div className="flex gap-2">
+          <select
+            className="rounded-md border border-neutral-300 px-2 py-2 text-sm outline-none focus:border-blue-500"
+            value={provider}
+            onChange={(e) => setProvider(e.target.value as Provider)}
+            disabled={busy}
+            aria-label="Pilih model"
+          >
+            {MODELS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
           <input
             className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
             placeholder="Ketik perintah untuk agent..."

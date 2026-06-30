@@ -13,7 +13,11 @@ import { LlmService } from '../llm/llm.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AGENT_QUEUE } from './jobs.constants';
 
-type JobInput = { conversationId?: string; content?: string };
+type JobInput = {
+  conversationId?: string;
+  content?: string;
+  provider?: string;
+};
 
 /**
  * Content Engine worker. Merakit system prompt (profil brand + playbook +
@@ -65,7 +69,9 @@ export class JobsProcessor extends WorkerHost {
       const system = buildSystemPrompt(brandProfile, brand.category);
       const user = buildUserPrompt(outputType, input.content ?? '');
 
-      const result = await this.llm.complete(system, user);
+      const result = await this.llm.complete(system, user, {
+        provider: input.provider,
+      });
       const { readable, json } = splitGeneratorOutput(result.text);
 
       const output = {

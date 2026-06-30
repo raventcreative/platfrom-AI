@@ -60,7 +60,12 @@ export class ConversationsService {
    * job generator. Worker mengisi balasan dengan hasil sungguhan (lihat
    * JobsProcessor). Pesan dibuat sebelum enqueue agar worker tidak balapan.
    */
-  async postMessage(auth: AuthContext, conversationId: string, content: string) {
+  async postMessage(
+    auth: AuthContext,
+    conversationId: string,
+    content: string,
+    provider?: 'anthropic' | 'openai',
+  ) {
     const convo = await this.loadConversation(auth, conversationId);
 
     const userMessage = await this.prisma.message.create({
@@ -71,6 +76,7 @@ export class ConversationsService {
     const job = await this.jobs.create(convo.brandId, agent, {
       conversationId,
       content,
+      ...(provider ? { provider } : {}),
     });
 
     const assistantMessage = await this.prisma.message.create({
