@@ -1,4 +1,11 @@
-import { IsArray, IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsIn,
+  IsObject,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateBrandDto {
   @IsString()
@@ -21,4 +28,9 @@ export class CreateBrandDto {
   @IsArray()
   @IsIn(['instagram', 'tiktok'], { each: true })
   platforms?: ('instagram' | 'tiktok')[];
+
+  /** Jawaban intake lengkap + daftar SKU (profile.skus) — disimpan di Brand.profile. */
+  @IsOptional()
+  @IsObject()
+  profile?: Record<string, unknown>;
 }

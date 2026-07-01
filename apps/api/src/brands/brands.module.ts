@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BrandsController } from './brands.controller';
 import { BrandsService } from './brands.service';
 
+/** Feature module untuk pengelolaan brand (controller + service). */
 @Module({
   controllers: [BrandsController],
   providers: [BrandsService],

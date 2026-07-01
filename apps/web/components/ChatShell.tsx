@@ -1,5 +1,8 @@
 'use client';
 
+// ChatShell: antarmuka chat dengan agent untuk sebuah brand.
+// Memuat/membuat percakapan, mengirim pesan, dan mem-polling hasil job generate.
+
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 
@@ -11,6 +14,7 @@ const MODELS: { value: Provider; label: string }[] = [
   { value: 'openai', label: 'ChatGPT (OpenAI)' },
 ];
 
+/** Panel chat untuk brand terpilih (`brandId`); tanpa brand menampilkan placeholder. */
 export function ChatShell({ brandId }: { brandId?: string }) {
   const [conversationId, setConversationId] = useState<string>();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -20,6 +24,8 @@ export function ChatShell({ brandId }: { brandId?: string }) {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Saat brand berubah: reset state, lalu ambil percakapan pertama atau
+    // buat baru bila brand belum punya, dan muat riwayat pesannya.
     if (!brandId) return;
     setMessages([]);
     setConversationId(undefined);
@@ -34,15 +40,18 @@ export function ChatShell({ brandId }: { brandId?: string }) {
       .catch(() => {});
   }, [brandId]);
 
+  // Auto-scroll ke pesan terbaru setiap kali daftar pesan berubah.
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Ganti isi satu pesan (dipakai untuk mengisi hasil job ke pesan assistant).
   function patchMessage(id: string, content: string) {
     setMessages((m) => m.map((x) => (x.id === id ? { ...x, content } : x)));
   }
 
   // Poll the generation job until it finishes, then show the result.
+  // Cek tiap 1.5s hingga 40x (~60s); tulis hasil/pesan error ke pesan assistant.
   async function pollJob(messageId: string, jobId: string) {
     for (let i = 0; i < 40; i++) {
       await new Promise((r) => setTimeout(r, 1500));
@@ -63,6 +72,8 @@ export function ChatShell({ brandId }: { brandId?: string }) {
     patchMessage(messageId, 'Timeout menunggu hasil. Coba cek lagi nanti.');
   }
 
+  // Kirim pesan pengguna; tampilkan balasan assistant dan mulai polling bila
+  // server mengembalikan jobId (respons dihasilkan secara asinkron).
   async function send() {
     if (!conversationId || !input.trim() || busy) return;
     setBusy(true);

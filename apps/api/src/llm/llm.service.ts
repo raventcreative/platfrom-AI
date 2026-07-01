@@ -55,17 +55,28 @@ export class LlmService {
   }
 
   /**
-   * Generate. `opts.provider` memaksa provider untuk request ini (mis. pilihan
-   * model dari UI); bila kosong memakai default dari env.
+   * Generate untuk satu request.
+   * - `opts.provider` memaksa provider (mis. pilihan dari UI).
+   * - `opts.apiKey` = "bring your own key" dari UI; dipakai hanya untuk request
+   *   ini dan TIDAK disimpan. Bila kosong → fallback ke key dari env.
+   * - `opts.model` menimpa model default provider (opsional).
    */
   async complete(
     system: string,
     user: string,
-    opts?: { provider?: string },
+    opts?: {
+      provider?: string;
+      apiKey?: string;
+      model?: string;
+      maxTokens?: number;
+    },
   ): Promise<LlmResult> {
     const provider = normalizeProvider(opts?.provider) ?? this.provider;
+    const key = opts?.apiKey?.trim() || this.keyFor(provider);
+    const model = opts?.model?.trim() || this.defaultModel(provider);
+    const maxTokens = opts?.maxTokens || this.maxTokens;
 
-    if (!this.keyFor(provider)) {
+    if (!key) {
       this.logger.warn(
         `API key untuk provider "${provider}" tidak diset — memakai mode demo.`,
       );
@@ -73,24 +84,31 @@ export class LlmService {
     }
 
     return provider === 'openai'
-      ? this.completeOpenai(system, user)
-      : this.completeAnthropic(system, user);
+      ? this.completeOpenai(key, model, system, user, maxTokens)
+      : this.completeAnthropic(key, model, system, user, maxTokens);
+  }
+
+  private defaultModel(p: Provider): string {
+    return p === 'openai' ? this.openaiModel : this.anthropicModel;
   }
 
   private async completeAnthropic(
+    key: string,
+    model: string,
     system: string,
     user: string,
+    maxTokens: number,
   ): Promise<LlmResult> {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': this.anthropicKey!,
+        'x-api-key': key,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: this.anthropicModel,
-        max_tokens: this.maxTokens,
+        model,
+        max_tokens: maxTokens,
         system,
         messages: [{ role: 'user', content: user }],
       }),
@@ -116,12 +134,15 @@ export class LlmService {
     const tokensUsed =
       (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0);
 
-    return { text, model: data.model ?? this.anthropicModel, tokensUsed, demo: false };
+    return { text, model: data.model ?? model, tokensUsed, demo: false };
   }
 
   private async completeOpenai(
+    key: string,
+    model: string,
     system: string,
     user: string,
+    maxTokens: number,
   ): Promise<LlmResult> {
     const base =
       process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
@@ -129,11 +150,11 @@ export class LlmService {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${this.openaiKey!}`,
+        authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: this.openaiModel,
-        max_tokens: this.maxTokens,
+        model,
+        max_tokens: maxTokens,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },
@@ -159,7 +180,7 @@ export class LlmService {
 
     const tokensUsed = data.usage?.total_tokens ?? 0;
 
-    return { text, model: data.model ?? this.openaiModel, tokensUsed, demo: false };
+    return { text, model: data.model ?? model, tokensUsed, demo: false };
   }
 }
 

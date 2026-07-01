@@ -1,0 +1,8 @@
+# Override lokal (tidak untuk produksi).
+# Di mesin ini port host 5432 sudah dipakai PostgreSQL native (Homebrew PG17),
+# jadi container Postgres dipetakan ke 5433 agar tidak bentrok.
+# Docker Compose otomatis menggabungkan file ini dengan docker-compose.yml.
+services:
+  postgres:
+    ports:
+      - "5433:5432"

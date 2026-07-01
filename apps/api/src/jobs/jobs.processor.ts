@@ -35,8 +35,8 @@ export class JobsProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<{ jobId: string }>) {
-    const { jobId } = job.data;
+  async process(job: Job<{ jobId: string; apiKey?: string; model?: string }>) {
+    const { jobId, apiKey, model } = job.data;
 
     await this.prisma.job.update({
       where: { id: jobId },
@@ -71,6 +71,8 @@ export class JobsProcessor extends WorkerHost {
 
       const result = await this.llm.complete(system, user, {
         provider: input.provider,
+        apiKey,
+        model,
       });
       const { readable, json } = splitGeneratorOutput(result.text);
 

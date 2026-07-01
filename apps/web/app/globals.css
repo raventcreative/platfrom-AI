@@ -1,3 +1,259 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ============================================================
+   Tema mengikuti DESIGN.md — dashboard gelap "Power BI".
+   Dark flat (#121212), aksen cyan neon (#00E5FF), teknis & tenang.
+   ============================================================ */
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: 'Inter', 'SF Pro Display', ui-sans-serif, system-ui,
+      -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #ffffff;
+    background: #121212; /* Background primario, flat */
+    min-height: 100vh;
+    font-size: 14px; /* Cuerpo: 14px */
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: rgba(0, 229, 255, 0.28);
+    color: #fff;
+  }
+
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: #00e5ff;
+  }
+
+  ::placeholder {
+    color: #6b6b70;
+  }
+
+  /* Fokus cyan lembut & konsisten untuk semua kontrol form. */
+  :where(input, textarea, select):focus-visible {
+    outline: none;
+    border-color: #00e5ff;
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2);
+  }
+
+  button,
+  a {
+    transition:
+      background-color 0.14s ease,
+      border-color 0.14s ease,
+      color 0.14s ease,
+      opacity 0.14s ease;
+  }
+
+  /* Scrollbar tipis bertema (border #2C2C2E). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2c2c2e transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #2c2c2e;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3c;
+    background-clip: padding-box;
+  }
+}
+
+/* ============================================================
+   Render Markdown (.md) — dipakai untuk SEMUA output konten AI.
+   Heading/list/tabel/bold agar rapi & mudah dibaca (tema gelap).
+   ============================================================ */
+.md {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #eef1f5;
+  word-break: break-word;
+}
+.md > :first-child {
+  margin-top: 0;
+}
+.md > :last-child {
+  margin-bottom: 0;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.1em 0 0.5em;
+  color: #ffffff;
+}
+.md h1 {
+  font-size: 1.35em;
+}
+.md h2 {
+  font-size: 1.18em;
+}
+.md h3 {
+  font-size: 1.05em;
+}
+.md h4 {
+  font-size: 0.98em;
+  color: #cdd4dd;
+}
+.md p {
+  margin: 0.55em 0;
+}
+.md strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+.md em {
+  color: #dfe4ea;
+}
+.md a {
+  color: #00e5ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.md ul,
+.md ol {
+  margin: 0.5em 0;
+  padding-left: 1.4em;
+}
+.md ul {
+  list-style: disc;
+}
+.md ol {
+  list-style: decimal;
+}
+.md li {
+  margin: 0.28em 0;
+}
+.md li::marker {
+  color: #00e5ff;
+}
+.md blockquote {
+  margin: 0.7em 0;
+  padding: 0.2em 0.9em;
+  border-left: 3px solid #00e5ff;
+  color: #b9c1cc;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 6px 6px 0;
+}
+.md hr {
+  margin: 1em 0;
+  border: 0;
+  border-top: 1px solid #2c2c2e;
+}
+.md code {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 0.88em;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0.12em 0.38em;
+  border-radius: 5px;
+}
+.md pre {
+  margin: 0.7em 0;
+  padding: 0.85em 1em;
+  background: #0e0e0e;
+  border: 1px solid #2c2c2e;
+  border-radius: 10px;
+  overflow: auto;
+}
+.md pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.55;
+}
+/* Tabel (GFM) */
+.md table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+.md th,
+.md td {
+  border: 1px solid #2c2c2e;
+  padding: 0.5em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+.md th {
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 700;
+  color: #ffffff;
+}
+.md tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* Tema TERANG khusus ekspor PDF (offscreen). */
+.md.pdf-export {
+  color: #1a1a1a;
+}
+.md.pdf-export h1,
+.md.pdf-export h2,
+.md.pdf-export h3,
+.md.pdf-export h4,
+.md.pdf-export strong {
+  color: #000;
+}
+.md.pdf-export a {
+  color: #0b62c4;
+}
+.md.pdf-export li::marker {
+  color: #0b62c4;
+}
+.md.pdf-export blockquote {
+  color: #444;
+  border-left-color: #0b62c4;
+  background: #f3f6fb;
+}
+.md.pdf-export code {
+  background: #eef1f5;
+  color: #1a1a1a;
+}
+.md.pdf-export pre {
+  background: #f5f6f8;
+  border-color: #dfe3e8;
+  color: #1a1a1a;
+}
+.md.pdf-export hr {
+  border-top-color: #ddd;
+}
+.md.pdf-export th,
+.md.pdf-export td {
+  border-color: #cbd2da;
+}
+.md.pdf-export th {
+  background: #eef1f5;
+  color: #000;
+}
+.md.pdf-export tr:nth-child(even) td {
+  background: #f7f9fb;
+}

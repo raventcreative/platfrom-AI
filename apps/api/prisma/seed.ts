@@ -1,14 +1,20 @@
+/**
+ * Prisma seed script: mengisi DB dengan data demo (org, user, brand contoh)
+ * agar aplikasi bisa langsung dicoba tanpa input manual.
+ */
 import { BrandCategory, Platform, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // Organisasi demo — upsert agar seed idempoten (aman dijalankan berulang).
   const org = await prisma.organization.upsert({
     where: { id: 'seed-org-0001' },
     update: {},
     create: { id: 'seed-org-0001', name: 'ProdPilot Studio', plan: 'AGENCY' },
   });
 
+  // User demo beserta apiToken statis untuk otentikasi di lingkungan dev.
   const user = await prisma.user.upsert({
     where: { email: 'demo@prodpilot.local' },
     update: {},
@@ -21,10 +27,12 @@ async function main() {
     },
   });
 
+  // Cek brand contoh; hanya dibuat jika belum ada (findFirst tak mendukung upsert komposit).
   const existing = await prisma.brand.findFirst({
     where: { orgId: org.id, name: 'Glow Serum' },
   });
 
+  // Brand demo lengkap dengan voice profile & brand kit.
   const brand =
     existing ??
     (await prisma.brand.create({
@@ -71,6 +79,7 @@ async function main() {
   console.log('  Brand id   :', brand.id, `(${brand.name})`);
 }
 
+// Jalankan seed; keluar dengan kode error bila gagal, dan selalu tutup koneksi.
 main()
   .catch((e) => {
     console.error(e);
