@@ -49,6 +49,11 @@ export function buildBrandProfile(b: BrandContextInput): string {
         push('Produk / SKU', formatSkus(val));
         continue;
       }
+      // Gambar referensi = base64 besar → JANGAN dump ke prompt teks, cukup catat.
+      if (key === 'reference_image') {
+        push('Gambar referensi', 'tersedia (dipakai sebagai acuan visual saat generate gambar)');
+        continue;
+      }
       push(INTAKE_LABELS[key] ?? key, val);
     }
   }
@@ -82,7 +87,11 @@ function formatSkus(val: unknown): string {
 /** Label rapi untuk field intake yang disimpan di Brand.profile (JSON). */
 export const INTAKE_LABELS: Record<string, string> = {
   area: 'Area / pasar',
-  social: 'Akun sosial (IG/TikTok)',
+  ig_handle: 'Username Instagram',
+  social: 'Akun sosial lain',
+  brand_colors: 'Palet warna brand',
+  visual_style: 'Gaya visual',
+  guidelines: 'BRAND GUIDELINE (patuhi)',
   products: 'Produk/jasa unggulan',
   price: 'Range harga',
   problem: 'Masalah pelanggan yang diselesaikan',
@@ -154,10 +163,12 @@ const AGENT_TO_TYPE: Partial<Record<JobAgent, OutputType>> = {
   IDEAS: 'ideas',
 };
 
+// Map enum Job.agent (DB) → jenis output internal.
 export function agentToOutputType(agent: JobAgent): OutputType {
   return AGENT_TO_TYPE[agent] ?? 'ideas';
 }
 
+// Kebalikannya: jenis output internal → enum Job.agent.
 export function outputTypeToAgent(type: OutputType): JobAgent {
   return GENERATORS[type].agent;
 }
@@ -174,10 +185,12 @@ export function detectOutputType(text: string): OutputType {
   return 'script';
 }
 
+// Deteksi Job.agent langsung dari perintah natural di chat.
 export function detectAgent(text: string): JobAgent {
   return outputTypeToAgent(detectOutputType(text));
 }
 
+// Label ramah-manusia untuk sebuah agent (dipakai di UI/log).
 export function generatorLabel(agent: JobAgent): string {
   return GENERATORS[agentToOutputType(agent)].label;
 }

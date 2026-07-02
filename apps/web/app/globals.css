@@ -212,16 +212,29 @@
   background: rgba(255, 255, 255, 0.015);
 }
 
-/* Tema TERANG khusus ekspor PDF (offscreen). */
-.md.pdf-export {
-  color: #1a1a1a;
+/* Tema TERANG khusus ekspor PDF (offscreen).
+   Semua elemen dipaksa tinta gelap agar terbaca jelas di kertas putih —
+   override warna tema gelap (mis. em/p/li/td yang aslinya abu terang). */
+.md.pdf-export,
+.md.pdf-export p,
+.md.pdf-export li,
+.md.pdf-export td,
+.md.pdf-export th,
+.md.pdf-export span,
+.md.pdf-export div {
+  color: #111111;
 }
 .md.pdf-export h1,
 .md.pdf-export h2,
 .md.pdf-export h3,
 .md.pdf-export h4,
-.md.pdf-export strong {
+.md.pdf-export strong,
+.md.pdf-export b {
   color: #000;
+}
+.md.pdf-export em,
+.md.pdf-export i {
+  color: #1a1a1a;
 }
 .md.pdf-export a {
   color: #0b62c4;
@@ -230,7 +243,7 @@
   color: #0b62c4;
 }
 .md.pdf-export blockquote {
-  color: #444;
+  color: #333;
   border-left-color: #0b62c4;
   background: #f3f6fb;
 }

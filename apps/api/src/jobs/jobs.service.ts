@@ -11,6 +11,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { GenerateDto } from './dto/generate.dto';
 import { AGENT_QUEUE } from './jobs.constants';
 
+/**
+ * Layanan Job generate konten: enqueue job ke BullMQ (agent + konteks brand),
+ * baca status/hasil, daftar riwayat per-brand, dan hapus entri. API key/model
+ * pilihan UI dikirim lewat payload antrian, TIDAK disimpan ke DB.
+ */
 @Injectable()
 export class JobsService {
   constructor(

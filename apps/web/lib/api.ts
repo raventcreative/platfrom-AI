@@ -1,15 +1,33 @@
-// Klien HTTP tipis untuk backend API v1.
-// Semua request lewat helper req() yang menempelkan header auth & JSON.
+// Klien HTTP tipis + TYPE-SAFE untuk backend API v1.
+//
+// Tipe request bersumber dari KONTRAK OpenAPI backend (apps/web/lib/api.gen.ts),
+// yang di-generate dari NestJS via `npm run gen:api`. Ubah DTO di backend →
+// jalankan gen:api → tipe di sini ikut berubah, dan pemanggil yang tak sesuai
+// langsung error saat compile. Inilah "jembatan" backend↔frontend yang mudah.
+//
+// Dua field di-override karena plugin Swagger salah meng-infer:
+//   - Brand.platforms  → seharusnya array
+//   - Insight.params   → seharusnya Record<string,string>
+import type { components } from './api.gen';
 
-// Payload create/update brand yang dikirim ke endpoint /brands.
-export type BrandInput = {
-  name?: string;
-  niche?: string;
-  description?: string;
-  category?: 'skincare' | 'fnb' | 'fashion' | 'service' | 'other';
+// Semua skema DTO dari kontrak backend (auto-sync).
+export type ApiSchemas = components['schemas'];
+
+// Payload create/update brand. Semua opsional (dipakai untuk create & edit),
+// dengan platforms dikoreksi jadi array.
+export type BrandInput = Partial<Omit<ApiSchemas['CreateBrandDto'], 'platforms'>> & {
   platforms?: ('instagram' | 'tiktok')[];
-  profile?: Record<string, unknown>; // termasuk profile.skus (array produk)
 };
+
+// Payload insight dengan params yang dikoreksi jadi peta string→string.
+export type InsightInput = Omit<ApiSchemas['InsightDto'], 'params'> & {
+  params?: Record<string, string>;
+};
+
+// Payload lain diambil apa adanya dari kontrak (sudah akurat).
+export type GenerateInput = ApiSchemas['GenerateDto'];
+export type AutomateInput = ApiSchemas['AutomateDto'];
+export type ImageInput = ApiSchemas['GenerateImageDto'];
 
 // Base URL API; fallback ke localhost saat env var tidak diset (dev lokal).
 const API_BASE =
@@ -18,7 +36,8 @@ const API_BASE =
 const TOKEN = process.env.NEXT_PUBLIC_DEV_TOKEN ?? 'dev-token-123';
 
 // Wrapper fetch: gabung header default, cek status, kembalikan JSON.
-async function req(path: string, init?: RequestInit) {
+// Generik <T> = tipe response yang diharapkan (default any agar kompatibel).
+async function req<T = any>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
@@ -31,7 +50,7 @@ async function req(path: string, init?: RequestInit) {
   if (!res.ok) {
     throw new Error(`${res.status} ${await res.text()}`);
   }
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 // Kumpulan endpoint API yang dipakai UI.
@@ -77,38 +96,21 @@ export const api = {
   // Hapus satu entri riwayat.
   deleteJob: (id: string) => req(`/jobs/${id}`, { method: 'DELETE' }),
   // Jalankan alat insight (kompetitor / audit IG / inspirasi / education).
-  insight: (body: {
-    type:
-      | 'competitor'
-      | 'ig_audit'
-      | 'inspiration'
-      | 'education'
-      | 'content_intel'
-      | 'ig_insight'
-      | 'ig_research';
-    brandId?: string;
-    params?: Record<string, string>;
-    provider?: 'anthropic' | 'openai';
-    apiKey?: string;
-    model?: string;
-  }) => req('/insights/run', { method: 'POST', body: JSON.stringify(body) }),
+  insight: (body: InsightInput) =>
+    req('/insights/run', { method: 'POST', body: JSON.stringify(body) }),
   // Jalankan job generate konten dengan agent & konteks brand tertentu.
-  generate: (body: {
-    brandId: string;
-    agent: 'SCRIPT' | 'CAROUSEL' | 'STORYBOARD' | 'CAPTION' | 'IDEAS';
-    input?: string;
-    provider?: 'anthropic' | 'openai';
-    apiKey?: string;
-    model?: string;
-  }) => req('/jobs/generate', { method: 'POST', body: JSON.stringify(body) }),
+  generate: (body: GenerateInput) =>
+    req('/jobs/generate', { method: 'POST', body: JSON.stringify(body) }),
   // Otomasi: brief → JSON spec → reel/post final.
-  automate: (body: {
-    brandId?: string;
-    brief: string;
-    format: 'reels' | 'carousel' | 'post';
-    platform?: string;
-    provider?: 'anthropic' | 'openai';
-    apiKey?: string;
-    model?: string;
-  }) => req('/automation/run', { method: 'POST', body: JSON.stringify(body) }),
+  automate: (body: AutomateInput) =>
+    req('/automation/run', { method: 'POST', body: JSON.stringify(body) }),
+  // Otomasi GAMBAR: brief → prompt gambar → OpenAI Images → gambar.
+  automateImage: (body: ImageInput) =>
+    req('/automation/image', { method: 'POST', body: JSON.stringify(body) }),
+  // Riwayat generasi gambar AI Automation (opsional per-brand).
+  listAutomationImages: (brandId?: string) =>
+    req(`/automation/images${brandId ? `?brandId=${encodeURIComponent(brandId)}` : ''}`),
+  // Hapus satu entri riwayat gambar.
+  deleteAutomationImage: (id: string) =>
+    req(`/automation/images/${id}`, { method: 'DELETE' }),
 };

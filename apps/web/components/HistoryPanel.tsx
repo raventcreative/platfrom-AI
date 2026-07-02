@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { toast } from '../lib/toast';
+import { downloadHtmlPdf } from '../lib/pdf';
 import { Markdown } from './Markdown';
 
 type Agent = 'SCRIPT' | 'CAROUSEL' | 'STORYBOARD' | 'CAPTION' | 'IDEAS';
@@ -17,7 +18,7 @@ type HistoryJob = {
   agent: Agent;
   status: 'SUCCEEDED' | 'FAILED';
   input?: { content?: string; provider?: string };
-  output?: { readable?: string; model?: string; demo?: boolean };
+  output?: { readable?: string; model?: string; demo?: boolean; json?: unknown };
   error?: string;
   tokensUsed?: number;
   createdAt: string;
@@ -40,6 +41,16 @@ function fmtTime(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+// Unduh hasil sebuah entri riwayat jadi PDF A4 dari HTML markdown ter-render
+// (elemen ber-id domId). Judul PDF pakai label agent + waktu.
+function downloadJobPdf(domId: string, job: HistoryJob) {
+  const el = document.getElementById(domId);
+  if (!el) return;
+  const stamp = fmtTime(job.createdAt).replace(/[^\w]+/g, '-');
+  const title = `${LABEL[job.agent]} · ${fmtTime(job.createdAt)}`;
+  downloadHtmlPdf(el.innerHTML, `${LABEL[job.agent].replace(/[^\w]+/g, '-')}-${stamp}`, title);
 }
 
 // refreshKey: naik setiap ada generate baru → memicu fetch ulang riwayat.
@@ -188,11 +199,42 @@ export function HistoryPanel({
                       </button>
                     </div>
                     {open && (
-                      <div className="mt-1 max-h-72 overflow-auto rounded-lg border border-brand-line bg-black/30 p-2.5">
+                      <div className="mt-1 rounded-lg border border-brand-line bg-black/30 p-2.5">
                         {j.status === 'FAILED' ? (
                           <p className="text-xs text-brand-danger">Gagal: {j.error ?? 'unknown'}</p>
                         ) : (
-                          <Markdown>{j.output?.readable ?? '(kosong)'}</Markdown>
+                          <>
+                            <div className="mb-1.5 flex justify-end gap-2">
+                              <button
+                                onClick={() => downloadJobPdf(`hist-md-${j.id}`, j)}
+                                className="rounded-lg border border-brand-accent/40 bg-brand-accent/10 px-2.5 py-1 text-xs text-brand-accent hover:bg-brand-accent/20"
+                              >
+                                ⬇ Download PDF
+                              </button>
+                              <button
+                                onClick={() => navigator.clipboard?.writeText(j.output?.readable ?? '')}
+                                className="rounded-lg border border-brand-line px-2.5 py-1 text-xs hover:bg-white/5"
+                              >
+                                Copy teks
+                              </button>
+                              {/* Copy JSON hanya untuk carousel (dipakai generate produk). */}
+                              {j.agent === 'CAROUSEL' && j.output?.json != null && (
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard?.writeText(JSON.stringify(j.output?.json, null, 2));
+                                    toast('JSON carousel disalin');
+                                  }}
+                                  className="rounded-lg border border-brand-line px-2.5 py-1 text-xs hover:bg-white/5"
+                                  title="Salin JSON untuk generate carousel/produk"
+                                >
+                                  Copy JSON
+                                </button>
+                              )}
+                            </div>
+                            <div id={`hist-md-${j.id}`} className="max-h-72 overflow-auto">
+                              <Markdown>{j.output?.readable ?? '(kosong)'}</Markdown>
+                            </div>
+                          </>
                         )}
                       </div>
                     )}
@@ -288,14 +330,27 @@ function CompareModal({
                 </pre>
               </div>
               <div>
-                <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-brand-muted">
-                  Hasil
+                <div className="mb-1 flex items-center gap-2">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-brand-muted">
+                    Hasil
+                  </div>
+                  <div className="flex-1" />
+                  {j.status !== 'FAILED' && (
+                    <button
+                      onClick={() => downloadJobPdf(`cmp-md-${j.id}`, j)}
+                      className="rounded-lg border border-brand-accent/40 bg-brand-accent/10 px-2 py-0.5 text-[11px] text-brand-accent hover:bg-brand-accent/20"
+                    >
+                      ⬇ PDF
+                    </button>
+                  )}
                 </div>
                 <div className="max-h-[40vh] overflow-auto rounded-lg border border-brand-line bg-brand-panel p-2.5">
                   {j.status === 'FAILED' ? (
                     <p className="text-xs text-brand-danger">Gagal: {j.error ?? 'unknown'}</p>
                   ) : (
-                    <Markdown>{j.output?.readable ?? '(kosong)'}</Markdown>
+                    <div id={`cmp-md-${j.id}`}>
+                      <Markdown>{j.output?.readable ?? '(kosong)'}</Markdown>
+                    </div>
                   )}
                 </div>
               </div>

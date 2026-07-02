@@ -9,6 +9,10 @@ import { detectAgent, generatorLabel } from '../content';
 import { JobsService } from '../jobs/jobs.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+/**
+ * Layanan percakapan (chat) per-brand: buat/daftar percakapan, simpan pesan,
+ * dan dari pesan user deteksi agent lalu enqueue job generate konten.
+ */
 @Injectable()
 export class ConversationsService {
   constructor(

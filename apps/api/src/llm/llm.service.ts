@@ -7,7 +7,21 @@ export interface LlmResult {
   demo: boolean;
 }
 
+export interface ImageResult {
+  dataUrl?: string; // "data:image/png;base64,..." (kosong bila demo/tanpa key)
+  model: string;
+  size: string;
+  demo: boolean;
+}
+
 type Provider = 'anthropic' | 'openai';
+type Aspect = 'square' | 'portrait' | 'landscape';
+
+// Ukuran gambar per-model (OpenAI Images) menurut aspek yang diminta.
+const IMAGE_SIZES: Record<string, Record<Aspect, string>> = {
+  'dall-e-3': { square: '1024x1024', portrait: '1024x1792', landscape: '1792x1024' },
+  'gpt-image-1': { square: '1024x1024', portrait: '1024x1536', landscape: '1536x1024' },
+};
 
 /**
  * Pemanggil LLM Content Engine. Mendukung dua provider:
@@ -90,6 +104,81 @@ export class LlmService {
 
   private defaultModel(p: Provider): string {
     return p === 'openai' ? this.openaiModel : this.anthropicModel;
+  }
+
+  /**
+   * Generate GAMBAR via OpenAI Images API (hanya OpenAI yang punya image gen).
+   * - `apiKey` = BYO key dari UI (key OpenAI); kosong → fallback ke env; tetap
+   *   kosong → mode demo (tanpa gambar, hanya prompt yang dikembalikan caller).
+   * - Mengembalikan data URL base64 supaya bisa langsung ditampilkan & diunduh.
+   */
+  async generateImage(
+    prompt: string,
+    opts?: {
+      apiKey?: string;
+      model?: string;
+      aspect?: Aspect;
+      referenceImage?: string; // data URL — acuan visual (image-to-image via /edits)
+    },
+  ): Promise<ImageResult> {
+    const key = opts?.apiKey?.trim() || this.openaiKey;
+    const model =
+      opts?.model?.trim() || process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
+    const aspect = opts?.aspect ?? 'square';
+    const size = (IMAGE_SIZES[model] ?? IMAGE_SIZES['gpt-image-1'])[aspect];
+
+    if (!key) {
+      this.logger.warn('OPENAI_API_KEY tidak diset — gambar mode demo (prompt saja).');
+      return { model: 'demo', size, demo: true };
+    }
+
+    const base = process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
+    const ref = opts?.referenceImage ? dataUrlToBlob(opts.referenceImage) : null;
+
+    let res: Response;
+    if (ref) {
+      // Ada gambar referensi → endpoint /edits (image-to-image) sebagai acuan visual.
+      const form = new FormData();
+      form.append('model', model);
+      form.append('prompt', prompt);
+      form.append('size', size);
+      form.append('image', ref.blob, ref.filename);
+      res = await fetch(`${base}/images/edits`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${key}` }, // biarkan FormData set content-type
+        body: form,
+      });
+    } else {
+      // Catatan: JANGAN kirim response_format — API Images terbaru menolaknya.
+      // gpt-image-1 selalu balikan b64; dall-e-3 balikan URL → dikonversi ke b64.
+      res = await fetch(`${base}/images/generations`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, prompt, size, n: 1 }),
+      });
+    }
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`OpenAI Images ${res.status}: ${t.slice(0, 400)}`);
+    }
+
+    const data = (await res.json()) as {
+      model?: string;
+      data?: { b64_json?: string; url?: string }[];
+    };
+    const first = data.data?.[0];
+    let dataUrl: string | undefined;
+    if (first?.b64_json) {
+      dataUrl = `data:image/png;base64,${first.b64_json}`;
+    } else if (first?.url) {
+      // Ambil gambar dari URL sementara OpenAI → ubah ke data URL base64 mandiri
+      // (supaya bisa langsung tampil & diunduh, tidak kedaluwarsa).
+      const imgRes = await fetch(first.url);
+      const buf = Buffer.from(await imgRes.arrayBuffer());
+      dataUrl = `data:image/png;base64,${buf.toString('base64')}`;
+    }
+
+    return { dataUrl, model: data.model ?? model, size, demo: false };
   }
 
   private async completeAnthropic(
@@ -182,6 +271,16 @@ export class LlmService {
 
     return { text, model: data.model ?? model, tokensUsed, demo: false };
   }
+}
+
+/** Ubah data URL base64 → Blob + nama file (untuk multipart /images/edits). */
+function dataUrlToBlob(dataUrl: string): { blob: Blob; filename: string } | null {
+  const m = dataUrl.match(/^data:(image\/[\w.+-]+);base64,(.+)$/s);
+  if (!m) return null;
+  const mime = m[1];
+  const buf = Buffer.from(m[2], 'base64');
+  const ext = mime.split('/')[1] || 'png';
+  return { blob: new Blob([buf], { type: mime }), filename: `reference.${ext}` };
 }
 
 /** Map alias bebas ("chatgpt", "claude", dst) ke Provider; null bila tak dikenal. */

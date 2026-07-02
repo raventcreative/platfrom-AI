@@ -1,0 +1,692 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "OrgController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/brands": {
+      "get": {
+        "operationId": "BrandsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "BrandsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBrandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/brands/{id}": {
+      "get": {
+        "operationId": "BrandsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "BrandsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBrandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/conversations": {
+      "post": {
+        "operationId": "ConversationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      },
+      "get": {
+        "operationId": "ConversationsController_list",
+        "parameters": [
+          {
+            "name": "brandId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{id}/messages": {
+      "get": {
+        "operationId": "ConversationsController_messages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "operationId": "ConversationsController_post",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/generate": {
+      "post": {
+        "operationId": "JobsController_generate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/jobs": {
+      "get": {
+        "operationId": "JobsController_list",
+        "parameters": [
+          {
+            "name": "brandId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{id}": {
+      "get": {
+        "operationId": "JobsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "JobsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/insights/run": {
+      "post": {
+        "operationId": "InsightsController_run",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsightDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/automation/run": {
+      "post": {
+        "operationId": "AutomationController_run",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutomateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/automation/image": {
+      "post": {
+        "operationId": "AutomationController_image",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateImageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/automation/images": {
+      "get": {
+        "operationId": "AutomationController_listImages",
+        "parameters": [
+          {
+            "name": "brandId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/automation/images/{id}": {
+      "delete": {
+        "operationId": "AutomationController_deleteImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "info": {
+    "title": "ProdPilot API",
+    "description": "AIpreneur Content Engine — kontrak API v1 untuk web Next.js",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "CreateBrandDto": {
+        "type": "object",
+        "properties": {
+          "platforms": {
+            "type": "array",
+            "enum": [
+              "instagram",
+              "tiktok"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "instagram",
+                "tiktok"
+              ]
+            }
+          },
+          "profile": {
+            "type": "object",
+            "description": "Jawaban intake lengkap + daftar SKU (profile.skus) — disimpan di Brand.profile.",
+            "additionalProperties": true
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "niche": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "skincare",
+              "fnb",
+              "fashion",
+              "service",
+              "other"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateBrandDto": {
+        "type": "object",
+        "properties": {
+          "platforms": {
+            "type": "array",
+            "enum": [
+              "instagram",
+              "tiktok"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "instagram",
+                "tiktok"
+              ]
+            }
+          },
+          "profile": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "niche": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "skincare",
+              "fnb",
+              "fashion",
+              "service",
+              "other"
+            ]
+          }
+        }
+      },
+      "CreateConversationDto": {
+        "type": "object",
+        "properties": {
+          "brandId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brandId"
+        ]
+      },
+      "PostMessageDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provider": {
+            "type": "string",
+            "description": "Pilihan model dari UI. Kosong → pakai default server.",
+            "enum": [
+              "anthropic",
+              "openai"
+            ]
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "GenerateDto": {
+        "type": "object",
+        "properties": {
+          "brandId": {
+            "type": "string"
+          },
+          "agent": {
+            "type": "string",
+            "enum": [
+              "SCRIPT",
+              "CAROUSEL",
+              "STORYBOARD",
+              "CAPTION",
+              "IDEAS"
+            ]
+          },
+          "input": {
+            "type": "string",
+            "description": "Daily input yang sudah dirangkai dari form (boleh kosong → pakai profil brand)."
+          },
+          "provider": {
+            "type": "string",
+            "description": "Pilihan model dari UI. Kosong → default server.",
+            "enum": [
+              "anthropic",
+              "openai"
+            ]
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "\"Bring your own key\" dari UI. Dikirim per-request, dipakai sekali, TIDAK\ndisimpan di server (lewat payload antrian, bukan kolom DB). Kosong → env."
+          },
+          "model": {
+            "type": "string",
+            "description": "Override model spesifik (mis. gpt-4o-mini / claude-opus-4-8). Kosong → default."
+          }
+        },
+        "required": [
+          "brandId",
+          "agent"
+        ]
+      },
+      "InsightDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "competitor",
+              "ig_audit",
+              "inspiration",
+              "education",
+              "content_intel",
+              "ig_insight",
+              "ig_research"
+            ]
+          },
+          "brandId": {
+            "type": "string",
+            "description": "Konteks brand (opsional) — profilnya ikut dimasukkan ke prompt."
+          },
+          "params": {
+            "type": "object",
+            "description": "Parameter bebas per-tool (mis. handle IG, tema, topik)."
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "openai"
+            ]
+          },
+          "apiKey": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "AutomateDto": {
+        "type": "object",
+        "properties": {
+          "brandId": {
+            "type": "string"
+          },
+          "brief": {
+            "type": "string",
+            "description": "Brief / arahan konten dari user (jadi dasar spec JSON).",
+            "minLength": 1
+          },
+          "format": {
+            "type": "string",
+            "description": "Bentuk output yang mau dibuat.",
+            "enum": [
+              "reels",
+              "carousel",
+              "post"
+            ]
+          },
+          "platform": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "openai"
+            ]
+          },
+          "apiKey": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brief",
+          "format"
+        ]
+      },
+      "GenerateImageDto": {
+        "type": "object",
+        "properties": {
+          "brandId": {
+            "type": "string"
+          },
+          "brief": {
+            "type": "string",
+            "description": "Brief / arahan visual dari user.",
+            "minLength": 1
+          },
+          "count": {
+            "type": "number",
+            "description": "Jumlah gambar/konsep yang dibuat (1–4, default 3).",
+            "minimum": 1,
+            "maximum": 4
+          },
+          "aspect": {
+            "type": "string",
+            "description": "Rasio gambar (default square).",
+            "enum": [
+              "square",
+              "portrait",
+              "landscape"
+            ]
+          },
+          "style": {
+            "type": "string",
+            "description": "Gaya visual opsional (mis. \"flat vector\", \"fotografi produk\", \"3D render\")."
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "BYO OpenAI key dari UI (image hanya via OpenAI); tidak disimpan."
+          },
+          "model": {
+            "type": "string",
+            "description": "Override model image (mis. dall-e-3 / gpt-image-1)."
+          }
+        },
+        "required": [
+          "brief"
+        ]
+      }
+    }
+  }
+}

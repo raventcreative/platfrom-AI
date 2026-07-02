@@ -27,23 +27,29 @@ npx prisma generate --schema apps/api/prisma/schema.prisma
 > Jika download engine gagal dengan `unable to get local issuer certificate` (proxy/SSL),
 > jalankan ulang dengan prefix `NODE_TLS_REJECT_UNAUTHORIZED=0`.
 
-## 3. Postgres + Redis (Docker)
+## 3. Postgres + Redis (NATIVE / Homebrew — monolith)
+Stack ini memakai **Postgres 17 & Redis native (Homebrew)**, bukan Docker
+(container Docker sering ngadat di mesin ini). Data sudah dimigrasikan ke PG native.
 ```bash
-docker compose up -d
-docker compose ps          # kedua container harus "Up"
+npm run stack:up      # brew services start postgresql@17 + redis
+brew services list    # keduanya harus "started"
 ```
+- Postgres native: `localhost:5432`, role `prodpilot` / db `prodpilot`.
+- Redis native: `localhost:6379` (ephemeral, tak perlu data).
+- `apps/api/.env` → `DATABASE_URL=postgresql://prodpilot:prodpilot@localhost:5432/prodpilot`.
 
-### ⚠️ Konflik port 5432 (penting di mesin ini)
-Ada **PostgreSQL native (Homebrew)** yang listen di `127.0.0.1:5432`. Karena bind-nya
-lebih spesifik dari Docker (`*:5432`), koneksi `localhost:5432` nyasar ke PG native →
-error Prisma **`P1010: User prodpilot was denied access`** (bukan masalah izin sungguhan).
+> Fallback Docker (tidak dipakai lagi): `npm run stack:up:docker` (memetakan Postgres
+> ke port 5433 via [docker-compose.override.yml](../../../docker-compose.override.yml)
+> untuk menghindari bentrok dengan PG native di 5432). Bila pindah ke Docker, ubah
+> `DATABASE_URL` kembali ke `...@localhost:5433/...`.
 
-Solusi (sudah terpasang): [docker-compose.override.yml](../../../docker-compose.override.yml)
-memetakan container Postgres ke **host port 5433**, dan `apps/api/.env` memakai `...@localhost:5433/...`.
-Verifikasi konflik:
+### Setup PG native dari nol (bila role/db belum ada)
 ```bash
-lsof -nP -iTCP:5432 -sTCP:LISTEN   # kalau ada `postgres` non-docker → pakai 5433
+export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
+psql -d postgres -c "CREATE ROLE prodpilot LOGIN PASSWORD 'prodpilot' CREATEDB;"
+createdb -O prodpilot prodpilot
 ```
+Migrasi data dari container lama (bila ada): `docker exec <pg-container> pg_dump -U prodpilot -d prodpilot --no-owner --no-acl | psql -U prodpilot -d prodpilot`.
 
 ## 4. Env + skema DB + seed
 Kalau `apps/api/.env` belum ada, salin dari `.env.example` lalu set `DATABASE_URL` ke port **5433**:
@@ -92,6 +98,18 @@ ANTHROPIC_API_KEY=sk-ant-...    # untuk Claude
 OPENAI_API_KEY=sk-...           # untuk ChatGPT
 ```
 Provider juga bisa dipilih per-pesan lewat dropdown di UI (menimpa default env).
+
+## Kontrak API type-safe (OpenAPI → tipe TS)
+Backend↔frontend disatukan lewat kontrak OpenAPI yang di-generate dari NestJS:
+- **Swagger UI**: http://localhost:4000/api/v1/docs (uji endpoint dari browser)
+- **Spec JSON**: http://localhost:4000/api/v1/docs-json
+- **Generate tipe** untuk web (setelah ubah DTO backend):
+  ```bash
+  npm run gen:api   # build API → dump openapi.json → tulis apps/web/lib/api.gen.ts
+  ```
+  `gen:api` boot Nest dalam *preview mode* (tanpa DB/Redis), jadi bisa jalan
+  walau infra mati. Setelah itu `apps/web/lib/api.ts` (typed client) otomatis
+  memakai tipe baru — pemanggil yang tak sesuai langsung error saat compile.
 
 ## Matikan
 ```bash

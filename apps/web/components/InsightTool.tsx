@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { toast } from '../lib/toast';
+import { downloadHtmlPdf } from '../lib/pdf';
 import { ModelSettings } from './ModelSettings';
 import { Markdown } from './Markdown';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type LlmSettings } from '../lib/llmSettings';
@@ -146,13 +147,25 @@ export function InsightTool({
             )}
             <div className="flex-1" />
             <button
+              onClick={() => {
+                const el = document.getElementById(`insight-md-${type}`);
+                if (el) downloadHtmlPdf(el.innerHTML, title.replace(/[^\w]+/g, '-'), title);
+              }}
+              className="rounded-lg border border-brand-accent/40 bg-brand-accent/10 px-2.5 py-1 text-xs text-brand-accent hover:bg-brand-accent/20"
+            >
+              ⬇ Download PDF
+            </button>
+            <button
               onClick={() => navigator.clipboard?.writeText(result.text)}
               className="rounded-lg border border-brand-line px-2.5 py-1 text-xs hover:bg-white/5"
             >
               Copy
             </button>
           </div>
-          <div className="max-h-[60vh] overflow-auto rounded-lg border border-brand-line bg-black/30 p-3">
+          <div
+            id={`insight-md-${type}`}
+            className="max-h-[60vh] overflow-auto rounded-lg border border-brand-line bg-black/30 p-3"
+          >
             <Markdown>{result.text}</Markdown>
           </div>
         </div>

@@ -44,14 +44,24 @@ export const CORE_FIELDS = new Set(['name', 'category']);
 
 // Struktur lengkap form intake brand; dirender section demi section oleh BrandEditor.
 export const INTAKE_SCHEMA: IntakeSection[] = [
-  // Identitas brand: nama, kategori, area, akun sosial.
+  // Identitas brand: nama, kategori, area, akun sosial, username IG.
   {
     title: 'Identitas brand',
     fields: [
       { id: 'name', label: 'Nama brand', type: 'text' },
       { id: 'category', label: 'Kategori', type: 'select', options: ['skincare', 'fnb', 'fashion', 'service', 'other'], labels: ['Skincare/Beauty', 'F&B/Resto', 'Fashion/Retail', 'Jasa/Service', 'Lainnya'] },
       { id: 'area', label: 'Area / pasar', type: 'text' },
-      { id: 'social', label: 'Akun sosial (IG/TikTok)', type: 'text' },
+      { id: 'ig_handle', label: 'Nama / username Instagram', type: 'text', hint: 'mis. @brandkamu — dipakai agar konten selaras dengan akun IG' },
+      { id: 'social', label: 'Akun sosial lain (TikTok/dll)', type: 'text' },
+    ],
+  },
+  // Brand guideline: aturan visual & konten agar hasil (mis. carousel) konsisten.
+  {
+    title: 'Brand guideline',
+    fields: [
+      { id: 'brand_colors', label: 'Palet warna brand', type: 'text', hint: 'mis. #00E5FF, pastel pink, emas' },
+      { id: 'visual_style', label: 'Gaya visual', type: 'text', hint: 'font, layout, mood, referensi look' },
+      { id: 'guidelines', label: 'Brand guideline (aturan visual & konten)', type: 'textarea', hint: "do & don't, elemen wajib/larangan, tone visual, aturan logo" },
     ],
   },
   // Produk/jasa: penawaran unggulan, harga, masalah yang diselesaikan, USP.

@@ -1,65 +1,75 @@
 'use client';
 
-// AI Automation: pipeline brief → JSON spec → reel/post final.
-// Content Creation "spill" prompt jadi JSON, lalu dari JSON dibuat reel/post-nya.
+// AI Automation (mode GAMBAR): brief → AI susun BEBERAPA konsep → OpenAI Images →
+// beberapa gambar. Output berupa IMAGE (bukan script). Butuh OpenAI API key (image
+// gen hanya via OpenAI); tanpa key → tampilkan prompt-nya saja (mode demo).
 
 import { useEffect, useState } from 'react';
 import { BrandSwitcher, type Brand } from '../../components/BrandSwitcher';
 import { ModelSettings } from '../../components/ModelSettings';
-import { Markdown } from '../../components/Markdown';
+import { AutomationHistory } from '../../components/AutomationHistory';
 import { api } from '../../lib/api';
 import { toast } from '../../lib/toast';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type LlmSettings } from '../../lib/llmSettings';
 
-type Format = 'reels' | 'carousel' | 'post';
-const FORMATS: { value: Format; label: string }[] = [
-  { value: 'reels', label: 'Reels / TikTok' },
-  { value: 'carousel', label: 'Carousel IG' },
-  { value: 'post', label: 'Single Post' },
+type Aspect = 'square' | 'portrait' | 'landscape';
+const ASPECTS: { value: Aspect; label: string }[] = [
+  { value: 'square', label: 'Kotak 1:1 (feed)' },
+  { value: 'portrait', label: 'Potret 4:5 / 9:16 (story/reels)' },
+  { value: 'landscape', label: 'Lanskap 16:9' },
 ];
 
-type Res = {
-  format: Format;
-  platform: string;
-  spec?: unknown;
-  output?: { readable?: string; json?: unknown };
-  demo?: boolean;
+// Satu gambar hasil (satu konsep).
+type ImageItem = {
+  imagePrompt?: string;
+  caption?: string;
+  hashtags?: string[];
+  image?: string | null; // data URL base64
+  size?: string;
+  model?: string;
+  error?: string;
 };
+type Res = { aspect?: Aspect; count?: number; demo?: boolean; results?: ImageItem[] };
 
 export default function AutomationPage() {
   const [brand, setBrand] = useState<Brand>();
   const [brief, setBrief] = useState('');
-  const [format, setFormat] = useState<Format>('reels');
-  const [platform, setPlatform] = useState('');
+  const [aspect, setAspect] = useState<Aspect>('square');
+  const [count, setCount] = useState(3); // jumlah gambar
+  const [style, setStyle] = useState('');
   const [settings, setSettings] = useState<LlmSettings>(DEFAULT_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<Res>();
+  const [historyKey, setHistoryKey] = useState(0); // pemicu refresh riwayat
 
   useEffect(() => setSettings(loadSettings()), []);
-  const provider = settings.provider;
-  const hasKey = Boolean(settings.keys[provider]?.trim());
+  // Image gen HANYA via OpenAI → yang relevan adalah OpenAI key.
+  const openaiKey = settings.keys.openai?.trim();
+  const hasKey = Boolean(openaiKey);
 
+  // Kirim brief ke backend → dapat beberapa gambar + caption + prompt.
   async function run() {
     if (busy) return;
     if (!brief.trim()) {
-      toast('Isi brief dulu', 'error');
+      toast('Isi brief/arahan visual dulu', 'error');
       return;
     }
     setBusy(true);
     setRes(undefined);
     try {
-      const r = await api.automate({
+      const r = await api.automateImage({
         brandId: brand?.id,
         brief,
-        format,
-        platform: platform || undefined,
-        provider,
-        apiKey: settings.keys[provider]?.trim() || undefined,
-        model: settings.models[provider],
+        count,
+        aspect,
+        style: style || undefined,
+        apiKey: openaiKey || undefined,
       });
       setRes(r);
-      toast('Otomasi selesai');
+      setHistoryKey((k) => k + 1); // segarkan riwayat setelah tersimpan
+      const made = (r.results ?? []).filter((x: ImageItem) => x.image).length;
+      toast(made ? `${made} gambar selesai` : 'Prompt gambar siap (mode demo)');
     } catch (e) {
       toast(`Gagal: ${e}`, 'error');
     } finally {
@@ -67,10 +77,22 @@ export default function AutomationPage() {
     }
   }
 
+  // Unduh satu gambar (data URL base64) sebagai file PNG.
+  function downloadImage(dataUrl: string, idx: number) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `automation-${aspect}-${idx + 1}-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  const results = res?.results ?? [];
+
   return (
     <>
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-brand-line bg-brand-panel px-6 py-3">
-        <h1 className="text-base font-semibold text-brand-text">AI Automation</h1>
+        <h1 className="text-base font-semibold text-brand-text">AI Automation · Gambar</h1>
         <div className="flex-1" />
         <span className="text-xs text-brand-muted">Brand:</span>
         <BrandSwitcher value={brand?.id} onChange={setBrand} />
@@ -81,9 +103,9 @@ export default function AutomationPage() {
         <div className="rounded-xl border border-brand-line bg-brand-panel p-5">
           <div className="flex items-start gap-2">
             <div>
-              <h2 className="text-base font-semibold">Brief → JSON → Reel/Post</h2>
+              <h2 className="text-base font-semibold">Brief → Beberapa Gambar</h2>
               <p className="mt-0.5 text-xs text-brand-muted">
-                AI mengubah brief jadi <b>spec JSON</b>, lalu dari JSON itu membuat reel/post final.
+                AI menyusun beberapa konsep visual dari brief-mu, lalu menggenerate <b>gambar</b> (via OpenAI Images).
               </p>
             </div>
             <div className="flex-1" />
@@ -94,7 +116,7 @@ export default function AutomationPage() {
                   : 'border-orange-400/30 bg-orange-400/10 text-orange-300'
               }`}
             >
-              {hasKey ? `live · ${settings.models[provider]}` : 'mode demo'}
+              {hasKey ? 'live · OpenAI' : 'mode demo (isi OpenAI key)'}
             </span>
             <button
               onClick={() => setShowSettings(true)}
@@ -104,103 +126,147 @@ export default function AutomationPage() {
             </button>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-[13px] font-semibold">Format</label>
+              <label className="mb-1 block text-[13px] font-semibold">Rasio gambar</label>
               <select
                 className="w-full rounded-lg border border-brand-line bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-accent"
-                value={format}
-                onChange={(e) => setFormat(e.target.value as Format)}
+                value={aspect}
+                onChange={(e) => setAspect(e.target.value as Aspect)}
               >
-                {FORMATS.map((f) => (
-                  <option key={f.value} value={f.value}>{f.label}</option>
+                {ASPECTS.map((a) => (
+                  <option key={a.value} value={a.value}>{a.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[13px] font-semibold">Platform (opsional)</label>
+              <label className="mb-1 block text-[13px] font-semibold">Jumlah gambar</label>
+              <select
+                className="w-full rounded-lg border border-brand-line bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-accent"
+                value={count}
+                onChange={(e) => setCount(Number(e.target.value))}
+              >
+                {[1, 2, 3, 4].map((n) => (
+                  <option key={n} value={n}>{n} gambar</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold">Gaya visual (opsional)</label>
               <input
                 className="w-full rounded-lg border border-brand-line bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-accent"
-                placeholder="IG Reels / TikTok / Instagram"
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
+                placeholder="mis. fotografi produk, flat vector, 3D"
+                value={style}
+                onChange={(e) => setStyle(e.target.value)}
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-[13px] font-semibold">Brief / arahan konten</label>
+            <div className="sm:col-span-3">
+              <label className="mb-1 block text-[13px] font-semibold">Brief / arahan visual</label>
               <textarea
                 className="min-h-[90px] w-full resize-y rounded-lg border border-brand-line bg-brand-bg px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-accent"
-                placeholder='mis. "Promo bundling 2 serum 99k, angle before/after, target ibu muda, CTA checkout link bio"'
+                placeholder='mis. "Poster promo bundling 2 serum, nuansa pastel, ada teks 99K, mood cerah higienis"'
                 value={brief}
                 onChange={(e) => setBrief(e.target.value)}
               />
             </div>
           </div>
 
+          {!hasKey && (
+            <p className="mt-2 text-xs text-orange-300">
+              Generate gambar butuh <b>OpenAI API key</b>. Isi di ⚙️ (key OpenAI). Tanpa key, hanya prompt gambar yang ditampilkan.
+            </p>
+          )}
+
           <button
             onClick={run}
             disabled={busy}
             className="mt-4 rounded-lg bg-brand-accent px-4 py-2 text-sm font-semibold text-brand-bg hover:bg-brand-accentHover disabled:opacity-50"
           >
-            {busy ? 'Memproses…' : 'Jalankan otomasi'}
+            {busy ? `Menggenerate ${count} gambar…` : `Generate ${count} gambar`}
           </button>
         </div>
 
-        {/* HASIL */}
+        {/* HASIL: grid beberapa gambar */}
         {res && (
-          <>
-            {/* Tahap 1: spec JSON */}
-            <div className="rounded-xl border border-brand-line bg-brand-panel p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="text-sm font-bold">1 · Prompt → JSON (spec)</div>
-                {res.demo && (
-                  <span className="rounded-full border border-orange-400/30 bg-orange-400/10 px-2 py-0.5 text-[11px] text-orange-300">
-                    mode demo
-                  </span>
-                )}
-                <div className="flex-1" />
-                {res.spec != null && (
-                  <button
-                    onClick={() => navigator.clipboard?.writeText(JSON.stringify(res.spec, null, 2))}
-                    className="rounded-lg border border-brand-line px-2.5 py-1 text-xs hover:bg-white/5"
-                  >
-                    Copy JSON
-                  </button>
-                )}
-              </div>
-              <pre className="max-h-[40vh] overflow-auto rounded-lg border border-brand-line bg-black/40 p-3 text-xs text-slate-100">
-                {res.spec != null ? JSON.stringify(res.spec, null, 2) : '(spec JSON tidak terparse)'}
-              </pre>
-            </div>
+          <div className="space-y-2">
+            {res.demo && (
+              <span className="inline-block rounded-full border border-orange-400/30 bg-orange-400/10 px-2 py-0.5 text-[11px] text-orange-300">
+                mode demo (tanpa OpenAI key) — hanya prompt
+              </span>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {results.map((item, i) => (
+                <div key={i} className="rounded-xl border border-brand-accent/30 bg-brand-panel p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="text-sm font-bold">Gambar {i + 1}</div>
+                    {item.model && item.image && (
+                      <span className="text-[11px] text-brand-muted">{item.model} · {item.size}</span>
+                    )}
+                    <div className="flex-1" />
+                    {item.image && (
+                      <button
+                        onClick={() => downloadImage(item.image as string, i)}
+                        className="rounded-lg border border-brand-accent/40 bg-brand-accent/10 px-2.5 py-1 text-xs text-brand-accent hover:bg-brand-accent/20"
+                      >
+                        ⬇ PNG
+                      </button>
+                    )}
+                  </div>
 
-            {/* Tahap 2: reel/post final */}
-            <div className="rounded-xl border border-brand-accent/30 bg-brand-panel p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="text-sm font-bold">
-                  2 · {FORMATS.find((f) => f.value === res.format)?.label} final
+                  {item.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.image}
+                      alt={`Hasil ${i + 1}`}
+                      className="w-full rounded-lg border border-brand-line"
+                    />
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-brand-line bg-brand-bg p-4 text-center text-xs text-brand-muted">
+                      {item.error ? `Gagal: ${item.error}` : 'Belum ada gambar (mode demo).'}
+                    </div>
+                  )}
+
+                  {item.caption && (
+                    <div className="mt-2 rounded-lg border border-brand-line bg-brand-bg p-2.5">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-muted">Caption</span>
+                        <div className="flex-1" />
+                        <button
+                          onClick={() =>
+                            navigator.clipboard?.writeText(
+                              [item.caption, (item.hashtags ?? []).map((h) => (h.startsWith('#') ? h : `#${h}`)).join(' ')]
+                                .filter(Boolean)
+                                .join('\n\n'),
+                            )
+                          }
+                          className="rounded-lg border border-brand-line px-2 py-0.5 text-[11px] hover:bg-white/5"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <p className="text-xs text-brand-text">{item.caption}</p>
+                      {!!item.hashtags?.length && (
+                        <p className="mt-1 text-[11px] text-brand-accent">
+                          {item.hashtags.map((h) => (h.startsWith('#') ? h : `#${h}`)).join(' ')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {item.imagePrompt && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-[11px] text-brand-muted">Prompt gambar</summary>
+                      <p className="mt-1 text-[11px] text-slate-300">{item.imagePrompt}</p>
+                    </details>
+                  )}
                 </div>
-                <div className="flex-1" />
-                <button
-                  onClick={() => navigator.clipboard?.writeText(res.output?.readable ?? '')}
-                  className="rounded-lg border border-brand-line px-2.5 py-1 text-xs hover:bg-white/5"
-                >
-                  Copy teks
-                </button>
-              </div>
-              <div className="rounded-lg border border-brand-line bg-black/30 p-3">
-                <Markdown>{res.output?.readable ?? '(kosong)'}</Markdown>
-              </div>
-              {res.output?.json != null && (
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-xs text-brand-muted">JSON produksi (untuk otomasi/API)</summary>
-                  <pre className="mt-1 max-h-[40vh] overflow-auto rounded-lg bg-black/40 p-3 text-xs text-slate-100">
-                    {JSON.stringify(res.output.json, null, 2)}
-                  </pre>
-                </details>
-              )}
+              ))}
             </div>
-          </>
+          </div>
         )}
+
+        {/* Riwayat generasi gambar (tersimpan di server) */}
+        <AutomationHistory brandId={brand?.id} refreshKey={historyKey} />
       </div>
 
       {showSettings && (

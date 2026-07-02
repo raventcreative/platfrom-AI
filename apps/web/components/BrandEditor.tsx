@@ -15,8 +15,8 @@ import {
   type Sku,
 } from '../lib/brandSchema';
 
-// Rangkai body brand: name+category ke kolom, field lain + daftar SKU ke profile.
-function toBody(values: Record<string, string>, skus: Sku[]) {
+// Rangkai body brand: name+category ke kolom, field lain + SKU + gambar referensi ke profile.
+function toBody(values: Record<string, string>, skus: Sku[], refImage: string) {
   const profile: Record<string, unknown> = {};
   for (const section of INTAKE_SCHEMA) {
     for (const f of section.fields) {
@@ -35,6 +35,8 @@ function toBody(values: Record<string, string>, skus: Sku[]) {
       notes: s.notes?.trim() || undefined,
     }));
   if (cleanSkus.length) profile.skus = cleanSkus;
+  // Gambar referensi brand (data URL base64) — dipakai sebagai acuan visual generate.
+  if (refImage) profile.reference_image = refImage;
 
   return {
     name: (values.name ?? '').trim(),
@@ -54,6 +56,7 @@ export function BrandEditor({ brandId }: { brandId?: string }) {
   // Semua nilai field disimpan dalam satu map string->string (di-index oleh field id).
   const [values, setValues] = useState<Record<string, string>>({ category: 'other' });
   const [skus, setSkus] = useState<Sku[]>([]);
+  const [refImage, setRefImage] = useState<string>(''); // gambar referensi (data URL)
   const [loading, setLoading] = useState(Boolean(brandId));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string>();
@@ -64,14 +67,15 @@ export function BrandEditor({ brandId }: { brandId?: string }) {
     api
       .getBrand(brandId)
       .then((b: { name: string; category: string; profile?: Record<string, unknown> }) => {
-        // Pisahkan `skus` (array) dari field profile lain (string).
-        const { skus: rawSkus, ...profileRest } = b.profile ?? {};
+        // Pisahkan `skus` (array) & `reference_image` (base64) dari field profile lain.
+        const { skus: rawSkus, reference_image, ...profileRest } = b.profile ?? {};
         setValues({
           name: b.name ?? '',
           category: (b.category ?? 'OTHER').toLowerCase(),
           ...(profileRest as Record<string, string>),
         });
         setSkus(Array.isArray(rawSkus) ? (rawSkus as Sku[]) : []);
+        setRefImage(typeof reference_image === 'string' ? reference_image : '');
       })
       .catch((e) => setMsg(`Gagal memuat: ${e}`))
       .finally(() => setLoading(false));
@@ -94,8 +98,21 @@ export function BrandEditor({ brandId }: { brandId?: string }) {
   }
 
   // Simpan brand: update bila edit, atau create + redirect ke halaman brand baru.
+  // Pilih file gambar → ubah jadi data URL base64 (disimpan di profile brand).
+  function onPickRefImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setMsg('Gambar referensi maksimal 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setRefImage(String(reader.result));
+    reader.readAsDataURL(file);
+  }
+
   async function save() {
-    const body = toBody(values, skus);
+    const body = toBody(values, skus, refImage);
     if (!body.name) {
       setMsg('Nama brand wajib diisi.');
       return;
@@ -167,6 +184,41 @@ export function BrandEditor({ brandId }: { brandId?: string }) {
           </div>
         </div>
       ))}
+
+      {/* Gambar referensi brand — acuan visual untuk generate gambar (AI Automation) */}
+      <div className="rounded-xl border border-brand-line bg-brand-panel p-4">
+        <div className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-muted">
+          Gambar referensi (guideline visual)
+        </div>
+        <p className="mb-2 text-xs text-brand-muted">
+          Unggah 1 contoh visual brand (mood/warna/gaya). Dipakai sebagai acuan saat generate gambar di AI Automation.
+        </p>
+        <div className="flex items-start gap-3">
+          {refImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={refImage} alt="Referensi" className="h-28 w-28 rounded-lg border border-brand-line object-cover" />
+          ) : (
+            <div className="flex h-28 w-28 items-center justify-center rounded-lg border border-dashed border-brand-line text-xs text-brand-muted">
+              belum ada
+            </div>
+          )}
+          <div className="space-y-2">
+            <label className="inline-block cursor-pointer rounded-lg border border-brand-line px-3 py-1.5 text-sm hover:bg-white/5">
+              {refImage ? 'Ganti gambar' : 'Pilih gambar'}
+              <input type="file" accept="image/*" className="hidden" onChange={onPickRefImage} />
+            </label>
+            {refImage && (
+              <button
+                onClick={() => setRefImage('')}
+                className="ml-2 rounded-lg border border-red-500/30 px-3 py-1.5 text-sm text-red-300 hover:bg-red-500/10"
+              >
+                Hapus
+              </button>
+            )}
+            <p className="text-xs text-brand-muted">PNG/JPG, maks 5MB.</p>
+          </div>
+        </div>
+      </div>
 
       {/* Produk / SKU — daftar produk brand (mis. sabun, skincare, parfum) */}
       <div className="rounded-xl border border-brand-line bg-brand-panel p-4">

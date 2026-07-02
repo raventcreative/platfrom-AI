@@ -179,12 +179,14 @@ function igInsightPrompt(
   };
 }
 
+// Bungkus profil brand jadi blok teks untuk disisipkan ke prompt (kosong bila tak ada).
 function brandBlock(brandText: string): string {
   return brandText
     ? `\n\n================ PROFIL BRAND ================\n${brandText}\n=============================================`
     : '';
 }
 
+// Prompt: cari & analisis kompetitor (system + user).
 function competitorPrompt(
   brandText: string,
   p: Record<string, string>,
@@ -204,6 +206,7 @@ function competitorPrompt(
   };
 }
 
+// Prompt: audit akun IG (strength/weakness) dari data + input.
 function igAuditPrompt(
   brandText: string,
   p: Record<string, string>,
@@ -229,6 +232,7 @@ function igAuditPrompt(
   };
 }
 
+// Prompt: ide/inspirasi konten dari niche & referensi.
 function inspirationPrompt(
   brandText: string,
   p: Record<string, string>,
@@ -247,6 +251,7 @@ function inspirationPrompt(
   };
 }
 
+// Prompt: intelijen konten (pola yang menang) dari data akun.
 function contentIntelPrompt(
   brandText: string,
   p: Record<string, string>,
@@ -327,6 +332,7 @@ function igResearchPrompt(
   };
 }
 
+// Prompt: education insight (materi edukasi audiens) untuk brand.
 function educationPrompt(
   brandText: string,
   p: Record<string, string>,

@@ -387,14 +387,6 @@ export function GeneratorStudio({ brandId }: { brandId?: string }) {
                 <div id={`md-${r.id}`} className="mt-2 rounded-lg border border-brand-line bg-black/30 p-3">
                   <Markdown>{r.readable ?? ''}</Markdown>
                 </div>
-                {r.json != null && (
-                  <details className="mt-2">
-                    <summary className="cursor-pointer text-xs text-brand-muted">JSON terstruktur</summary>
-                    <pre className="mt-1 overflow-auto rounded-lg bg-black/40 p-3 text-xs text-slate-100">
-                      {JSON.stringify(r.json, null, 2)}
-                    </pre>
-                  </details>
-                )}
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     onClick={() => downloadPdf(r)}
@@ -408,16 +400,29 @@ export function GeneratorStudio({ brandId }: { brandId?: string }) {
                   >
                     Copy teks
                   </button>
-                  {r.json != null && (
-                    <button
-                      onClick={() => copy(JSON.stringify(r.json, null, 2))}
-                      className="rounded-lg border border-brand-line px-2.5 py-1 text-xs text-brand-text hover:bg-white/5"
-                      title="Salin JSON untuk generate carousel/produk"
-                    >
-                      Copy JSON (untuk carousel)
-                    </button>
-                  )}
                 </div>
+                {/* JSON carousel = KOLOM TERPISAH. Sengaja di luar #md-{id} agar
+                    TIDAK ikut ke PDF (downloadPdf hanya membaca elemen #md-{id}). */}
+                {r.json != null && r.agent === 'CAROUSEL' && (
+                  <div className="mt-3 rounded-lg border border-brand-line bg-black/20 p-3">
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-brand-muted">
+                        JSON carousel
+                      </span>
+                      <span className="text-[10px] text-brand-muted">untuk generate produk · tidak termasuk di PDF</span>
+                      <div className="flex-1" />
+                      <button
+                        onClick={() => copy(JSON.stringify(r.json, null, 2))}
+                        className="rounded-lg border border-brand-line px-2.5 py-1 text-xs text-brand-text hover:bg-white/5"
+                      >
+                        Copy JSON
+                      </button>
+                    </div>
+                    <pre className="max-h-[40vh] overflow-auto rounded-lg bg-black/40 p-3 text-xs text-slate-100">
+                      {JSON.stringify(r.json, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </>
             )}
           </div>

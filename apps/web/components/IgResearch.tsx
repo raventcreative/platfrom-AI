@@ -9,6 +9,8 @@ import { api } from '../lib/api';
 import { toast } from '../lib/toast';
 import { ModelSettings } from './ModelSettings';
 import { Markdown } from './Markdown';
+import { downloadHtmlPdf } from '../lib/pdf';
+import { researchToHtml } from '../lib/igReport';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type LlmSettings } from '../lib/llmSettings';
 
 type Hook = { hook?: string; why_works?: string };
@@ -180,6 +182,16 @@ export function IgResearch({ brandId }: { brandId?: string }) {
               {res.liveData ? 'data live' : 'tanpa data live (analisis dari input/pengetahuan AI)'}
             </span>
             <div className="flex-1" />
+            {j && (
+              <button
+                onClick={() =>
+                  downloadHtmlPdf(researchToHtml(j), 'Riset-Instagram', 'Riset Instagram: Akun Saya + Kompetitor')
+                }
+                className="rounded-lg border border-brand-accent/40 bg-brand-accent/10 px-2.5 py-1 text-xs text-brand-accent hover:bg-brand-accent/20"
+              >
+                ⬇ Download PDF
+              </button>
+            )}
             <button
               onClick={() => navigator.clipboard?.writeText(res.text)}
               className="rounded-lg border border-brand-line px-2.5 py-1 text-xs hover:bg-white/5"
