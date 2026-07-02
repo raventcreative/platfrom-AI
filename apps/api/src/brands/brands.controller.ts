@@ -4,6 +4,8 @@ import {
   Get,
   Param,
   Patch,
+  HttpCode,
+  Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +14,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { TrainVoiceDto } from './dto/train-voice.dto';
 
 /** Controller CRUD brand; seluruh route dilindungi AuthGuard (butuh token valid). */
 @UseGuards(AuthGuard)
@@ -45,5 +48,14 @@ export class BrandsController {
     @Body() dto: UpdateBrandDto,
   ) {
     return this.brands.update(auth, id, dto);
+  /** "Training" brand voice dari IG handle / contoh caption → 202 { jobId }. */
+  @Post(':id/voice-profile')
+  @HttpCode(202)
+  trainVoice(
+    @Auth() auth: AuthContext,
+    @Param('id') id: string,
+    @Body() dto: TrainVoiceDto,
+  ) {
+    return this.brands.trainVoice(auth, id, dto);
   }
 }

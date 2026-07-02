@@ -186,12 +186,18 @@ export function detectOutputType(text: string): OutputType {
 }
 
 // Deteksi Job.agent langsung dari perintah natural di chat.
+/** Perintah "training": pelajari brand / analisis akun IG → BrandVoice agent. */
+const VOICE_PATTERN =
+  /(brand ?voice|pelajari brand|belajar (dari )?(ig|instagram)|analisis (ig|instagram|akun)|training brand|latih (ai|brand))/i;
+
 export function detectAgent(text: string): JobAgent {
+  if (VOICE_PATTERN.test(text)) return 'BRANDVOICE';
   return outputTypeToAgent(detectOutputType(text));
 }
 
 // Label ramah-manusia untuk sebuah agent (dipakai di UI/log).
 export function generatorLabel(agent: JobAgent): string {
+  if (agent === 'BRANDVOICE') return 'analisis brand voice';
   return GENERATORS[agentToOutputType(agent)].label;
 }
 

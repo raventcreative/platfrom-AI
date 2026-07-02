@@ -1,13 +1,17 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { BrandCategory, Platform, Prisma } from '@prisma/client';
+import { BrandCategory, JobAgent, Platform } from '@prisma/client';
 import { AuthContext } from '../auth/auth.decorator';
+import { JobsService } from '../jobs/jobs.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { TrainVoiceDto } from './dto/train-voice.dto';
 
 // Peta string kategori dari DTO ke enum BrandCategory Prisma.
 const CATEGORY_MAP: Record<string, BrandCategory> = {
@@ -21,7 +25,10 @@ const CATEGORY_MAP: Record<string, BrandCategory> = {
 /** Logika bisnis brand: query & mutasi selalu dibatasi pada org milik pemanggil. */
 @Injectable()
 export class BrandsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jobs: JobsService,
+  ) {}
 
   /** Ambil daftar brand aktif milik org, terbaru dulu. */
   list(auth: AuthContext) {
@@ -94,4 +101,22 @@ function mapPlatforms(platforms?: ('instagram' | 'tiktok')[]): Platform[] {
   return (platforms ?? []).map((p) =>
     p === 'tiktok' ? Platform.TIKTOK : Platform.INSTAGRAM,
   );
+  /**
+   * "Training" brand voice: antrikan job BRANDVOICE yang mengambil konten IG
+   * (scrape) dan/atau contoh caption manual, lalu menyimpan voice profile.
+   */
+  async trainVoice(auth: AuthContext, id: string, dto: TrainVoiceDto) {
+    const brand = await this.get(auth, id); // sekaligus cek kepemilikan org
+    const samples = (dto.samples ?? []).filter((s) => s.trim());
+    if (!dto.igHandle?.trim() && !samples.length) {
+      throw new BadRequestException(
+        'Isi igHandle (mis. "@brandku") atau samples (contoh caption).',
+      );
+    }
+    const job = await this.jobs.createAndEnqueue(brand.id, JobAgent.BRANDVOICE, {
+      igHandle: dto.igHandle?.trim() || undefined,
+      samples,
+    });
+    return { jobId: job.id, status: job.status };
+  }
 }

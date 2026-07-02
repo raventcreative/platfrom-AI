@@ -104,9 +104,10 @@ export function ChatShell({ brandId }: { brandId?: string }) {
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && (
           <div className="text-sm text-neutral-400">
-            Mulai dengan perintah, mis. &ldquo;Buatkan script Reels 30 detik promo
-            bundling&rdquo;, &ldquo;Carousel 7 slide tips skincare&rdquo;, atau
-            &ldquo;7 ide konten minggu ini&rdquo;.
+            Mulai dengan perintah, mis. &ldquo;Pelajari brand dari IG
+            @brandku&rdquo; (training voice), &ldquo;Buatkan script Reels 30 detik
+            promo bundling&rdquo;, &ldquo;Carousel 7 slide tips skincare&rdquo;,
+            atau &ldquo;7 ide konten minggu ini&rdquo;.
           </div>
         )}
         {messages.map((m) => (

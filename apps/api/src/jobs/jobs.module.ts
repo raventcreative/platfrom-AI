@@ -1,5 +1,6 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { InstagramModule } from '../instagram/instagram.module';
 import { LlmModule } from '../llm/llm.module';
 import { AGENT_QUEUE } from './jobs.constants';
 import { JobsController } from './jobs.controller';
@@ -11,7 +12,11 @@ import { JobsService } from './jobs.service';
  * dan processor (consumer). JobsService diekspor agar bisa dipakai modul lain.
  */
 @Module({
-  imports: [BullModule.registerQueue({ name: AGENT_QUEUE }), LlmModule],
+  imports: [
+    BullModule.registerQueue({ name: AGENT_QUEUE }),
+    LlmModule,
+    InstagramModule,
+  ],
   controllers: [JobsController],
   providers: [JobsService, JobsProcessor],
   exports: [JobsService],

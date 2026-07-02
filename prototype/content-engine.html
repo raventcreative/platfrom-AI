@@ -3,117 +3,267 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Content Engine — Prototype</title>
+<title>Content Engine — bikin konten sosmed sat-set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800;9..144,900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #f6f7f9; --card: #fff; --line: #e4e7ec; --ink: #1f2430; --muted: #667085;
-    --brand: #2f6df6; --brand-d: #1f4fd0; --ok: #14924a; --warn: #b25f00; --soft: #eef2ff;
+    --paper: #F6F1E7;
+    --paper-2: #FDFBF6;
+    --card: #FFFFFF;
+    --ink: #1B160F;
+    --ink-2: #6B6152;
+    --ink-3: #9A8F7D;
+    --line: #E7DECD;
+    --line-2: #D9CDB6;
+    --accent: #E4572E;
+    --accent-dark: #C33F1A;
+    --accent-soft: #FBEAE2;
+    --green: #177A54;
+    --green-soft: #E3F2EA;
+    --amber: #B45309;
+    --amber-soft: #FCF0DC;
+    --red: #C03434;
+    --red-soft: #FAE7E7;
+    --track: #EFE7D6;
+    --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --sh-1: 0 1px 2px rgba(27,22,15,.05), 0 6px 20px rgba(27,22,15,.06);
+    --sh-2: 0 2px 4px rgba(27,22,15,.07), 0 14px 34px rgba(27,22,15,.10);
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
-    color: var(--ink); background: var(--bg); }
-  header { background: var(--card); border-bottom: 1px solid var(--line); padding: 12px 20px;
-    display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 5; }
-  header h1 { font-size: 16px; margin: 0; font-weight: 700; }
-  header .sub { color: var(--muted); font-size: 12px; }
-  header .spacer { flex: 1; }
-  main { max-width: 920px; margin: 0 auto; padding: 20px; }
-  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line);
-    background: var(--card); padding: 8px 12px; color: var(--ink); }
-  button:hover { background: #f0f2f5; }
-  button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
-  button.primary:hover { background: var(--brand-d); }
-  button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
-  button:disabled { opacity: .5; cursor: default; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-  .client { cursor: pointer; }
-  .client h3 { margin: 0 0 4px; font-size: 15px; }
-  .client .tag { display: inline-block; font-size: 11px; color: var(--brand-d); background: var(--soft);
-    padding: 1px 8px; border-radius: 999px; }
-  .muted { color: var(--muted); }
-  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
-  label .req { color: #d12; }
-  input, select, textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line);
-    border-radius: 8px; background: #fff; color: var(--ink); }
-  textarea { min-height: 64px; resize: vertical; }
-  .field-hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-    color: var(--muted); margin: 22px 0 2px; }
-  .tabs { display: flex; gap: 6px; margin: 8px 0 16px; }
-  .tabs button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .gens { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
-  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
-  .badge.demo { background: #fff3e0; color: var(--warn); border: 1px solid #ffd9a8; }
-  .badge.live { background: #e7f6ee; color: var(--ok); border: 1px solid #b7e3c8; }
-  .result { margin-top: 14px; }
-  .result h4 { margin: 0 0 6px; font-size: 14px; }
-  pre { background: #0e1726; color: #d7e2f5; padding: 12px; border-radius: 8px; overflow: auto;
-    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
-  .readable { white-space: pre-wrap; background: #fbfcfe; border: 1px solid var(--line); border-radius: 8px;
-    padding: 12px; }
-  dialog { border: 1px solid var(--line); border-radius: 12px; padding: 0; width: min(460px, 92vw); }
-  dialog .dlg-body { padding: 18px; }
-  dialog h3 { margin: 0 0 4px; }
-  .backdrop[open]::backdrop { background: rgba(15,23,42,.4); }
-  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink);
-    color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s;
-    pointer-events: none; z-index: 50; }
-  .toast.show { opacity: 1; }
-  .note { font-size: 13px; color: var(--muted); background: var(--soft); border: 1px solid #dbe4ff;
-    border-radius: 8px; padding: 10px 12px; }
-  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent;
-    border-radius: 50%; animation: sp .7s linear infinite; vertical-align: -2px; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 15.5px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent-soft); }
+
+  /* ── primitives ─────────────────────────────────────────── */
+  h1,h2,h3 { font-family: var(--serif); font-weight: 800; letter-spacing: -.01em; margin: 0; }
+  .display { font-family: var(--serif); font-weight: 900; }
+  .muted { color: var(--ink-2); }
+  .tiny { font-size: 12.5px; color: var(--ink-3); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .between { justify-content: space-between; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 20px; padding: 20px; box-shadow: var(--sh-1);
+  }
+  button {
+    font: 600 15px var(--sans); cursor: pointer; color: var(--ink);
+    background: var(--card); border: 1.5px solid var(--ink);
+    border-radius: 999px; padding: 10px 18px;
+    box-shadow: 0 2px 0 var(--ink);
+    transition: transform .08s ease, box-shadow .08s ease, background .15s ease;
+  }
+  button:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--ink); }
+  button:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--ink); }
+  button.primary { background: var(--accent); border-color: var(--accent-dark); color: #fff; box-shadow: 0 3px 0 var(--accent-dark); }
+  button.primary:hover { box-shadow: 0 4px 0 var(--accent-dark); }
+  button.primary:active { box-shadow: 0 1px 0 var(--accent-dark); }
+  button.big { font-size: 17px; font-weight: 800; padding: 15px 28px; border-radius: 999px; }
+  button.ghost { border-color: transparent; box-shadow: none; background: transparent; color: var(--ink-2); }
+  button.ghost:hover { background: rgba(27,22,15,.05); transform: none; }
+  button.danger { color: var(--red); border-color: var(--red); box-shadow: 0 2px 0 var(--red); }
+  button:disabled { opacity: .45; cursor: default; transform: none !important; }
+  input, textarea, select {
+    width: 100%; font: 500 15.5px var(--sans); color: var(--ink);
+    background: var(--paper-2); border: 1.5px solid var(--line-2);
+    border-radius: 14px; padding: 12px 14px; outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(228,87,46,.15); }
+  textarea { min-height: 84px; resize: vertical; line-height: 1.55; }
+  label { display: block; font-weight: 700; font-size: 14px; margin: 16px 0 6px; }
+  label:first-child { margin-top: 0; }
+  .hint { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; }
+  .req { color: var(--accent); }
+
+  /* pills (pilihan sekali klik) */
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    font: 600 14px var(--sans); padding: 9px 16px; border-radius: 999px;
+    border: 1.5px solid var(--line-2); background: var(--paper-2); cursor: pointer;
+    box-shadow: none; color: var(--ink-2);
+  }
+  .pill:hover { border-color: var(--ink); color: var(--ink); transform: none; box-shadow: none; }
+  .pill.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: 600 12.5px var(--sans); padding: 4px 12px; border-radius: 999px;
+    background: var(--paper); border: 1px solid var(--line-2); color: var(--ink-2);
+  }
+  .chip.copy { cursor: pointer; }
+  .chip.copy:hover { border-color: var(--ink); color: var(--ink); }
+  .badge { font: 700 11.5px var(--sans); padding: 3px 10px; border-radius: 999px; letter-spacing: .02em; }
+  .badge.demo { background: var(--amber-soft); color: var(--amber); }
+  .badge.live { background: var(--green-soft); color: var(--green); }
+  .badge.accent { background: var(--accent-soft); color: var(--accent-dark); }
+
+  /* layout */
+  header.top {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(246,241,231,.88); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    padding: 12px clamp(16px, 4vw, 40px);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo { font-family: var(--serif); font-weight: 900; font-size: 19px; letter-spacing: -.02em; }
+  .logo .dot { color: var(--accent); }
+  main { max-width: 980px; margin: 0 auto; padding: clamp(18px, 4vw, 36px) clamp(14px, 4vw, 24px) 90px; }
+  .spacer { flex: 1; }
+
+  /* home */
+  .hero { margin: 14px 0 26px; }
+  .hero h1 { font-size: clamp(30px, 5.4vw, 44px); line-height: 1.12; }
+  .hero p { color: var(--ink-2); margin: 10px 0 0; max-width: 560px; }
+  .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .brand-card { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+  .brand-card:hover { transform: translateY(-3px); box-shadow: var(--sh-2); }
+  .avatar {
+    width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+    font: 800 20px var(--serif); color: #fff; background: var(--ink);
+  }
+  .brand-card h3 { font-size: 18px; margin-top: 12px; }
+  .add-card {
+    display: grid; place-items: center; min-height: 150px; cursor: pointer;
+    border: 2px dashed var(--line-2); border-radius: 20px; background: transparent;
+    color: var(--ink-2); font-weight: 700; transition: all .15s ease;
+  }
+  .add-card:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* wizard */
+  .wiz { max-width: 620px; margin: 0 auto; }
+  .wiz-progress { display: flex; gap: 6px; margin: 18px 0 26px; }
+  .wiz-progress i { flex: 1; height: 6px; border-radius: 99px; background: var(--track); }
+  .wiz-progress i.on { background: var(--accent); }
+  .wiz .emoji { font-size: 40px; }
+  .wiz h2 { font-size: clamp(24px, 4.6vw, 32px); margin-top: 8px; }
+  .wiz .sub { color: var(--ink-2); margin: 6px 0 20px; }
+  .wiz-nav { display: flex; gap: 10px; margin-top: 26px; align-items: center; }
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .cat-card {
+    border: 1.5px solid var(--line-2); border-radius: 16px; padding: 16px 14px;
+    background: var(--paper-2); cursor: pointer; text-align: center;
+    font-weight: 700; font-size: 14px; transition: all .12s ease;
+  }
+  .cat-card .e { font-size: 30px; display: block; margin-bottom: 6px; }
+  .cat-card:hover { border-color: var(--ink); transform: translateY(-2px); }
+  .cat-card.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+  /* brand workspace */
+  .tabs { display: flex; gap: 8px; margin: 18px 0 22px; overflow-x: auto; padding-bottom: 2px; }
+  .tab {
+    white-space: nowrap; font: 700 15px var(--sans); padding: 11px 20px; border-radius: 999px;
+    border: 1.5px solid var(--line-2); background: var(--paper-2); cursor: pointer; color: var(--ink-2);
+    box-shadow: none;
+  }
+  .tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .type-card {
+    border: 1.5px solid var(--line); border-radius: 18px; padding: 18px 16px;
+    background: var(--card); cursor: pointer; transition: all .12s ease; box-shadow: var(--sh-1);
+  }
+  .type-card .e { font-size: 30px; }
+  .type-card h4 { margin: 8px 0 3px; font-size: 15.5px; }
+  .type-card p { margin: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.45; }
+  .type-card:hover { transform: translateY(-3px); box-shadow: var(--sh-2); border-color: var(--ink); }
+  .type-card.on { border-color: var(--accent); background: var(--accent-soft); }
+
+  /* results */
+  .result-card { margin-top: 18px; overflow: hidden; }
+  .result-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .result-head h3 { font-size: 19px; }
+  .copybox {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 16px; white-space: pre-wrap; word-break: break-word; position: relative;
+    font-size: 15px; line-height: 1.65;
+  }
+  .hook-opt { border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px; background: var(--paper-2); }
+  .hook-opt b { font-size: 15.5px; display: block; margin: 6px 0 4px; }
+  .why { font-size: 13px; color: var(--ink-2); background: var(--card); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 10px 10px 0; margin-top: 8px; }
+  .learn {
+    background: linear-gradient(0deg, var(--accent-soft), var(--accent-soft));
+    border: 1px solid #F2C4AE; border-radius: 14px; padding: 14px 16px; margin-top: 14px; font-size: 14px;
+  }
+  .learn b { color: var(--accent-dark); }
+  .tscroll { overflow-x: auto; margin-top: 10px; border: 1px solid var(--line); border-radius: 14px; }
+  table.t { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+  table.t th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--paper-2); }
+  table.t td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.t tr:last-child td { border-bottom: none; }
+  .slides { display: flex; gap: 12px; overflow-x: auto; padding: 6px 2px 10px; }
+  .slide {
+    min-width: 210px; max-width: 210px; border: 1.5px solid var(--line); border-radius: 16px;
+    background: var(--paper-2); padding: 14px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .slide .no { font: 800 12px var(--sans); color: var(--accent-dark); }
+  .slide b { font-size: 14.5px; line-height: 1.35; }
+  .slide .vis { font-size: 12px; color: var(--ink-3); font-style: italic; margin-top: auto; padding-top: 8px; }
+
+  /* meters (review) — satu hue + angka, bukan warna doang */
+  .meter-row { display: grid; grid-template-columns: 150px 1fr 84px; gap: 12px; align-items: center; margin: 9px 0; }
+  .meter-label { font-weight: 700; font-size: 13.5px; }
+  .meter { height: 12px; border-radius: 99px; background: var(--track); overflow: hidden; }
+  .meter i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+  .score-num { font: 800 14px var(--sans); text-align: right; white-space: nowrap; }
+  .hero-score { display: flex; align-items: baseline; gap: 8px; }
+  .hero-score .n { font: 900 52px/1 var(--serif); }
+  .hero-score .d { color: var(--ink-3); font-weight: 700; }
+  ul.clean { margin: 8px 0 0; padding-left: 4px; list-style: none; }
+  ul.clean li { padding: 7px 0 7px 30px; position: relative; border-bottom: 1px dashed var(--line); font-size: 14.5px; }
+  ul.clean li:last-child { border-bottom: none; }
+  ul.clean li::before { position: absolute; left: 2px; }
+  ul.good li::before { content: '✅'; }
+  ul.bad li::before { content: '⚠️'; }
+  ul.idea li::before { content: '💡'; }
+  ul.num { counter-reset: n; }
+  ul.num li::before { counter-increment: n; content: counter(n); font: 800 12px var(--sans); background: var(--ink); color: var(--paper); width: 20px; height: 20px; border-radius: 99px; display: grid; place-items: center; top: 9px; }
+
+  /* streaming / status */
+  .thinking { display: flex; gap: 10px; align-items: flex-start; }
+  .orb { width: 34px; height: 34px; border-radius: 12px; background: var(--accent); flex: none; display: grid; place-items: center; color: #fff; font-size: 17px; animation: pulse 1.4s ease infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  .stream { white-space: pre-wrap; font-size: 14px; color: var(--ink-2); max-height: 200px; overflow: hidden; display: flex; flex-direction: column-reverse; }
+  .spin { display: inline-block; width: 15px; height: 15px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite; vertical-align: -3px; }
+  .spin.dark { border-color: rgba(27,22,15,.2); border-top-color: var(--ink); }
   @keyframes sp { to { transform: rotate(360deg); } }
+
+  dialog { border: 1px solid var(--line); border-radius: 22px; padding: 0; width: min(480px, 92vw); box-shadow: var(--sh-2); }
+  dialog::backdrop { background: rgba(27,22,15,.45); }
+  dialog .body { padding: 24px; }
+  .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(10px);
+    background: var(--ink); color: var(--paper); padding: 11px 20px; border-radius: 999px;
+    font-weight: 700; font-size: 14px; opacity: 0; transition: all .22s ease; pointer-events: none; z-index: 99;
+    box-shadow: var(--sh-2);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .divider { height: 1px; background: var(--line); margin: 18px 0; }
+  details.adv { margin-top: 14px; }
+  details.adv summary { cursor: pointer; font-weight: 700; font-size: 14px; color: var(--ink-2); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .meter-row { grid-template-columns: 110px 1fr 70px; }
+    .tagline { display: none; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Content Engine</h1>
-  <span class="sub">prototype · AI = drafter, manusia = approver</span>
+
+<header class="top">
+  <span class="logo" id="logoHome" style="cursor:pointer;">Content<span class="dot">•</span>Engine</span>
+  <span class="tiny tagline" style="margin-top:2px;">bikin konten sosmed sat-set ✨</span>
   <span class="spacer"></span>
-  <span id="keyState" class="badge demo">mode demo</span>
-  <button id="btnSettings">⚙️ API key</button>
+  <span id="modeBadge" class="badge demo">mode demo</span>
+  <button class="ghost" id="btnSettings" title="Pengaturan">⚙️</button>
 </header>
 
-<main>
-  <!-- DASHBOARD -->
-  <section id="viewDashboard">
-    <div class="row" style="justify-content: space-between; margin-bottom: 14px;">
-      <h2 style="margin:0; font-size:18px;">Brand klien</h2>
-      <div class="row">
-        <button id="btnSeed">Muat contoh</button>
-        <button class="primary" id="btnAddBrand">+ Tambah brand</button>
-      </div>
-    </div>
-    <div id="clientList" class="grid"></div>
-    <p id="emptyHint" class="muted" style="margin-top:16px;">Belum ada brand. Klik <b>Muat contoh</b> untuk mulai cepat, atau <b>Tambah brand</b>.</p>
-  </section>
-
-  <!-- CLIENT -->
-  <section id="viewClient" hidden>
-    <div class="row" style="justify-content: space-between; margin-bottom: 6px;">
-      <button class="ghost" id="btnBack">← Semua brand</button>
-      <button class="ghost" id="btnDelete" style="color:#d12;">Hapus brand</button>
-    </div>
-    <h2 id="clientName" style="margin:4px 0 2px; font-size:20px;"></h2>
-    <div class="tabs">
-      <button data-tab="generate" class="active">Generate</button>
-      <button data-tab="profile">Profil brand</button>
-    </div>
-
-    <!-- TAB GENERATE -->
-    <div id="tabGenerate">
-      <div class="card">
-        <div class="section-title" style="margin-top:0;">Daily input — fokus hari ini</div>
-        <div id="dailyForm"></div>
-        <div class="section-title">Generate</div>
-        <div class="gens" id="genButtons"></div>
-        <div id="genStatus" class="muted"></div>
-      </div>
-      <div id="results"></div>
-    </div>
+<main id="app"></main>
 
     <!-- TAB PROFILE -->
     <div id="tabProfile" hidden>
@@ -139,8 +289,14 @@
       <option value="openai">OpenAI (ChatGPT)</option>
     </select>
     <label id="lblKey">Anthropic API key</label>
+<dialog id="dlgSettings">
+  <div class="body">
+    <h2 style="font-size:22px;">Pengaturan</h2>
+    <p class="muted" style="margin:6px 0 4px; font-size:14px;">Semua kunci disimpan di browser ini saja. Kosong = <b>mode demo</b> (hasil contoh, gratis, buat latihan).</p>
+    <label>🔑 Kunci AI (Anthropic API key)</label>
     <input id="inpKey" type="password" placeholder="sk-ant-..." autocomplete="off" />
-    <label>Model</label>
+    <div class="hint">Bikin di console.anthropic.com → API Keys. Ini yang bikin hasilnya beneran.</div>
+    <label>⚡ Kecepatan vs kualitas</label>
     <select id="inpModel">
       <optgroup id="optAnthropic" label="Claude">
         <option value="claude-sonnet-4-6">claude-sonnet-4-6 (hemat & cepat)</option>
@@ -150,8 +306,14 @@
         <option value="gpt-4o">gpt-4o (seimbang)</option>
         <option value="gpt-4o-mini">gpt-4o-mini (hemat & cepat)</option>
       </optgroup>
+      <option value="claude-sonnet-4-6">Seimbang — cepat & bagus (disarankan)</option>
+      <option value="claude-haiku-4-5-20251001">Paling cepat — buat draft kilat</option>
+      <option value="claude-opus-4-8">Paling bagus — buat konten penting</option>
     </select>
-    <div class="row" style="justify-content:flex-end; margin-top:18px;">
+    <label>📸 Kunci Instagram (Apify token — opsional)</label>
+    <input id="inpApify" type="password" placeholder="apify_api_..." autocomplete="off" />
+    <div class="hint">Buat ambil data IG otomatis (review & bandingkan kompetitor). Daftar gratis di apify.com. Tanpa ini, kamu bisa tempel caption manual.</div>
+    <div class="row" style="justify-content:flex-end; margin-top:22px;">
       <button id="btnCloseSettings">Batal</button>
       <button class="primary" id="btnSaveSettings">Simpan</button>
     </div>
@@ -161,7 +323,36 @@
 <div id="toast" class="toast"></div>
 
 <script>
-/* ============================ KNOWLEDGE PLAYBOOK ============================ */
+/* ═══════════════════════ UTIL & STORAGE ═══════════════════════ */
+const $ = s => document.querySelector(s);
+const el = (tag, props = {}, kids = []) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') n.className = v;
+    else if (k === 'html') n.innerHTML = v;
+    else if (k.startsWith('on')) n[k] = v;
+    else if (k in n) { try { n[k] = v; } catch (e) { n.setAttribute(k, v); } }
+    else n.setAttribute(k, v);
+  }
+  for (const c of (Array.isArray(kids) ? kids : [kids])) if (c != null) n.append(c);
+  return n;
+};
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast('Penyimpanan browser diblokir'); } },
+};
+const uid = () => 'b' + Math.random().toString(36).slice(2, 9);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 1900); }
+function copyText(text, label) { navigator.clipboard.writeText(text).then(() => toast((label || 'Teks') + ' disalin ✓')).catch(() => toast('Gagal menyalin')); }
+const loadClients = () => store.get('ce_clients', []);
+const saveClients = l => store.set('ce_clients', l);
+const getClient = id => loadClients().find(c => c.id === id);
+function saveClient(c) { const l = loadClients(); const i = l.findIndex(x => x.id === c.id); if (i >= 0) l[i] = c; else l.push(c); saveClients(l); }
+const hasKey = () => !!store.get('ce_apikey', '');
+const hasApify = () => !!store.get('ce_apify', '');
+
+/* ═══════════════════════ KNOWLEDGE & COMPLIANCE ═══════════════════════ */
 const KNOWLEDGE_PLAYBOOK = `PLAYBOOK KONTEN (pakai buat SEMUA output):
 
 A. HOOK (3 detik pertama = penentu; ~50% orang skip kalau lemah). Pilih pola kuat: curiosity gap, bold/contrarian, "stop ngelakuin X", pertanyaan, warning/negativity, POV relatable, listicle berangka, before/after, "gue coba X N hari", relatable struggle, angka kejut, call-out niche. Teks on-screen hook 4-7 kata, mulai dari frame paling menarik.
@@ -170,175 +361,197 @@ B. STRUKTUR (retensi): Hook(0-3s) -> Build (value baru tiap 5-8 detik, ada patte
 
 C. PANJANG: Reels 7-15s / TikTok ~24-38s. Jangan dipanjangin kalau ide pendek.
 
-D. COPYWRITING (pilih sesuai kesadaran audiens): PAS (Problem-Agitate-Solve) buat hook; AIDA buat jualan; BAB (Before-After-Bridge) buat transformasi; FAB (Feature-Advantage-Benefit) buat fitur; 4U buat najemin judul. Hybrid: PAS->FAB->AIDA.
+D. COPYWRITING (pilih sesuai kesadaran audiens): PAS buat hook; AIDA buat jualan; BAB buat transformasi; FAB buat fitur; 4U buat judul. Hybrid: PAS->FAB->AIDA.
 
 E. CAROUSEL: 6-8 slide. Slide 1 cover/hook (5-8 kata + curiosity gap = 80% bobot). 1 ide/slide, teks ringkas. Slide akhir recap + 1 CTA. Optimalkan SAVE & SHARE (bobot 3x like) -> bikin save-worthy (checklist/framework). Kasih cue swipe.
 
-F. CAPTION: hook di 125 karakter pertama; body 150-200 kata, baris pendek; 1 CTA spesifik (= ~3x lebih banyak komen).
+F. CAPTION: hook di 125 karakter pertama; body 150-200 kata, baris pendek; 1 CTA spesifik.
 
-G. HASHTAG: 3-5 saja (IG batasi 5). Campur niche + topik + branded + lokal. Mid-tier (10K-500K) > mega-tag.
+G. HASHTAG: 3-5 saja. Campur niche + topik + branded + lokal. Mid-tier (10K-500K) > mega-tag.
 
-H. CTA per tujuan: Jualan -> "komen [KEYWORD] nanti di-DM" / "checkout link bio"; Engagement -> pertanyaan / "tim mana?"; Save -> "save dulu biar gak lupa"; Share -> "tag temen yang butuh".
+H. CTA per tujuan: Jualan -> "komen [KEYWORD] nanti di-DM" / "checkout link bio"; Engagement -> pertanyaan; Save -> "save dulu"; Share -> "tag temen yang butuh".
 
-I. CONTENT PILLARS (80% value / 20% jualan): Edukasi, Hiburan, Promosi, Social proof/testimoni, Behind-the-scenes, Komunitas. Jangan tiap konten jualan.
+I. CONTENT PILLARS (80% value / 20% jualan): Edukasi, Hiburan, Promosi, Social proof, Behind-the-scenes, Komunitas.
 
-J. BAHASA INDONESIA: default casual & relatable (sesuai voice brand). Slang lazim bila cocok: kak/bestie/gais, racun, spill, POV, wajib cobain, gaskeun/kuy/yuk, checkout/co, glow up, cuan. Konten lokal & relatable > formal/Inggris. Autentik > over-produksi. Jam puncak belanja 19-22 WIB.`;
+J. BAHASA INDONESIA: default casual & relatable (ikuti voice brand). Slang bila cocok: kak/bestie/gais, racun, spill, POV, gaskeun, checkout, glow up, cuan. Lokal & relatable > formal. Autentik > over-produksi. Jam puncak 19-22 WIB.`;
 
-/* ============================== COMPLIANCE ================================= */
 const COMPLY = {
-  skincare: `COMPLIANCE SKINCARE (WAJIB - aturan BPOM): Kosmetik hanya klaim PENAMPILAN, BUKAN menyembuhkan penyakit. DILARANG: "menyembuhkan/obat", "memutihkan", "menghilangkan permanen", superlatif (paling/ter-/nomor 1/100%/terbaik), persona dokter/jas lab. GANTI dgn kata aman: "membantu merawat/menyamarkan tampilan/mencerahkan", "kulit TAMPAK/TERASA lebih...". Hanya produk ber-BPOM. Jangan glorifikasi merkuri/hidrokuinon/tretinoin/steroid. Kata aman: membantu, menjaga, merawat, menyamarkan tampilan, tampak/terlihat lebih..., terasa.`,
+  skincare: `COMPLIANCE SKINCARE (WAJIB - aturan BPOM): Kosmetik hanya klaim PENAMPILAN, BUKAN menyembuhkan penyakit. DILARANG: "menyembuhkan/obat", "memutihkan", "menghilangkan permanen", superlatif (paling/ter-/nomor 1/100%/terbaik), persona dokter/jas lab. GANTI dgn: "membantu merawat/menyamarkan tampilan/mencerahkan", "kulit TAMPAK/TERASA lebih...". Hanya produk ber-BPOM.`,
   fnb: `COMPLIANCE F&B (WAJIB): selalu sebut channel order (GoFood/GrabFood/ShopeeFood/dine-in) + lokasi/jam + harga transparan + status halal kalau ada. Hindari klaim sehat/medis tanpa dasar.`,
-  umum: `COMPLIANCE UMUM: hindari overclaim, scarcity palsu, testimoni palsu. Sebut harga/varian/cara beli jelas. SEMUA: hindari SARA, body shaming/colorism, menjelekkan kompetitor. Inklusif & jujur. Jangan ngarang fakta/angka di luar profil (tandai [PERLU DIISI: ...]).`,
+  umum: `COMPLIANCE UMUM: hindari overclaim, scarcity palsu, testimoni palsu. Sebut harga/cara beli jelas. Hindari SARA, body shaming, menjelekkan kompetitor secara kasar. Jangan ngarang fakta/angka di luar profil (tandai [PERLU DIISI: ...]).`,
 };
-function complianceFocus(category) {
-  if (category === 'skincare') return COMPLY.skincare + '\n\n' + COMPLY.umum;
-  if (category === 'fnb') return COMPLY.fnb + '\n\n' + COMPLY.umum;
-  return COMPLY.umum;
+const complianceFocus = cat => (cat === 'skincare' ? COMPLY.skincare + '\n\n' : cat === 'fnb' ? COMPLY.fnb + '\n\n' : '') + COMPLY.umum;
+
+/* ═══════════════════════ GENERATORS v2 ═══════════════════════ */
+const TYPES = {
+  script:     { e: '🎬', label: 'Script Video',      desc: 'Naskah Reels/TikTok: 3 hook + scene + CTA' },
+  carousel:   { e: '🎠', label: 'Carousel IG',       desc: 'Slide per slide, save-worthy, siap desain' },
+  caption:    { e: '✍️', label: 'Caption + Hashtag', desc: 'Caption siap posting + hashtag pas' },
+  storyboard: { e: '🎥', label: 'Storyboard',        desc: 'Shot list realistis, tinggal shoot pakai HP' },
+  ideas:      { e: '🗓️', label: 'Ide Seminggu',      desc: '7 ide siap eksekusi, campuran pillar' },
+  paket:      { e: '⚡', label: 'Paket Lengkap',     desc: 'Script + carousel + caption sekaligus' },
+};
+const GEN = {
+  script: `Buatkan SCRIPT video pendek (Reels/TikTok) berdasarkan DAILY INPUT. Terapkan PLAYBOOK penuh (hook kuat, Hook->Build->Payoff->CTA, panjang pas platform).
+{{DAILY_INPUT}}
+Ketentuan: 3 OPSI HOOK dengan pola berbeda dari playbook — untuk tiap hook sebutkan nama polanya + 1 kalimat KENAPA hook itu bakal works untuk audiens brand ini; scene berurutan dengan visual konkret + voiceover bahasa lisan natural + teks on-screen (4-7 kata) + durasi detik; 1 CTA sesuai tujuan; saran sound. Tutup dengan learning_note: 2-3 kalimat pelajaran singkat kenapa script disusun begini (biar user makin jago).
+Keluarkan: (1) ringkasan singkat enak dibaca; (2) blok JSON valid di pagar \`\`\`json:
+{"type":"script","platform":"","duration_sec":0,"hooks":[{"text":"","pattern":"","why":""}],"scenes":[{"scene":1,"visual":"","voiceover":"","onscreen_text":"","duration_sec":0}],"cta":"","sound_suggestion":"","caption_hint":"","learning_note":"","compliance_notes":""}`,
+  carousel: `Buatkan KONSEP CAROUSEL Instagram berdasarkan DAILY INPUT. Terapkan PLAYBOOK carousel (slide 1 = 80% bobot, 1 ide/slide, save-worthy, slide akhir 1 CTA, kasih cue swipe).
+{{DAILY_INPUT}}
+Ketentuan: 6-8 slide; slide 1 kasih 2 alternatif headline hook; tiap slide headline (max 8 kata) + subteks ringkas + arah visual konkret; caption (hook di 125 karakter pertama) + 3-5 hashtag campur niche/topik/branded/lokal. Tutup dengan learning_note singkat kenapa struktur ini save-worthy.
+Keluarkan: (1) ringkasan singkat; (2) blok JSON valid di pagar \`\`\`json:
+{"type":"carousel","platform":"Instagram","title":"","cover_alternatives":["",""],"slides":[{"slide":1,"role":"hook","headline":"","subtext":"","visual":""}],"caption":"","hashtags":[],"learning_note":"","compliance_notes":""}`,
+  storyboard: `Buatkan STORYBOARD/shot list produksi video berdasarkan DAILY INPUT. Harus realistis dishoot pakai HP oleh 1-2 orang.
+{{DAILY_INPUT}}
+Ketentuan: konsep 1 kalimat + durasi (default 20-40s); SHOT berurutan: visual, angle/gerakan kamera, talent/props, voiceover, teks on-screen, sfx/musik, durasi; daftar B-ROLL; catatan produksi praktis (lighting, lokasi, waktu).
+Keluarkan: (1) ringkasan singkat; (2) blok JSON valid di pagar \`\`\`json:
+{"type":"storyboard","concept":"","duration_sec":0,"shots":[{"shot":1,"visual":"","camera":"","talent_props":"","voiceover":"","onscreen_text":"","sfx_music":"","duration_sec":0}],"broll":[],"production_notes":"","cta":"","learning_note":"","compliance_notes":""}`,
+  caption: `Buatkan CAPTION siap posting + hashtag + variasi hook berdasarkan DAILY INPUT. Terapkan PLAYBOOK caption (hook 125 karakter pertama, baris pendek, 1 CTA spesifik).
+{{DAILY_INPUT}}
+Ketentuan: 1 caption utama 150-200 kata, 1 caption pendek (<50 kata), 5 variasi hook 1 baris (pola beda-beda), 3-5 hashtag (niche+topik+branded+lokal).
+Keluarkan: (1) ringkasan singkat; (2) blok JSON valid di pagar \`\`\`json:
+{"type":"caption","caption_long":"","caption_short":"","hooks":["","","","",""],"hashtags":[],"learning_note":"","compliance_notes":""}`,
+  ideas: `Buatkan 7 IDE KONTEN siap-eksekusi untuk ~1 minggu berdasarkan DAILY INPUT (kalau kosong, dari profil brand). Sebar ke content pillars (80% value / 20% jualan), variasikan format.
+{{DAILY_INPUT}}
+Tiap ide: hari saran, pillar, format (Reels/Carousel/Story), hook 1 baris (pola kuat), konsep singkat & konkret, CTA.
+Keluarkan: (1) ringkasan singkat; (2) blok JSON valid di pagar \`\`\`json:
+{"type":"ideas","ideas":[{"no":1,"day":"","pillar":"","format":"","hook":"","concept":"","cta":""}],"learning_note":""}`,
+};
+
+/* ═══════════════════════ RISET: REVIEW & COMPARE ═══════════════════════ */
+const REVIEW_SYSTEM = 'Kamu adalah auditor media sosial senior di Indonesia. Tugasmu: me-review performa konten Instagram sebuah brand dengan jujur, spesifik, dan actionable — berdasarkan best practice hook/retensi/caption/CTA/pillar. Bahasa Indonesia, to the point, tidak menyanjung kosong. Jangan mengarang data di luar yang diberikan.';
+function buildReviewPrompt(brandInfo, data) {
+  return `${brandInfo ? 'PROFIL BRAND:\n' + brandInfo + '\n\n' : ''}${KNOWLEDGE_PLAYBOOK}
+
+DATA KONTEN YANG DI-REVIEW:
+${data}
+
+TUGAS: review konten di atas. Nilai per aspek skor 1-10 (jujur): Hook 3 detik, Caption & CTA, Konsistensi gaya/voice, Variasi pillar, Potensi save & share. Lalu: 3-5 kekuatan, 3-5 kelemahan spesifik (kutip contohnya), 5 rekomendasi konkret, 3 quick wins yang bisa dikerjain minggu ini.
+Keluarkan: (1) ringkasan review enak dibaca; (2) blok JSON valid di pagar \`\`\`json:
+{"type":"review","overall":0,"scores":[{"aspect":"","score":0,"note":""}],"strengths":[""],"weaknesses":[""],"recommendations":[""],"quick_wins":[""]}`;
+}
+const COMPARE_SYSTEM = 'Kamu adalah strategist konten senior di Indonesia yang jago analisis kompetitor. Tugasmu: membandingkan brand klien dengan kompetitornya secara jujur & taktis, lalu menemukan celah yang bisa dimenangkan. Adaptasi pola yang works — bukan plagiat. Bahasa Indonesia. Jangan mengarang data.';
+function buildComparePrompt(brandInfo, myData, compData) {
+  return `PROFIL BRAND KITA:\n${brandInfo}\n\n${myData ? 'KONTEN BRAND KITA:\n' + myData + '\n\n' : ''}KONTEN KOMPETITOR:\n${compData}
+
+TUGAS: bandingkan. Untuk tiap kompetitor: positioning 1 kalimat, pola hook yang sering mereka pakai, apa yang bisa kita tiru-adaptasi (bukan copy), kelemahan mereka. Lalu: celah/gap yang belum digarap siapa pun (peluang kita menang), hook bank 5-8 hook siap pakai yang SUDAH diadaptasi ke voice brand kita, dan 5 ide konten untuk menang di celah itu.
+Keluarkan: (1) ringkasan enak dibaca; (2) blok JSON valid di pagar \`\`\`json:
+{"type":"compare","competitors":[{"handle":"","positioning":"","hook_patterns":[""],"tiru_adaptasi":[""],"kelemahan":[""]}],"gaps":[""],"hook_bank":[""],"action_ideas":[""]}`;
 }
 
-/* ============================== GENERATORS ================================= */
-const GENERATORS = {
-  script: { label: 'Script Reels/TikTok', instruction:
-`Buatkan SCRIPT video pendek (Reels/TikTok) berdasarkan DAILY INPUT. Terapkan PLAYBOOK (hook kuat, struktur Hook->Build->Payoff->CTA, panjang pas).
-{{DAILY_INPUT}}
-Ketentuan: durasi 15-45 detik; 2 OPSI HOOK (pola playbook); tiap scene kasih visual + durasi + teks on-screen; 1 CTA sesuai tujuan; bahasa lisan natural.
-Keluarkan: (1) versi enak dibaca (2 hook, tabel Scene|Visual|Voiceover|Teks on-screen|Durasi, CTA, sound, durasi); (2) blok JSON valid di dalam pagar kode \`\`\`json:
-{"type":"script","platform":"...","duration_sec":0,"hooks":["",""],"scenes":[{"scene":1,"visual":"","voiceover":"","onscreen_text":"","duration_sec":0}],"cta":"","sound_suggestion":"","caption_hint":"","compliance_notes":""}` },
-  carousel: { label: 'Carousel IG', instruction:
-`Buatkan KONSEP CAROUSEL Instagram berdasarkan DAILY INPUT. Terapkan PLAYBOOK carousel (slide 1 cover/hook kuat, 1 ide/slide, save-worthy, slide akhir 1 CTA).
-{{DAILY_INPUT}}
-Ketentuan: 6-8 slide; tiap slide headline + subteks + saran visual; caption (hook 125 karakter pertama) + 3-5 hashtag.
-Keluarkan: (1) versi enak dibaca (Judul, Slide 1..n, Caption, Hashtag); (2) blok JSON valid di dalam pagar kode \`\`\`json:
-{"type":"carousel","platform":"Instagram","title":"","slides":[{"slide":1,"role":"hook","headline":"","subtext":"","visual":""}],"caption":"","hashtags":[],"compliance_notes":""}` },
-  storyboard: { label: 'Storyboard', instruction:
-`Buatkan STORYBOARD/shot list produksi video berdasarkan DAILY INPUT. Realistis dishoot pakai HP.
-{{DAILY_INPUT}}
-Ketentuan: konsep & durasi (default 20-40s); SHOT urut (visual, angle/gerakan kamera, talent/props, voiceover, teks on-screen, sfx/musik, durasi); daftar B-ROLL & aset + catatan produksi.
-Keluarkan: (1) versi enak dibaca; (2) blok JSON valid di dalam pagar kode \`\`\`json:
-{"type":"storyboard","concept":"","duration_sec":0,"shots":[{"shot":1,"visual":"","camera":"","talent_props":"","voiceover":"","onscreen_text":"","sfx_music":"","duration_sec":0}],"broll":[],"production_notes":"","cta":"","compliance_notes":""}` },
-  caption: { label: 'Caption + Hashtag', instruction:
-`Buatkan CAPTION siap posting + hashtag + variasi hook berdasarkan DAILY INPUT. Terapkan PLAYBOOK caption.
-{{DAILY_INPUT}}
-Ketentuan: 1 caption utama (hook di 125 karakter pertama, ada CTA brand), 1 caption pendek, 5 variasi hook (1 baris each), 3-5 hashtag (niche+topik+branded+lokal).
-Keluarkan: (1) versi enak dibaca; (2) blok JSON valid di dalam pagar kode \`\`\`json:
-{"type":"caption","caption_long":"","caption_short":"","hooks":["","","","",""],"hashtags":[],"compliance_notes":""}` },
-  ideas: { label: 'Ide mingguan', instruction:
-`Buatkan 7 IDE KONTEN siap-eksekusi (~1 minggu) berdasarkan DAILY INPUT (kalau kosong, dari profil brand). Sebar ke content pillars (80% value / 20% jualan).
-{{DAILY_INPUT}}
-Tiap ide: pillar, format (Reels/Carousel/Story), hook (1 baris pola kuat), konsep singkat, CTA.
-Keluarkan: (1) tabel (No|Pillar|Format|Hook|Konsep|CTA); (2) blok JSON valid di dalam pagar kode \`\`\`json:
-{"type":"ideas","ideas":[{"no":1,"pillar":"","format":"","hook":"","concept":"","cta":""}]}` },
+/* ═══════════════════════ BRAND VOICE (training) ═══════════════════════ */
+const VOICE_SYSTEM = 'Kamu adalah Brand Strategist senior di agency konten Indonesia. Tugasmu: menganalisis konten Instagram sebuah brand dan mengekstrak BRAND VOICE PROFILE presisi, supaya AI copywriter bisa meniru gaya brand itu konsisten. Bahasa Indonesia. Jangan mengarang di luar data.';
+function buildVoicePrompt(brandInfo, data) {
+  return `${brandInfo ? 'INFO BRAND:\n' + brandInfo + '\n\n' : ''}DATA KONTEN:\n${data}
+
+TUGAS: analisis nada & kepribadian, sapaan, frasa khas, kata dihindari, emoji, pola hook, pillar, gaya caption.
+Keluarkan: (1) ringkasan singkat; (2) blok JSON valid di pagar \`\`\`json:
+{"tone_attributes":["",""],"style_summary":"","sapaan":"","signature_phrases":[""],"preferred_words":[""],"avoid_words":[""],"emoji_usage":"banyak|secukupnya|none","hook_patterns":[""],"content_pillars":[""],"sample_captions":["",""],"do":[""],"dont":[""]}
+Catatan: sample_captions = 2-3 caption ASLI dari data (salin persis).`;
+}
+
+/* ═══════════════════════ PROMPT ASSEMBLY ═══════════════════════ */
+const PROFILE_LABELS = {
+  name: 'Nama brand', category: 'Kategori', area: 'Area/pasar', social: 'Akun IG', products: 'Produk/jasa unggulan',
+  problem: 'Masalah yang diselesaikan',
+  price: 'Range harga', usp: 'Pembeda utama (USP)', proof: 'Bukti/keunggulan', buyer: 'Pembeli utama',
+  painpoint: 'Masalah/pain point pembeli', desire: 'Keinginan pembeli', tone: 'Nada brand', sapaan: 'Sapaan ke audiens',
+  signature: 'Frasa khas (wajib dipakai)', forbidden: 'Kata TERLARANG', emoji: 'Emoji', goal: 'Tujuan utama konten',
+  cta: 'CTA utama', promo: 'Promo aktif', forbiddenClaims: 'Klaim yang DILARANG', certifications: 'Sertifikasi',
+  sensitive: 'Hal sensitif dihindari', sampleCaptions: 'Contoh caption yang disukai', inspirasi: 'Akun inspirasi',
+  sk_ingredients: 'Kandungan unggulan', sk_bpom: 'Status BPOM', fb_menu: 'Menu andalan', fb_channels: 'Channel order',
+  fb_location: 'Lokasi & jam', fb_halal: 'Status halal',
 };
-
-/* ============================== INTAKE SCHEMA ============================== */
-// type: text | textarea | select ; vertical: optional (skincare|fnb) shows conditionally
-const SCHEMA = [
-  { title: 'Identitas brand', fields: [
-    { id: 'name', label: 'Nama brand', type: 'text', req: true },
-    { id: 'category', label: 'Kategori', type: 'select', req: true,
-      options: ['skincare','fnb','fashion','service','other'],
-      labels: ['Skincare/Beauty','F&B/Resto','Fashion/Retail','Jasa/Service','Lainnya'] },
-    { id: 'area', label: 'Area / pasar', type: 'text' },
-    { id: 'social', label: 'Akun sosial (IG/TikTok)', type: 'text' },
-  ]},
-  { title: 'Produk / jasa', fields: [
-    { id: 'products', label: 'Produk/jasa unggulan', type: 'textarea' },
-    { id: 'price', label: 'Range harga', type: 'text' },
-    { id: 'problem', label: 'Masalah pelanggan yang diselesaikan', type: 'textarea' },
-    { id: 'usp', label: 'USP / pembeda utama', type: 'textarea' },
-    { id: 'proof', label: 'Bukti/keunggulan konkret', type: 'text' },
-  ]},
-  { title: 'Target audience', fields: [
-    { id: 'buyer', label: 'Pembeli utama (umur, gender, status)', type: 'text' },
-    { id: 'painpoint', label: 'Pain point / kekhawatiran', type: 'textarea' },
-    { id: 'desire', label: 'Keinginan / aspirasi', type: 'text' },
-  ]},
-  { title: 'Brand voice & tone', fields: [
-    { id: 'tone', label: 'Nada brand', type: 'select',
-      options: ['Edukatif','Santai/Friendly','Lucu/Relatable','Premium/Elegan','Tegas/Bold','Hangat/Caring'] },
-    { id: 'sapaan', label: 'Sapaan ke audiens', type: 'text', hint: 'kamu / kak / bestie / gais / Anda' },
-    { id: 'signature', label: 'Frasa signature (wajib dipakai)', type: 'text' },
-    { id: 'forbidden', label: 'Frasa / kata TERLARANG', type: 'text' },
-    { id: 'emoji', label: 'Penggunaan emoji', type: 'select', options: ['banyak','secukupnya','none'] },
-  ]},
-  { title: 'Tujuan & CTA', fields: [
-    { id: 'goal', label: 'Tujuan utama konten', type: 'select', options: ['Awareness','Engagement','Jualan/Konversi','Edukasi'] },
-    { id: 'cta', label: 'CTA / aksi yang diinginkan', type: 'text' },
-    { id: 'promo', label: 'Promo yang sedang jalan', type: 'text' },
-  ]},
-  { title: 'Compliance', fields: [
-    { id: 'forbiddenClaims', label: 'Klaim yang TIDAK BOLEH dipakai', type: 'textarea' },
-    { id: 'certifications', label: 'Sertifikasi yang boleh disebut', type: 'text', hint: 'BPOM, Halal MUI' },
-  ]},
-  { title: 'Modul skincare', vertical: 'skincare', fields: [
-    { id: 'sk_ingredients', label: 'Kandungan unggulan & manfaat', type: 'textarea' },
-    { id: 'sk_bpom', label: 'Status izin / no. BPOM', type: 'text' },
-  ]},
-  { title: 'Modul F&B', vertical: 'fnb', fields: [
-    { id: 'fb_menu', label: 'Menu andalan + harga', type: 'textarea' },
-    { id: 'fb_channels', label: 'Channel order', type: 'text', hint: 'GoFood/GrabFood/ShopeeFood/WA/dine-in' },
-    { id: 'fb_location', label: 'Lokasi/cabang + jam', type: 'text' },
-    { id: 'fb_halal', label: 'Status halal / alergen', type: 'text' },
-  ]},
+const CATS = [
+  { id: 'skincare', e: '🧴', label: 'Skincare & Beauty' },
+  { id: 'fnb', e: '🍜', label: 'Makanan & Minuman' },
+  { id: 'fashion', e: '👗', label: 'Fashion & Retail' },
+  { id: 'service', e: '🛠️', label: 'Jasa & Service' },
+  { id: 'other', e: '📦', label: 'Lainnya' },
 ];
-const FIELD_LABEL = {};
-SCHEMA.forEach(s => s.fields.forEach(f => { FIELD_LABEL[f.id] = f.label; }));
-
-const DAILY_FIELDS = [
-  { id: 'focus', label: 'Fokus hari ini', type: 'text', hint: 'produk / promo / edukasi / momen / brand story' },
-  { id: 'detail', label: 'Detail fokus', type: 'textarea', hint: 'mis. "promo bundling 2 serum 99k sampai Minggu"' },
-  { id: 'dgoal', label: 'Tujuan hari ini', type: 'select', options: ['', 'Awareness','Engagement','Jualan','Edukasi'] },
-  { id: 'moment', label: 'Momen/event relevan', type: 'text', hint: 'gajian, Ramadan, weekend, tanggal cantik' },
-  { id: 'angle', label: 'Angle/hook yang mau dicoba', type: 'text', hint: 'POV, mitos vs fakta, "jangan beli kalau..."' },
-  { id: 'platform', label: 'Platform tujuan', type: 'select', options: ['IG Reels','TikTok','IG Feed'] },
-  { id: 'notes', label: 'Catatan khusus', type: 'text' },
-];
-
-/* ============================ PROMPT BUILDERS ============================= */
 function buildBrandProfile(c) {
   const lines = [];
-  SCHEMA.forEach(s => s.fields.forEach(f => {
-    const v = c[f.id];
-    if (v && String(v).trim()) lines.push(FIELD_LABEL[f.id] + ': ' + v);
-  }));
+  for (const [k, label] of Object.entries(PROFILE_LABELS)) {
+    const v = c[k];
+    if (v && String(v).trim()) lines.push(label + ': ' + (k === 'category' ? (CATS.find(x => x.id === v)?.label || v) : v));
+  }
+  if (Array.isArray(c.competitors) && c.competitors.filter(Boolean).length)
+    lines.push('Kompetitor utama: ' + c.competitors.filter(Boolean).join(', '));
+  const va = c.voiceAnalysis;
+  if (va && typeof va === 'object') {
+    const add = (l, v) => { const t = Array.isArray(v) ? v.filter(Boolean).join(' · ') : (v == null ? '' : String(v).trim()); if (t) lines.push(l + ': ' + t); };
+    add('Ringkasan voice (hasil analisis IG)', va.style_summary);
+    add('Pola hook khas brand', va.hook_patterns);
+    add('Do (analisis voice)', va.do);
+    add("Don't (analisis voice)", va.dont);
+    const caps = Array.isArray(va.sample_captions) ? va.sample_captions.filter(Boolean) : [];
+    if (caps.length) lines.push('Contoh caption asli brand (tiru gayanya):\n' + caps.map(s => '• ' + s).join('\n'));
+  }
   return lines.join('\n');
 }
 function buildSystemPrompt(c) {
-  return [
-    'Kamu adalah Content Strategist & Copywriter senior untuk sebuah agency konten di Indonesia. Tugasmu: bikin konten media sosial harian yang nempel banget sama karakter brand klien di bawah, dengan kualitas tinggi & aman secara aturan.',
-    '',
-    '================ PROFIL BRAND ================',
-    buildBrandProfile(c),
-    '=============================================',
-    '',
-    KNOWLEDGE_PLAYBOOK,
-    '',
-    'ATURAN MAIN: pakai Bahasa Indonesia sesuai voice & tone brand; pakai sapaan brand; wajib pakai signature phrases kalau ada; HARAM pakai kata terlarang brand; selalu bicara ke target audience (sentuh pain point); tutup dengan CTA brand kecuali daily input minta lain.',
-    '',
-    complianceFocus(c.category),
-    '',
-    'OUTPUT: ikuti format yang diminta (versi enak-dibaca + blok JSON valid).',
-    '',
-    'SEBELUM FINAL, lakukan SELF-CHECK cepat: (1) hook nampol di 3 detik? (2) ada tepat 1 CTA jelas? (3) skincare: nggak ada klaim terlarang/superlatif, hasil dibingkai "tampak/membantu"? (4) sesuai voice & kata terlarang brand? (5) nggak ngarang angka? Kalau ada yang gagal, perbaiki dulu baru keluarkan.',
-  ].join('\n');
+  return ['Kamu adalah Content Strategist & Copywriter senior untuk agency konten di Indonesia. Tugasmu: bikin konten media sosial harian yang nempel banget sama karakter brand klien di bawah, kualitas tinggi & aman secara aturan.',
+    '', '================ PROFIL BRAND ================', buildBrandProfile(c), '=============================================',
+    '', KNOWLEDGE_PLAYBOOK,
+    '', 'ATURAN MAIN: Bahasa Indonesia sesuai voice brand; pakai sapaan brand; wajib pakai frasa khas kalau ada; HARAM pakai kata terlarang brand; selalu sentuh pain point audiens; tutup dengan CTA brand kecuali diminta lain.',
+    '', complianceFocus(c.category),
+    '', 'OUTPUT: ikuti format yang diminta (ringkasan + blok JSON valid).',
+    '', 'SEBELUM FINAL, SELF-CHECK: (1) hook nampol 3 detik? (2) tepat 1 CTA? (3) klaim aman (skincare: "tampak/membantu")? (4) sesuai voice & tanpa kata terlarang? (5) nggak ngarang angka? Gagal → perbaiki dulu.'].join('\n');
 }
 function buildDailyInput(d) {
-  const map = { focus: 'Fokus', detail: 'Detail fokus', dgoal: 'Tujuan hari ini', moment: 'Momen/event',
-    angle: 'Angle/hook', platform: 'Platform', notes: 'Catatan' };
+  const map = { topic: 'Mau ngomongin', goal: 'Tujuan', platform: 'Platform', durasi: 'Durasi target', detail: 'Detail tambahan', momen: 'Momen/event', angle: 'Angle/hook diminta' };
   const lines = ['DAILY INPUT:'];
-  Object.keys(map).forEach(k => { if (d[k] && String(d[k]).trim()) lines.push('- ' + map[k] + ': ' + d[k]); });
-  if (lines.length === 1) lines.push('- (kosong — ambil dari profil brand)');
+  for (const [k, l] of Object.entries(map)) if (d[k] && String(d[k]).trim()) lines.push('- ' + l + ': ' + d[k]);
+  if (lines.length === 1) lines.push('- (kosong — ambil dari profil brand & promo aktif)');
   return lines.join('\n');
 }
-function buildUserPrompt(type, d) {
-  return GENERATORS[type].instruction.replace('{{DAILY_INPUT}}', buildDailyInput(d));
+
+/* ═══════════════════════ LLM (streaming + demo) ═══════════════════════ */
+async function callLLM(system, user, { onDelta, demoType } = {}) {
+  const key = store.get('ce_apikey', '');
+  if (!key) { await sleep(600); return { text: DEMO_TEXT(demoType), demo: true }; }
+  const body = { model: store.get('ce_model', 'claude-sonnet-4-6'), max_tokens: 3000, system, messages: [{ role: 'user', content: user }] };
+  const headers = { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
+  // coba streaming dulu (kelihatan cepat), fallback non-stream
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify({ ...body, stream: true }) });
+    if (!res.ok) throw new Error('Anthropic API ' + res.status + ': ' + (await res.text()).slice(0, 300));
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', full = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const ev = JSON.parse(payload);
+          if (ev.type === 'content_block_delta' && ev.delta && ev.delta.text) { full += ev.delta.text; if (onDelta) onDelta(full); }
+          if (ev.type === 'error') throw new Error(ev.error?.message || 'stream error');
+        } catch (e) { if (String(e.message).includes('API')) throw e; }
+      }
+    }
+    if (full.trim()) return { text: full, demo: false };
+    throw new Error('stream kosong');
+  } catch (streamErr) {
+    if (String(streamErr.message || '').match(/API (401|403|400|429|529)/)) throw streamErr;
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error('Anthropic API ' + res.status + ': ' + (await res.text()).slice(0, 300));
+    const data = await res.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    return { text, demo: false };
+  }
 }
 function splitOutput(text) {
   const m = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (!m) return { readable: text.trim(), json: null };
   let json = null; try { json = JSON.parse(m[1].trim()); } catch (e) { json = null; }
-  const before = text.slice(0, m.index).trim();
-  return { readable: before || text.trim(), json };
+  return { readable: (text.slice(0, m.index).trim()) || text.trim(), json };
 }
 
 /* ================================ LLM CALL ================================ */
@@ -443,206 +656,838 @@ Hook variasi: "Jangan beli serum sebelum baca ini" / "3 mitos skincare yang biki
 \`\`\``,
   };
   return '⚙️ MODE DEMO (API key belum diisi)\n\n' + (samples[type] || samples.script);
-}
-
-/* ============================== STORAGE ================================== */
-const store = {
-  get(k, def) { try { const v = localStorage.getItem(k); return v == null ? def : JSON.parse(v); } catch (e) { return def; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast('Penyimpanan browser diblokir'); } },
+/* ═══════════════════════ DEMO DATA (mode latihan) ═══════════════════════ */
+const DEMO = {
+  script: { type: 'script', platform: 'IG Reels', duration_sec: 30,
+    hooks: [
+      { text: 'POV: udah rajin skincare tapi muka masih kusam 😩', pattern: 'POV relatable', why: 'Nunjuk langsung masalah audiens — yang ngerasa pasti berhenti scroll.' },
+      { text: 'STOP pakai serum kalau urutannya masih gini', pattern: 'Warning / stop doing X', why: 'Larangan memicu takut-salah, bikin orang nonton sampai tahu jawabannya.' },
+      { text: '3 kesalahan yang bikin serum kamu sia-sia', pattern: 'Listicle berangka', why: 'Angka = janji isi yang jelas & gampang diikuti sampai habis.' },
+    ],
+    scenes: [
+      { scene: 1, visual: 'Close-up wajah kusam depan cermin, cahaya jendela', voiceover: 'Udah rajin skincare tapi tetap kusam? Mungkin ini salahnya.', onscreen_text: 'Kenapa masih kusam? 🤔', duration_sec: 3 },
+      { scene: 2, visual: 'Tangan menunjuk urutan produk di meja (cleanser → toner → serum)', voiceover: 'Kesalahan satu: urutannya kebalik. Serum itu setelah toner, sebelum pelembap.', onscreen_text: 'Urutan: cleanser → toner → serum', duration_sec: 8 },
+      { scene: 3, visual: 'Aplikasi serum 2-3 tetes, tap lembut ke pipi', voiceover: 'Kesalahan dua: kebanyakan. Cukup 2-3 tetes, tap pelan sampai meresap.', onscreen_text: '2-3 tetes aja kak ✨', duration_sec: 9 },
+      { scene: 4, visual: 'Selfie kulit tampak segar + senyum, teks CTA muncul', voiceover: 'Konsisten 2 minggu, kulit tampak lebih cerah. Mau tau produknya?', onscreen_text: 'Komen "GLOW" 👇', duration_sec: 6 },
+    ],
+    cta: 'Komen "GLOW" nanti di-DM detailnya 😉', sound_suggestion: 'Audio trending tempo santai (lo-fi upbeat)',
+    caption_hint: 'Buka dengan pertanyaan hook, tutup CTA komen GLOW',
+    learning_note: 'Struktur: hook 3 detik → 2 poin cepat (visual ganti tiap 5-8 detik biar retensi jaga) → payoff "tampak lebih cerah" → 1 CTA. Pola POV dipilih karena audiens 18-28 paling responsif ke format relatable.',
+    compliance_notes: 'Klaim dibingkai "tampak lebih cerah" — tanpa menyembuhkan/memutihkan.' },
+  carousel: { type: 'carousel', platform: 'Instagram', title: '5 Tanda Kulitmu Minta Tolong',
+    cover_alternatives: ['5 tanda kulitmu minta tolong 🚨', 'Kulitmu ngasih kode — ini artinya'],
+    slides: [
+      { slide: 1, role: 'hook', headline: '5 tanda kulitmu minta tolong 🚨', subtext: 'Nomor 3 paling sering diabaikan → swipe', visual: 'Teks besar di tengah, background krem polos, panah swipe' },
+      { slide: 2, role: 'isi', headline: '1. Kusam walau udah cuci muka', subtext: 'Artinya sel kulit mati numpuk — butuh eksfoliasi lembut 1-2x seminggu.', visual: 'Foto tekstur kulit + ikon panah' },
+      { slide: 3, role: 'isi', headline: '2. Kering & ketarik habis mandi', subtext: 'Skin barrier lagi lemah. Stop sabun keras, pakai pelembap 60 detik setelah cuci muka.', visual: 'Ilustrasi jam 60 detik' },
+      { slide: 4, role: 'isi', headline: '3. Makeup gampang crack', subtext: 'Kulit dehidrasi. Hidrasi dulu, makeup kemudian.', visual: 'Before/after base makeup' },
+      { slide: 5, role: 'isi', headline: '4. Kemerahan tiap coba produk baru', subtext: 'Kulit sensitif — patch test dulu 24 jam di belakang telinga.', visual: 'Ilustrasi patch test' },
+      { slide: 6, role: 'isi', headline: '5. Bekas jerawat lama pudar', subtext: 'Regenerasi lambat — bantu dengan niacinamide & sunscreen tiap hari.', visual: 'Produk + ikon matahari' },
+      { slide: 7, role: 'cta', headline: 'Save dulu, praktikkan pelan-pelan 💛', subtext: 'Mulai rutinitasmu → checkout link bio. Tag temen yang kulitnya butuh ini!', visual: 'Recap 5 poin kecil + logo brand' },
+    ],
+    caption: 'Kulitmu sebenarnya ngasih kode terus, kak — kita aja yang sering nggak sadar 🥲 Save dulu biar nggak lupa, terus cek satu-satu: kamu kena tanda yang mana? Ceritain di komen 👇',
+    hashtags: ['#skincarepemula', '#tipsskincare', '#glowup', '#skincarelokal', '#kulitsehat'],
+    learning_note: 'Slide 1 pakai curiosity gap + angka. Tiap slide 1 ide biar gampang dicerna. Slide akhir recap + CTA save/tag — carousel yang di-save dapat bobot 3x like di algoritma.',
+    compliance_notes: 'Tanpa klaim menyembuhkan; saran umum perawatan.' },
+  storyboard: { type: 'storyboard', concept: 'GRWM pagi: rutinitas 3 langkah biar kulit tampak segar seharian', duration_sec: 30,
+    shots: [
+      { shot: 1, visual: 'Meja rias rapi, tangan ambil cleanser', camera: 'Top-down statis', talent_props: '1 talent, 3 produk, handuk', voiceover: 'Pagi-pagi cuma butuh 3 langkah ini.', onscreen_text: 'GRWM kulit segar ☀️', sfx_music: 'Lo-fi ceria', duration_sec: 4 },
+      { shot: 2, visual: 'Cuci muka di wastafel, busa lembut', camera: 'Eye-level, sedikit handheld', talent_props: 'Cleanser', voiceover: 'Satu: bersihin muka, 60 detik aja.', onscreen_text: '1. Cleanser 60 detik', sfx_music: 'SFX air', duration_sec: 7 },
+      { shot: 3, visual: 'Tetes serum ke tangan lalu tap ke wajah', camera: 'Close-up macro', talent_props: 'Serum', voiceover: 'Dua: serum 2-3 tetes, tap sampai meresap.', onscreen_text: '2. Serum 2-3 tetes', sfx_music: 'Musik lanjut', duration_sec: 8 },
+      { shot: 4, visual: 'Aplikasi sunscreen + senyum ke kamera', camera: 'Eye-level', talent_props: 'Sunscreen', voiceover: 'Tiga: sunscreen — wajib walau di rumah.', onscreen_text: '3. Sunscreen ✔️', sfx_music: 'Musik naik', duration_sec: 7 },
+      { shot: 5, visual: 'Selfie hasil akhir, teks CTA', camera: 'Selfie cam', talent_props: '-', voiceover: 'Simpel kan? Save buat besok pagi!', onscreen_text: 'Save dulu 📌', sfx_music: 'Outro', duration_sec: 4 },
+    ],
+    broll: ['Tetesan serum slow-mo', 'Tekstur busa cleanser', 'Produk berjajar estetik'],
+    production_notes: 'Shoot pagi jam 7-9 dekat jendela (cahaya alami). Semua shot bisa pakai HP + tripod kecil. Total waktu shoot ±30 menit.',
+    cta: 'Save dulu buat dipraktikkan besok pagi 📌', learning_note: 'Format GRWM works karena orang suka lihat proses; tiap langkah = beat baru yang jaga retensi.', compliance_notes: '-' },
+  caption: { type: 'caption',
+    caption_long: 'Kulit kusam itu bukan takdir, kak ✨\n\nSeringnya cuma karena 2 hal: sel kulit mati numpuk + kurang hidrasi. Solusinya nggak perlu 10 step — cukup konsisten: bersihin muka pagi-malam, serum niacinamide 2-3 tetes, tutup pakai sunscreen.\n\n2 minggu konsisten, kulit tampak lebih cerah & segar. Nggak instan, tapi worth it 💛\n\nMau mulai? Checkout link bio — ada Glow Bundle hemat 30% sampai Minggu ini.',
+    caption_short: 'Rahasia kulit tampak cerah: konsisten, bukan banyak step ✨ Mulai dari link bio ya kak 💛',
+    hooks: ['Kulit kusam bukan takdir — ini buktinya', 'Jangan beli serum lagi sebelum baca ini', 'POV: akhirnya nemu rutinitas yang cocok', '2 minggu konsisten = kulit beda sendiri', 'Racun skincare yang beneran works 🤫'],
+    hashtags: ['#skincarelokal', '#glowup', '#tipskulit', '#serumniacinamide', '#skincarepemula'],
+    learning_note: 'Hook di 125 karakter pertama (kelihatan sebelum "more"). Baris pendek biar gampang dibaca. 1 CTA jelas di akhir.', compliance_notes: 'Klaim "tampak lebih cerah" — aman BPOM.' },
+  ideas: { type: 'ideas', ideas: [
+      { no: 1, day: 'Senin', pillar: 'Edukasi', format: 'Reels', hook: '3 mitos skincare yang bikin kamu boros', concept: 'Bongkar mitos umum + fakta singkat per mitos', cta: 'Save biar nggak ketipu lagi' },
+      { no: 2, day: 'Selasa', pillar: 'Social proof', format: 'Carousel', hook: 'Perjalanan 30 hari kulit customer kami', concept: 'Before-after compliant + kutipan testimoni asli', cta: 'Komen "MULAI" untuk info' },
+      { no: 3, day: 'Rabu', pillar: 'Edukasi', format: 'Reels', hook: 'Urutan skincare yang benar (banyak yang kebalik!)', concept: 'Demo urutan 4 langkah pakai produk', cta: 'Share ke temen yang masih salah' },
+      { no: 4, day: 'Kamis', pillar: 'Behind-the-scenes', format: 'Story', hook: 'Spill proses produk kami dibuat', concept: 'BTS singkat + fakta BPOM', cta: 'Poll: mau lihat lebih?' },
+      { no: 5, day: 'Jumat', pillar: 'Hiburan', format: 'Reels', hook: 'POV: kamu tim skincare 10 step vs 3 step', concept: 'Skit ringan relatable dua karakter', cta: 'Tim mana kamu? Komen 👇' },
+      { no: 6, day: 'Sabtu', pillar: 'Promosi', format: 'Carousel', hook: 'Glow Bundle: hemat 30% cuma sampai Minggu', concept: 'Isi bundle + harga coret + cara order', cta: 'Checkout link bio' },
+      { no: 7, day: 'Minggu', pillar: 'Komunitas', format: 'Story', hook: 'Tanya-jawab: masalah kulitmu apa?', concept: 'Question sticker → jawab 3 terbaik Senin', cta: 'Kirim pertanyaanmu' },
+    ], learning_note: 'Campuran 80% value / 20% jualan: 2 edukasi, 1 social proof, 1 BTS, 1 hiburan, 1 promosi, 1 komunitas.' },
+  review: { type: 'review', overall: 6.8,
+    scores: [
+      { aspect: 'Hook 3 detik', score: 6, note: 'Sering buka dengan "Halo semuanya" — value baru muncul detik 5+' },
+      { aspect: 'Caption & CTA', score: 5, note: 'CTA sering lebih dari satu / kadang tidak ada sama sekali' },
+      { aspect: 'Konsistensi voice', score: 8, note: 'Sapaan "kak" & tone hangat sudah konsisten — pertahankan' },
+      { aspect: 'Variasi pillar', score: 6, note: '70% konten promosi — kebalikan dari rasio sehat 80/20' },
+      { aspect: 'Save & share-ability', score: 7, note: 'Carousel edukasi perform bagus, tapi jarang diposting' },
+    ],
+    strengths: ['Voice brand hangat & konsisten di semua caption', 'Visual produk bersih dan terang — kualitas foto di atas rata-rata', 'Carousel edukasi (yang jarang itu) engagement-nya 3x rata-rata akun'],
+    weaknesses: ['Hook lemah: 7 dari 10 video dibuka salam, bukan masalah audiens', 'Terlalu banyak konten jualan berturut-turut (algoritma & audiens capek)', 'Hashtag selalu sama persis 10 biji — beberapa terlalu mega (#skincare 100M+)'],
+    recommendations: ['Ganti pembuka semua video: langsung masalah/pertanyaan di detik 0', 'Terapkan rasio 80/20: 4 konten value untuk tiap 1 konten jualan', 'Perbanyak carousel edukasi jadi 2x/minggu (data kamu sendiri membuktikan works)', 'Kunci 1 CTA per post — komen keyword ATAU link bio, jangan dua-duanya', 'Kecilkan hashtag: 3-5 saja, mid-tier 10K-500K'],
+    quick_wins: ['Re-edit 3 video terakhir: potong salam pembuka, mulai dari detik ke-3', 'Pin carousel edukasi terbaik ke profil', 'Tulis ulang bio: tambah CTA jelas + keyword niche'] },
+  compare: { type: 'compare',
+    competitors: [
+      { handle: '@glowrivalid', positioning: 'Skincare "clean beauty" premium dengan edukasi ingredient yang dalam',
+        hook_patterns: ['Mitos vs fakta', 'Edukasi ingredient ("Niacinamide itu apa sih?")', 'Duet/reply komentar'],
+        tiru_adaptasi: ['Seri edukasi ingredient mingguan — versi kita lebih santai & pakai analogi sehari-hari', 'Reply komentar jadi konten (bikin audiens merasa didengar)'],
+        kelemahan: ['Tone terlalu ilmiah — audiens awam sering skip', 'Jarang tampilkan wajah manusia, kurang relatable'] },
+      { handle: '@bersinarskin', positioning: 'Harga terjangkau, gaya bestie Gen Z, sangat aktif di TikTok',
+        hook_patterns: ['POV relatable', 'Racun/haul "gak nyangka semurah ini"', 'Before-after 7 hari'],
+        tiru_adaptasi: ['Format POV pendek 7-15 detik — volume tinggi, produksi ringan', 'Angle harga vs hasil (value for money)'],
+        kelemahan: ['Klaim sering over ("putih dalam 3 hari") — berisiko & merusak trust', 'Visual berantakan, tidak ada identitas brand'] },
+    ],
+    gaps: ['Belum ada yang bahas skincare untuk pekerja shift/begadang — audiens besar & relevan', 'Konten "kulit sensitif coba produk baru dengan aman" hampir kosong di niche ini', 'Tidak ada kompetitor yang konsisten balas komentar jadi konten — peluang komunitas', 'Semua main di estetika — belum ada yang berani jujur "hasil realistis butuh 4-8 minggu"'],
+    hook_bank: ['POV: begadang terus tapi kulit tetap harus tampak segar', 'Kulit sensitif? Gini cara coba produk baru tanpa drama', 'Jujur-jujuran: hasil skincare itu 4-8 minggu, bukan 3 hari', 'Mitos: harga mahal = pasti cocok. Faktanya…', 'Kenapa kulitmu "kebal" sama skincare kamu sekarang', 'Tanda kamu OVER-skincare (yes, itu ada)'],
+    action_ideas: ['Seri mingguan "Skincare Anak Begadang" — 4 episode Reels, gap terbesar tanpa pesaing', 'Konten jujur "timeline hasil realistis" — bangun trust yang kompetitor rusak dengan over-claim', 'Program balas komentar jadi konten tiap Jumat', 'Carousel patch-test guide untuk kulit sensitif (save-worthy, evergreen)', 'Kolab micro-influencer yang kerjanya shift malam (perawat/barista) — otentik ke gap #1'] },
+  voice: { tone_attributes: ['santai', 'edukatif', 'hangat'], style_summary: '(demo) Bahasa santai-akrab, edukatif ringan, kalimat pendek, sapaan personal, fokus manfaat nyata tanpa over-claim.', sapaan: 'kak', signature_phrases: ['glow bareng'], preferred_words: ['glow', 'aman', 'teruji'], avoid_words: ['ajaib', 'instan', 'permanen'], emoji_usage: 'secukupnya', hook_patterns: ['pertanyaan relatable', 'mitos vs fakta', 'POV'], content_pillars: ['Edukasi', 'Social proof', 'Promosi'], sample_captions: ['(contoh demo) Kulit kusam padahal udah rajin skincare? Coba cek urutan pakainya, kak ✨', '(contoh demo) Mitos: makin perih makin ampuh. Faktanya, kulit sehat justru butuh yang lembut.'], do: ['pakai bahasa sehari-hari', 'tutup dengan CTA jelas'], dont: ['klaim menyembuhkan', 'superlatif nomor 1'] },
 };
-function loadClients() { return store.get('ce_clients', []); }
-function saveClients(list) { store.set('ce_clients', list); }
-function uid() { return 'b' + Math.random().toString(36).slice(2, 9); }
-
-/* ============================== UI STATE ================================= */
-let currentId = null;
-const $ = sel => document.querySelector(sel);
-const el = (tag, props = {}, kids = []) => {
-  const n = document.createElement(tag);
-  Object.entries(props).forEach(([k, v]) => { if (k === 'class') n.className = v; else if (k === 'html') n.innerHTML = v; else if (k in n) n[k] = v; else n.setAttribute(k, v); });
-  (Array.isArray(kids) ? kids : [kids]).forEach(c => c != null && n.append(c));
-  return n;
-};
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1600); }
-
-/* ----- field rendering ----- */
-function renderField(f, val, prefix) {
-  const id = prefix + '_' + f.id;
-  const labelKids = [f.label];
-  if (f.req) labelKids.push(el('span', { class: 'req', html: ' *' }));
-  let input;
-  if (f.type === 'textarea') input = el('textarea', { id, value: val || '' });
-  else if (f.type === 'select') {
-    input = el('select', { id });
-    (f.options || []).forEach((o, i) => {
-      const text = (f.labels && f.labels[i]) || o || '(pilih)';
-      input.append(el('option', { value: o, selected: (val || '') === o, textContent: text }));
-    });
-  } else input = el('input', { id, type: 'text', value: val || '' });
-  const wrap = el('div', {}, [el('label', {}, labelKids), input]);
-  if (f.hint) wrap.append(el('div', { class: 'field-hint', textContent: f.hint }));
-  return wrap;
+function DEMO_TEXT(type) {
+  const j = DEMO[type] || DEMO.script;
+  const intro = {
+    script: 'Ini script 30 detik dengan 3 opsi hook — pilih yang paling "kamu", lalu tinggal shoot.',
+    carousel: 'Carousel 7 slide save-worthy: slide 1 hook kuat, tiap slide 1 ide, ditutup CTA.',
+    storyboard: 'Storyboard 5 shot yang realistis dishoot pakai HP dalam ±30 menit.',
+    caption: 'Caption panjang + pendek + 5 hook cadangan + hashtag yang pas.',
+    ideas: 'Tujuh ide seminggu, campuran 80% value / 20% jualan.',
+    review: 'Review jujur akun kamu: yang udah bagus dipertahankan, yang bocor kita tambal.',
+    compare: 'Perbandingan dengan kompetitor + celah yang bisa langsung kamu menangkan.',
+    voice: 'Analisis voice brand dari konten yang kamu kasih.',
+  }[type] || '';
+  return '⚙️ CONTOH (mode demo — isi Kunci AI di ⚙️ untuk hasil sungguhan dari brand-mu)\n\n' + intro + '\n\n```json\n' + JSON.stringify(j, null, 1) + '\n```';
 }
 
-/* ----- dashboard ----- */
-function renderDashboard() {
-  const list = loadClients();
-  const box = $('#clientList'); box.innerHTML = '';
-  $('#emptyHint').hidden = list.length > 0;
-  list.forEach(c => {
-    const card = el('div', { class: 'card client' }, [
-      el('h3', { textContent: c.name || '(tanpa nama)' }),
-      el('span', { class: 'tag', textContent: (c.category || 'other') }),
-      el('div', { class: 'muted', style: 'margin-top:8px; font-size:13px;', textContent: c.usp || c.products || c.area || '—' }),
-    ]);
-    card.onclick = () => openClient(c.id);
-    box.append(card);
+/* ═══════════════════════ APIFY (IG scrape) ═══════════════════════ */
+async function apifyFetchIg(handles) {
+  const token = store.get('ce_apify', '');
+  if (!token) throw new Error('Kunci Instagram (Apify) belum diisi di ⚙️ — atau tempel caption manual.');
+  const usernames = handles.map(h => h.replace(/^@/, '').trim()).filter(Boolean);
+  const res = await fetch('https://api.apify.com/v2/acts/apify~instagram-profile-scraper/run-sync-get-dataset-items?token=' + encodeURIComponent(token), {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ usernames, resultsLimit: 12 }),
   });
-}
-
-/* ----- client view ----- */
-function openClient(id) {
-  currentId = id;
-  const c = loadClients().find(x => x.id === id);
-  if (!c) return;
-  $('#viewDashboard').hidden = true;
-  $('#viewClient').hidden = false;
-  $('#clientName').textContent = c.name || '(tanpa nama)';
-  switchTab('generate');
-  renderDaily();
-  renderGenButtons();
-  $('#results').innerHTML = '';
-  renderProfileForm(c);
-}
-function switchTab(tab) {
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  $('#tabGenerate').hidden = tab !== 'generate';
-  $('#tabProfile').hidden = tab !== 'profile';
-}
-function renderProfileForm(c) {
-  const box = $('#profileForm'); box.innerHTML = '';
-  const cat = c.category || 'other';
-  SCHEMA.forEach(s => {
-    if (s.vertical && s.vertical !== cat) return;
-    box.append(el('div', { class: 'section-title', textContent: s.title }));
-    s.fields.forEach(f => box.append(renderField(f, c[f.id], 'p')));
+  if (!res.ok) throw new Error('Apify ' + res.status + ': ' + (await res.text()).slice(0, 200));
+  const items = await res.json();
+  const out = {};
+  (items || []).forEach(it => {
+    if (!it || typeof it !== 'object') return;
+    const uname = (it.username || '').toLowerCase();
+    if (Array.isArray(it.latestPosts)) {
+      out[uname] = { bio: it.biography || '', followers: it.followersCount, posts: it.latestPosts.filter(p => p.caption && String(p.caption).trim()).slice(0, 12) };
+    }
   });
-  // re-render verticals when category changes
-  const catSel = $('#p_category');
-  if (catSel) catSel.onchange = () => { const cur = collectProfile(); openClientReRender(cur); };
-}
-function openClientReRender(partial) {
-  const list = loadClients(); const c = list.find(x => x.id === currentId) || {};
-  Object.assign(c, partial);
-  renderProfileForm(c);
-}
-function collectProfile() {
-  const out = { id: currentId };
-  SCHEMA.forEach(s => s.fields.forEach(f => { const n = $('#p_' + f.id); if (n) out[f.id] = n.value; }));
   return out;
 }
-function saveProfile() {
-  const list = loadClients();
-  const idx = list.findIndex(x => x.id === currentId);
-  const data = collectProfile();
-  if (idx >= 0) list[idx] = Object.assign({}, list[idx], data); else list.push(data);
-  saveClients(list);
-  $('#clientName').textContent = data.name || '(tanpa nama)';
-  $('#saveHint').textContent = 'Tersimpan ✓';
-  setTimeout(() => $('#saveHint').textContent = '', 1500);
-  toast('Profil tersimpan');
-}
-
-/* ----- daily + generate ----- */
-function renderDaily() {
-  const box = $('#dailyForm'); box.innerHTML = '';
-  DAILY_FIELDS.forEach(f => box.append(renderField(f, '', 'd')));
-}
-function collectDaily() {
-  const d = {};
-  DAILY_FIELDS.forEach(f => { const n = $('#d_' + f.id); if (n) d[f.id] = n.value; });
-  return d;
-}
-function renderGenButtons() {
-  const box = $('#genButtons'); box.innerHTML = '';
-  Object.keys(GENERATORS).forEach(type => {
-    box.append(el('button', { textContent: GENERATORS[type].label, onclick: () => runGenerate([type]) }));
+function formatIgBlock(handle, d) {
+  const lines = ['@' + handle.replace(/^@/, '') + (d.followers != null ? ' (' + d.followers + ' followers)' : '') + ':'];
+  if (d.bio) lines.push('Bio: ' + d.bio);
+  (d.posts || []).forEach((p, i) => {
+    const eng = [p.likesCount != null ? p.likesCount + ' likes' : null, p.commentsCount != null ? p.commentsCount + ' komentar' : null].filter(Boolean).join(', ');
+    lines.push('Post ' + (i + 1) + (eng ? ' [' + eng + ']' : '') + ': ' + String(p.caption).trim());
   });
-  box.append(el('button', { class: 'primary', textContent: '⚡ Paket Lengkap', onclick: () => runGenerate(['script','carousel','caption']) }));
+  return lines.join('\n');
 }
-async function runGenerate(types) {
-  const c = loadClients().find(x => x.id === currentId);
-  if (!c) return;
-  if (!c.name) { toast('Isi nama brand dulu (tab Profil)'); return; }
-  const daily = collectDaily();
-  const status = $('#genStatus');
-  document.querySelectorAll('#genButtons button').forEach(b => b.disabled = true);
-  status.innerHTML = '<span class="spin"></span> Menyusun ' + types.map(t => GENERATORS[t].label).join(', ') + '…';
-  const results = $('#results');
-  try {
-    for (const type of types) {
-      const system = buildSystemPrompt(c);
-      const user = buildUserPrompt(type, daily);
-      const out = await callLLM(system, user);
-      const { readable, json } = splitOutput(out.text);
-      results.prepend(renderResult(type, readable, json, out.demo));
-    }
-    status.textContent = '';
-  } catch (e) {
-    status.textContent = '';
-    results.prepend(el('div', { class: 'card', style: 'border-color:#f3c2c2;' }, [
-      el('b', { textContent: 'Gagal: ' }), document.createTextNode(String(e.message || e)),
-    ]));
-  } finally {
-    document.querySelectorAll('#genButtons button').forEach(b => b.disabled = false);
-  }
-}
-function renderResult(type, readable, json, demo) {
-  const head = el('div', { class: 'row', style: 'justify-content:space-between;' }, [
-    el('h4', { textContent: GENERATORS[type].label }),
-    el('span', { class: 'badge ' + (demo ? 'demo' : 'live'), textContent: demo ? 'mode demo' : 'live' }),
-  ]);
-  const readBox = el('div', { class: 'readable', textContent: readable });
-  const actions = el('div', { class: 'row', style: 'margin-top:8px;' }, [
-    el('button', { textContent: 'Copy teks', onclick: () => copy(readable) }),
-  ]);
-  const kids = [head, el('div', { class: 'result' }, [readBox])];
-  if (json) {
-    const pre = el('pre', { textContent: JSON.stringify(json, null, 2) });
-    actions.append(el('button', { textContent: 'Copy JSON', onclick: () => copy(JSON.stringify(json, null, 2)) }));
-    kids.push(el('div', { class: 'result' }, [el('div', { class: 'muted', style: 'font-size:12px; margin-bottom:4px;', textContent: 'JSON terstruktur' }), pre]));
-  }
-  kids.push(actions);
-  return el('div', { class: 'card', style: 'margin-top:14px;' }, kids);
-}
-function copy(text) { navigator.clipboard.writeText(text).then(() => toast('Disalin')); }
 
-/* ============================== SEED DATA =============================== */
+/* ═══════════════════════ WIZARD (onboarding) ═══════════════════════ */
+const TONES = ['Santai & friendly', 'Edukatif', 'Lucu & relatable', 'Premium & elegan', 'Tegas & bold', 'Hangat & caring'];
+const SAPAANS = ['kak', 'kamu', 'bestie', 'gais', 'Anda'];
+const GOALS = ['Jualan', 'Biar dikenal (awareness)', 'Interaksi (engagement)', 'Edukasi'];
+const CTAS = ['Checkout link bio', 'Komen keyword nanti di-DM', 'DM langsung', 'Order GoFood/GrabFood', 'Kunjungi toko', 'Save & share'];
+const EMOJIS = ['secukupnya', 'banyak', 'none'];
+const WIZ_STEPS = [
+  { id: 'kenalan', emoji: '👋', title: 'Kenalan dulu!', sub: 'Cukup 2 hal ini buat mulai.', req: true,
+    fields: [
+      { id: 'name', label: 'Nama brand kamu', type: 'text', ph: 'contoh: GlowUp Skincare', req: true },
+      { id: 'category', label: 'Jenis usahanya apa?', type: 'cats', req: true },
+      { id: 'area', label: 'Jualan di mana?', type: 'text', ph: 'contoh: Nasional (online) / Jabodetabek' },
+    ] },
+  { id: 'produk', emoji: '🛍️', title: 'Jualan apa nih?', sub: 'Biar AI tahu yang dipromosiin.',
+    fields: [
+      { id: 'products', label: 'Produk/jasa andalan (1-3)', type: 'textarea', ph: 'contoh: Serum Niacinamide 10%, Sunscreen SPF50', req: true },
+      { id: 'price', label: 'Kisaran harga', type: 'text', ph: 'contoh: Rp79rb–145rb' },
+      { id: 'usp', label: 'Yang bikin beda dari yang lain?', type: 'text', ph: 'contoh: ringan, ber-BPOM, ramah pemula' },
+      { id: 'proof', label: 'Bukti keren (opsional)', type: 'text', ph: 'contoh: 10.000+ terjual, BPOM, garansi' },
+    ] },
+  { id: 'pembeli', emoji: '🎯', title: 'Siapa pembelinya?', sub: 'Konten yang bagus itu ngomong ke satu orang.',
+    fields: [
+      { id: 'buyer', label: 'Pembeli utamamu siapa?', type: 'text', ph: 'contoh: cewek 18-28, mahasiswa & first jobber', req: true },
+      { id: 'painpoint', label: 'Masalah mereka yang kamu selesaikan?', type: 'textarea', ph: 'contoh: kulit kusam, takut produk abal-abal', req: true },
+      { id: 'desire', label: 'Impian/keinginan mereka?', type: 'text', ph: 'contoh: tampil pede tanpa makeup tebal' },
+    ] },
+  { id: 'gaya', emoji: '🗣️', title: 'Gaya ngomongnya gimana?', sub: 'Biar konten kerasa "kamu banget".',
+    fields: [
+      { id: 'tone', label: 'Nada bicara brand', type: 'pills', options: TONES, req: true },
+      { id: 'sapaan', label: 'Manggil audiens apa?', type: 'pills-custom', options: SAPAANS, req: true },
+      { id: 'emoji', label: 'Pakai emoji?', type: 'pills', options: EMOJIS },
+      { id: 'signature', label: 'Frasa khas brand (opsional)', type: 'text', ph: 'contoh: "glow bareng GlowUp"' },
+      { id: 'forbidden', label: 'Kata yang JANGAN pernah dipakai', type: 'text', ph: 'contoh: menyembuhkan, memutihkan, murahan' },
+    ] },
+  { id: 'tujuan', emoji: '📣', title: 'Kontennya buat apa?', sub: 'Semua konten diarahkan ke sini.',
+    fields: [
+      { id: 'goal', label: 'Tujuan utama', type: 'pills', options: GOALS, req: true },
+      { id: 'cta', label: 'Ajakan di akhir konten (CTA)', type: 'pills-custom', options: CTAS, req: true },
+      { id: 'promo', label: 'Promo yang lagi jalan (opsional)', type: 'text', ph: 'contoh: Glow Bundle 149rb (normal 210rb) s/d Minggu' },
+    ] },
+  { id: 'aturan', emoji: '🛡️', title: 'Aturan mainnya', sub: 'Biar kontenmu aman & nggak kena masalah.',
+    fields: [
+      { id: 'forbiddenClaims', label: 'Klaim yang dilarang untuk brand-mu', type: 'text', ph: 'contoh: menyembuhkan jerawat, putih permanen' },
+      { id: 'certifications', label: 'Sertifikasi yang boleh disebut', type: 'text', ph: 'contoh: BPOM, Halal MUI' },
+      { id: 'sensitive', label: 'Topik sensitif yang dihindari', type: 'text', ph: 'contoh: body shaming, SARA' },
+    ] },
+  { id: 'vertikal', emoji: '🧩', title: 'Detail khusus', sub: 'Sedikit lagi — ini bikin hasilnya makin tajam.', conditional: true,
+    fields: [] /* diisi dinamis */ },
+  { id: 'sosmed', emoji: '📱', title: 'Sosmed & saingan', sub: 'Buat fitur review & bandingkan kompetitor.',
+    fields: [
+      { id: 'social', label: 'Akun IG brand kamu', type: 'text', ph: '@brandku' },
+      { id: 'comp1', label: 'Kompetitor 1 (opsional)', type: 'text', ph: '@saingan_utama' },
+      { id: 'comp2', label: 'Kompetitor 2 (opsional)', type: 'text', ph: '@saingan_lain' },
+      { id: 'comp3', label: 'Kompetitor 3 (opsional)', type: 'text', ph: '@satu_lagi' },
+      { id: 'sampleCaptions', label: 'Contoh caption yang kamu suka gayanya (opsional)', type: 'textarea', ph: 'Tempel 1-3 caption — punya sendiri atau akun lain' },
+    ] },
+];
+const VERT_FIELDS = {
+  skincare: [
+    { id: 'sk_ingredients', label: 'Kandungan unggulan & manfaatnya', type: 'textarea', ph: 'contoh: Niacinamide 10% → bantu mencerahkan; Centella → menenangkan' },
+    { id: 'sk_bpom', label: 'Status BPOM', type: 'text', ph: 'contoh: BPOM terdaftar NA182300xxxx' },
+  ],
+  fnb: [
+    { id: 'fb_menu', label: 'Menu andalan + harga', type: 'textarea', ph: 'contoh: Mie Keju Lava 15rb, Es Teler 12rb' },
+    { id: 'fb_channels', label: 'Cara order', type: 'text', ph: 'contoh: GoFood, GrabFood, dine-in' },
+    { id: 'fb_location', label: 'Lokasi & jam buka', type: 'text', ph: 'contoh: Bekasi & Depok, 10.00-22.00' },
+    { id: 'fb_halal', label: 'Status halal / alergen', type: 'text', ph: 'contoh: Halal, mengandung seafood' },
+  ],
+};
+
+let wiz = null; // {draft, step, isNew}
+function startWizard(client, stepIdx = 0) {
+  wiz = { draft: client ? { ...client } : { id: uid(), category: '' }, step: stepIdx, isNew: !client };
+  renderWizard();
+}
+function wizSteps() {
+  return WIZ_STEPS.filter(s => s.id !== 'vertikal' || VERT_FIELDS[wiz.draft.category]);
+}
+function renderWizard() {
+  const steps = wizSteps();
+  const step = steps[wiz.step];
+  const isVert = step.id === 'vertikal';
+  const fields = isVert ? (VERT_FIELDS[wiz.draft.category] || []) : step.fields;
+  const app = $('#app'); app.innerHTML = '';
+  const box = el('div', { class: 'wiz' });
+  box.append(el('div', { class: 'row between' }, [
+    el('button', { class: 'ghost', textContent: '← Keluar', onclick: () => { if (wiz.isNew && !confirm('Keluar? Isian belum tersimpan.')) return; wiz = null; renderHome(); } }),
+    el('span', { class: 'tiny', textContent: 'Langkah ' + (wiz.step + 1) + ' dari ' + steps.length }),
+  ]));
+  const prog = el('div', { class: 'wiz-progress' });
+  steps.forEach((_, i) => prog.append(el('i', { class: i <= wiz.step ? 'on' : '' })));
+  box.append(prog);
+  box.append(el('div', { class: 'emoji', textContent: step.emoji }));
+  box.append(el('h2', { textContent: step.title }));
+  box.append(el('div', { class: 'sub', textContent: step.sub }));
+  const form = el('div', { class: 'card' });
+  fields.forEach(f => form.append(wizField(f)));
+  box.append(form);
+  const last = wiz.step === steps.length - 1;
+  const nav = el('div', { class: 'wiz-nav' });
+  if (wiz.step > 0) nav.append(el('button', { textContent: '← Balik', onclick: () => { wiz.step--; renderWizard(); } }));
+  nav.append(el('span', { class: 'spacer' }));
+  if (!step.req && !last) nav.append(el('button', { class: 'ghost', textContent: 'Lewati dulu', onclick: () => { wiz.step++; renderWizard(); } }));
+  nav.append(el('button', { class: 'primary big', textContent: last ? '🎉 Simpan brand!' : 'Lanjut →', onclick: () => {
+    if (step.req) {
+      for (const f of fields) {
+        if (f.req && !(wiz.draft[f.id] && String(wiz.draft[f.id]).trim())) { toast('Isi dulu: ' + f.label); return; }
+      }
+    }
+    if (last) return finishWizard();
+    wiz.step++; renderWizard(); window.scrollTo({ top: 0 });
+  } }));
+  box.append(nav);
+  app.append(box);
+  window.scrollTo({ top: 0 });
+}
+function wizField(f) {
+  const wrap = el('div');
+  const lbl = el('label', {}, [f.label]);
+  if (f.req) lbl.append(el('span', { class: 'req', textContent: ' *' }));
+  wrap.append(lbl);
+  const val = wiz.draft[f.id] || '';
+  if (f.type === 'cats') {
+    const grid = el('div', { class: 'cat-grid' });
+    CATS.forEach(c => {
+      const card = el('div', { class: 'cat-card' + (wiz.draft.category === c.id ? ' on' : '') }, [
+        el('span', { class: 'e', textContent: c.e }), c.label,
+      ]);
+      card.onclick = () => { wiz.draft.category = c.id; grid.querySelectorAll('.cat-card').forEach(x => x.classList.remove('on')); card.classList.add('on'); };
+      grid.append(card);
+    });
+    wrap.append(grid);
+  } else if (f.type === 'pills' || f.type === 'pills-custom') {
+    const pills = el('div', { class: 'pills' });
+    const setVal = v => { wiz.draft[f.id] = v; pills.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p.dataset.v === v)); if (custom) custom.value = f.options.includes(v) ? '' : v; };
+    f.options.forEach(o => {
+      const p = el('button', { class: 'pill' + (val === o ? ' on' : ''), textContent: o });
+      p.dataset.v = o; p.onclick = e => { e.preventDefault(); setVal(o); };
+      pills.append(p);
+    });
+    wrap.append(pills);
+    let custom = null;
+    if (f.type === 'pills-custom') {
+      custom = el('input', { type: 'text', placeholder: 'atau ketik sendiri…', value: f.options.includes(val) ? '' : val, style: 'margin-top:8px;' });
+      custom.oninput = () => { if (custom.value.trim()) { wiz.draft[f.id] = custom.value.trim(); pills.querySelectorAll('.pill').forEach(p => p.classList.remove('on')); } };
+      wrap.append(custom);
+    }
+  } else {
+    const input = el(f.type === 'textarea' ? 'textarea' : 'input', { value: val, placeholder: f.ph || '' });
+    if (f.type !== 'textarea') input.type = 'text';
+    input.oninput = () => { wiz.draft[f.id] = input.value; };
+    wrap.append(input);
+  }
+  if (f.hint) wrap.append(el('div', { class: 'hint', textContent: f.hint }));
+  return wrap;
+}
+function finishWizard() {
+  const d = wiz.draft;
+  d.competitors = [d.comp1, d.comp2, d.comp3].map(x => (x || '').trim()).filter(Boolean);
+  saveClient(d);
+  const id = d.id; const isNew = wiz.isNew;
+  wiz = null;
+  toast(isNew ? '🎉 Brand tersimpan! Yuk bikin konten pertama' : 'Profil diperbarui ✓');
+  openBrand(id);
+}
+
+/* ═══════════════════════ HOME ═══════════════════════ */
+function refreshModeBadge() {
+  const b = $('#modeBadge');
+  if (hasKey()) { b.className = 'badge live'; b.textContent = 'AI aktif'; }
+  else { b.className = 'badge demo'; b.textContent = 'mode demo'; }
+}
+function renderHome() {
+  const app = $('#app'); app.innerHTML = '';
+  const clients = loadClients();
+  const hero = el('div', { class: 'hero' }, [
+    el('h1', { html: clients.length ? 'Mau bikin konten<br/>buat siapa hari ini?' : 'Bikin konten sosmed<br/>tanpa pusing mikir. ✨' }),
+    el('p', { textContent: clients.length ? 'Pilih brand, atau tambah brand baru.' : 'Jawab beberapa pertanyaan tentang brand-mu sekali aja — habis itu tiap hari tinggal klik: script video, carousel, caption, sampai riset kompetitor.' }),
+  ]);
+  app.append(hero);
+  const grid = el('div', { class: 'brand-grid' });
+  clients.forEach(c => {
+    const cat = CATS.find(x => x.id === c.category);
+    const card = el('div', { class: 'card brand-card', onclick: () => openBrand(c.id) }, [
+      el('div', { class: 'row between' }, [
+        el('div', { class: 'avatar', textContent: (c.name || '?').trim().charAt(0).toUpperCase() }),
+        c.voiceAnalysis ? el('span', { class: 'badge accent', textContent: '🧠 terlatih' }) : null,
+      ]),
+      el('h3', { textContent: c.name || '(tanpa nama)' }),
+      el('div', { class: 'row', style: 'margin-top:6px;' }, [
+        el('span', { class: 'chip', textContent: (cat ? cat.e + ' ' + cat.label : '📦 Lainnya') }),
+      ]),
+    ]);
+    grid.append(card);
+  });
+  grid.append(el('div', { class: 'add-card', onclick: () => startWizard(null), textContent: '＋ Tambah brand' }));
+  app.append(grid);
+  if (!clients.length) {
+    app.append(el('div', { class: 'row', style: 'margin-top:22px;' }, [
+      el('button', { class: 'primary big', textContent: '➕ Bikin brand-ku (2 menit)', onclick: () => startWizard(null) }),
+      el('button', { class: 'big', textContent: '🎁 Coba pakai brand contoh', onclick: seedClients }),
+    ]));
+  }
+}
 function seedClients() {
   const list = loadClients();
   const seeds = [
-    { id: uid(), name: 'GlowUp Skincare', category: 'skincare', area: 'Nasional (online)',
-      products: 'Serum Niacinamide 10%, Sunscreen SPF50, Gentle Cleanser', price: 'Rp79k–145k',
-      problem: 'Kulit kusam, bekas jerawat, takut produk abal-abal', usp: 'Ringan, ber-BPOM, ramah pemula',
-      buyer: 'Cewek 18–28, mahasiswa/fresh grad', painpoint: 'Kusam, bekas jerawat, takut abal-abal',
-      tone: 'Santai/Friendly', sapaan: 'kak', signature: 'glow bareng GlowUp', forbidden: 'menyembuhkan, memutihkan permanen, 100% hilang',
-      emoji: 'secukupnya', goal: 'Jualan/Konversi', cta: 'checkout link bio', promo: 'Glow Bundle 149rb dari 210rb',
-      forbiddenClaims: 'menyembuhkan, memutihkan permanen, superlatif', certifications: 'BPOM terdaftar',
-      sk_ingredients: 'Niacinamide, Centella, HA', sk_bpom: 'BPOM terdaftar' },
-    { id: uid(), name: 'Mie Gacoan Corner', category: 'fnb', area: 'Bekasi, Depok, Tangerang',
-      products: 'Mie Level 1-5, Mie Keju Lava, Es Teler, dimsum', price: 'Rp10k–35k',
-      problem: 'Budget tipis, cari nongkrong kekinian', usp: 'Pedas nagih, harga ramah pelajar',
-      buyer: 'Anak muda 16–26, pelajar/mahasiswa', painpoint: 'Budget tipis, cari nongkrong kekinian',
-      tone: 'Lucu/Relatable', sapaan: 'gais', signature: 'pedasnya bikin nagih', forbidden: 'menyehatkan, klaim diet',
-      emoji: 'banyak', goal: 'Engagement', cta: 'order GoFood/GrabFood/ShopeeFood / dine-in', promo: 'Opening Bekasi diskon 20%',
-      forbiddenClaims: 'klaim menyehatkan/diet', certifications: 'Halal',
-      fb_menu: 'Mie Keju Lava 15rb, Es Teler 12rb', fb_channels: 'GoFood/GrabFood/ShopeeFood/dine-in',
-      fb_location: 'Bekasi (baru), Depok, Tangerang · 10–22', fb_halal: 'Halal; ada seafood (dimsum)' },
+    { id: uid(), name: 'GlowUp Skincare', category: 'skincare', area: 'Nasional (online)', social: '@glowupskin.id',
+      products: 'Serum Niacinamide 10%, Sunscreen SPF50, Gentle Cleanser', price: 'Rp79rb–145rb',
+      usp: 'Ringan, ber-BPOM, ramah pemula', proof: '10.000+ terjual, BPOM terdaftar',
+      buyer: 'Cewek 18–28, mahasiswa & first jobber', painpoint: 'Kulit kusam, bekas jerawat, takut produk abal-abal', desire: 'Tampil pede tanpa makeup tebal',
+      tone: 'Santai & friendly', sapaan: 'kak', emoji: 'secukupnya', signature: 'glow bareng GlowUp', forbidden: 'menyembuhkan, memutihkan, permanen',
+      goal: 'Jualan', cta: 'Checkout link bio', promo: 'Glow Bundle 149rb (normal 210rb) s/d Minggu',
+      forbiddenClaims: 'menyembuhkan jerawat, putih permanen, 100% ampuh', certifications: 'BPOM', sensitive: 'body shaming',
+      sk_ingredients: 'Niacinamide 10% → bantu mencerahkan; Centella → menenangkan; HA → hidrasi', sk_bpom: 'BPOM terdaftar',
+      competitors: ['@glowrivalid', '@bersinarskin'] },
+    { id: uid(), name: 'Mie Gacoan Corner', category: 'fnb', area: 'Bekasi, Depok, Tangerang', social: '@miegacoancorner',
+      products: 'Mie Level 1-5, Mie Keju Lava, Es Teler, dimsum', price: 'Rp10rb–35rb',
+      usp: 'Pedas nagih, harga ramah pelajar', buyer: 'Anak muda 16–26, pelajar & mahasiswa', painpoint: 'Budget tipis, cari tempat nongkrong kekinian',
+      tone: 'Lucu & relatable', sapaan: 'gais', emoji: 'banyak', signature: 'pedasnya bikin nagih', forbidden: 'menyehatkan, diet',
+      goal: 'Interaksi (engagement)', cta: 'Order GoFood/GrabFood', promo: 'Opening Bekasi diskon 20%',
+      forbiddenClaims: 'klaim sehat/diet', certifications: 'Halal', fb_menu: 'Mie Keju Lava 15rb, Es Teler 12rb',
+      fb_channels: 'GoFood, GrabFood, ShopeeFood, dine-in', fb_location: 'Bekasi (baru!), Depok, Tangerang · 10.00-22.00', fb_halal: 'Halal; dimsum mengandung seafood',
+      competitors: ['@miepedasmurah'] },
   ];
   seeds.forEach(s => { if (!list.some(x => x.name === s.name)) list.push(s); });
   saveClients(list);
-  renderDashboard();
-  toast('2 contoh brand dimuat');
+  toast('2 brand contoh siap dipakai 🎁');
+  renderHome();
+}
+
+/* ═══════════════════════ BRAND WORKSPACE ═══════════════════════ */
+let currentId = null, currentTab = 'bikin', pickedType = 'script';
+function openBrand(id, tab) {
+  currentId = id; currentTab = tab || 'bikin';
+  const c = getClient(id); if (!c) return renderHome();
+  const app = $('#app'); app.innerHTML = '';
+  app.append(el('div', { class: 'row between' }, [
+    el('button', { class: 'ghost', textContent: '← Semua brand', onclick: renderHome }),
+    el('span'),
+  ]));
+  app.append(el('div', { class: 'row', style: 'margin-top:10px;' }, [
+    el('div', { class: 'avatar', textContent: (c.name || '?').charAt(0).toUpperCase() }),
+    el('div', {}, [
+      el('h2', { style: 'font-size:26px;', textContent: c.name }),
+      el('div', { class: 'tiny', textContent: (CATS.find(x => x.id === c.category)?.label || 'Lainnya') + (c.voiceAnalysis ? ' · 🧠 voice terlatih' : '') }),
+    ]),
+  ]));
+  const tabs = el('div', { class: 'tabs' });
+  [['bikin', '✨ Bikin Konten'], ['riset', '🔍 Riset'], ['profil', '👤 Profil']].forEach(([id2, label]) => {
+    tabs.append(el('button', { class: 'tab' + (currentTab === id2 ? ' on' : ''), textContent: label, onclick: () => openBrand(currentId, id2) }));
+  });
+  app.append(tabs);
+  const body = el('div', { id: 'tabBody' });
+  app.append(body);
+  if (currentTab === 'bikin') renderBikin(body, c);
+  else if (currentTab === 'riset') renderRiset(body, c);
+  else renderProfil(body, c);
+}
+
+/* ── TAB: BIKIN KONTEN ─────────────────────────────────────── */
+function renderBikin(body, c) {
+  body.append(el('h3', { style: 'font-size:17px; margin-bottom:10px;', textContent: '1 · Mau bikin apa?' }));
+  const grid = el('div', { class: 'type-grid' });
+  Object.entries(TYPES).forEach(([id, t]) => {
+    const card = el('div', { class: 'type-card' + (pickedType === id ? ' on' : '') }, [
+      el('div', { class: 'e', textContent: t.e }), el('h4', { textContent: t.label }), el('p', { textContent: t.desc }),
+    ]);
+    card.onclick = () => { pickedType = id; grid.querySelectorAll('.type-card').forEach(x => x.classList.remove('on')); card.classList.add('on'); syncFormVisibility(); };
+    grid.append(card);
+  });
+  body.append(grid);
+
+  body.append(el('h3', { style: 'font-size:17px; margin:24px 0 10px;', textContent: '2 · Ceritain dikit' }));
+  const form = el('div', { class: 'card' });
+  form.append(el('label', { textContent: 'Mau ngomongin apa hari ini?' }));
+  const topic = el('input', { id: 'g_topic', type: 'text', placeholder: c.promo ? 'contoh: ' + c.promo : 'contoh: promo bundling, edukasi produk, menu baru…' });
+  topic.onkeydown = e => { if (e.key === 'Enter') doGenerate(c); };
+  form.append(topic);
+  form.append(el('div', { class: 'hint', textContent: 'Kosongin juga boleh — AI ambil dari profil & promo brand.' }));
+  form.append(el('label', { textContent: 'Tujuannya?' }));
+  const goalPills = el('div', { class: 'pills', id: 'g_goal' });
+  ['Jualan', 'Edukasi', 'Interaksi', 'Biar dikenal'].forEach((g, i) => {
+    const p = el('button', { class: 'pill' + (i === 0 ? ' on' : ''), textContent: g });
+    p.dataset.v = g;
+    p.onclick = e => { e.preventDefault(); goalPills.querySelectorAll('.pill').forEach(x => x.classList.remove('on')); p.classList.add('on'); };
+    goalPills.append(p);
+  });
+  form.append(goalPills);
+  const pfWrap = el('div', { id: 'g_pfwrap' });
+  pfWrap.append(el('label', { textContent: 'Buat platform mana?' }));
+  const pf = el('div', { class: 'pills', id: 'g_platform' });
+  ['IG Reels', 'TikTok', 'IG Feed'].forEach((g, i) => {
+    const p = el('button', { class: 'pill' + (i === 0 ? ' on' : ''), textContent: g });
+    p.dataset.v = g;
+    p.onclick = e => { e.preventDefault(); pf.querySelectorAll('.pill').forEach(x => x.classList.remove('on')); p.classList.add('on'); };
+    pf.append(p);
+  });
+  pfWrap.append(pf);
+  form.append(pfWrap);
+  const durWrap = el('div', { id: 'g_durwrap' });
+  durWrap.append(el('label', { textContent: 'Durasi video' }));
+  const dur = el('div', { class: 'pills', id: 'g_durasi' });
+  ['15 detik', '30 detik', '45 detik'].forEach((g, i) => {
+    const p = el('button', { class: 'pill' + (i === 1 ? ' on' : ''), textContent: g });
+    p.dataset.v = g;
+    p.onclick = e => { e.preventDefault(); dur.querySelectorAll('.pill').forEach(x => x.classList.remove('on')); p.classList.add('on'); };
+    dur.append(p);
+  });
+  durWrap.append(dur);
+  form.append(durWrap);
+  const adv = el('details', { class: 'adv' }, [
+    el('summary', { textContent: '⚙️ Detail tambahan (opsional)' }),
+  ]);
+  adv.append(el('label', { textContent: 'Detail fokus' }));
+  adv.append(el('textarea', { id: 'g_detail', placeholder: 'contoh: stok tinggal 20, harga naik minggu depan…' }));
+  adv.append(el('label', { textContent: 'Momen/event' }));
+  adv.append(el('input', { id: 'g_momen', type: 'text', placeholder: 'contoh: gajian, Ramadan, weekend, tanggal kembar' }));
+  adv.append(el('label', { textContent: 'Angle/hook yang pengin dicoba' }));
+  adv.append(el('input', { id: 'g_angle', type: 'text', placeholder: 'contoh: POV, mitos vs fakta, before-after' }));
+  form.append(adv);
+  body.append(form);
+
+  const goBar = el('div', { class: 'row', style: 'margin-top:18px;' });
+  const goBtn = el('button', { class: 'primary big', id: 'btnGo', textContent: '✨ Bikinin!' });
+  goBtn.onclick = () => doGenerate(c);
+  goBar.append(goBtn);
+  goBar.append(el('span', { class: 'tiny', id: 'goStatus' }));
+  body.append(goBar);
+  body.append(el('div', { id: 'results' }));
+  function syncFormVisibility() {
+    const needsVideo = pickedType === 'script' || pickedType === 'storyboard' || pickedType === 'paket';
+    durWrap.style.display = (pickedType === 'script' || pickedType === 'storyboard') ? '' : 'none';
+    pfWrap.style.display = needsVideo || pickedType === 'caption' ? '' : (pickedType === 'carousel' || pickedType === 'ideas' ? 'none' : '');
+  }
+  syncFormVisibility();
+}
+function collectDaily() {
+  const pill = id => { const on = document.querySelector(id + ' .pill.on'); return on ? on.dataset.v : ''; };
+  return {
+    topic: ($('#g_topic') || {}).value || '', goal: pill('#g_goal'), platform: pill('#g_platform'),
+    durasi: ($('#g_durwrap') && $('#g_durwrap').style.display !== 'none') ? pill('#g_durasi') : '',
+    detail: ($('#g_detail') || {}).value || '', momen: ($('#g_momen') || {}).value || '', angle: ($('#g_angle') || {}).value || '',
+  };
+}
+async function doGenerate(c) {
+  const types = pickedType === 'paket' ? ['script', 'carousel', 'caption'] : [pickedType];
+  const daily = collectDaily();
+  const btn = $('#btnGo'), status = $('#goStatus'), results = $('#results');
+  btn.disabled = true;
+  try {
+    for (let i = 0; i < types.length; i++) {
+      const type = types[i];
+      status.textContent = types.length > 1 ? ('Bikin ' + TYPES[type].label + ' (' + (i + 1) + '/' + types.length + ')…') : '';
+      const live = liveCard(TYPES[type].e, 'Lagi nulis ' + TYPES[type].label + '…');
+      results.prepend(live.card);
+      try {
+        const out = await callLLM(buildSystemPrompt(c), GEN[type].replace('{{DAILY_INPUT}}', buildDailyInput(daily)), { onDelta: live.update, demoType: type });
+        const { readable, json } = splitOutput(out.text);
+        live.card.replaceWith(renderResult(type, readable, json, out.demo));
+        toast(TYPES[type].label + ' jadi ✨');
+      } catch (e) { live.card.replaceWith(errorCard(e)); }
+    }
+  } finally { btn.disabled = false; status.textContent = ''; }
+}
+function liveCard(emoji, label) {
+  const streamBox = el('div', { class: 'stream' });
+  const card = el('div', { class: 'card result-card' }, [
+    el('div', { class: 'thinking' }, [
+      el('div', { class: 'orb', textContent: emoji }),
+      el('div', {}, [el('b', { textContent: label }), el('div', { class: 'tiny', textContent: 'beberapa detik ya…' }), streamBox]),
+    ]),
+  ]);
+  return { card, update: t => { streamBox.textContent = t.slice(-600); } };
+}
+function errorCard(e) {
+  const msg = String(e.message || e);
+  let help = '';
+  if (msg.includes('401')) help = 'Kunci AI-nya salah/tidak valid. Buka ⚙️ → cek lagi kuncinya (harus mulai sk-ant- dari console.anthropic.com).';
+  else if (msg.includes('429')) help = 'Kena limit — tunggu sebentar lalu coba lagi.';
+  else if (msg.match(/credit|billing/i)) help = 'Kredit API habis — isi billing di console.anthropic.com.';
+  return el('div', { class: 'card result-card', style: 'border-color:#EFC7C7;' }, [
+    el('div', { class: 'result-head' }, [el('h3', { textContent: '😵 Waduh, gagal' })]),
+    el('div', { class: 'copybox', textContent: msg }),
+    help ? el('div', { class: 'learn', html: '<b>Solusi:</b> ' + help }) : null,
+  ]);
+}
+
+/* ═══════════════ RENDERERS (hasil terstruktur) ═══════════════ */
+function resultShell(type, badgeDemo, kids) {
+  const t = TYPES[type] || TYPES_RISET[type] || { e: '📄', label: type };
+  const card = el('div', { class: 'card result-card' });
+  card.append(el('div', { class: 'result-head' }, [
+    el('span', { style: 'font-size:24px;', textContent: t.e }),
+    el('h3', { textContent: t.label }),
+    el('span', { class: 'badge ' + (badgeDemo ? 'demo' : 'live'), textContent: badgeDemo ? 'contoh' : 'hasil AI' }),
+    el('span', { class: 'spacer' }),
+    el('button', { class: 'ghost', textContent: '✕', title: 'Tutup', onclick: () => card.remove() }),
+  ]));
+  kids.forEach(k => k && card.append(k));
+  return card;
+}
+function copyRow(items) {
+  return el('div', { class: 'row', style: 'margin-top:14px;' }, items.map(([label, text]) =>
+    el('button', { textContent: label, onclick: () => copyText(text, label) })));
+}
+function learnBox(t) { return t ? el('div', { class: 'learn', html: '<b>💡 Biar makin jago:</b> ' + escapeHtml(t) }) : null; }
+function compBox(t) { return t && t !== '-' ? el('div', { class: 'tiny', style: 'margin-top:10px;', textContent: '🛡️ ' + t }) : null; }
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function sec(title) { return el('h4', { style: 'font: 800 13px var(--sans); text-transform: uppercase; letter-spacing:.06em; color: var(--ink-3); margin: 18px 0 8px;', textContent: title }); }
+
+function renderResult(type, readable, json, demo) {
+  if (json) {
+    try {
+      if (json.type === 'script') return renderScript(json, demo);
+      if (json.type === 'carousel') return renderCarousel(json, demo);
+      if (json.type === 'storyboard') return renderStoryboard(json, demo);
+      if (json.type === 'caption') return renderCaption(json, demo);
+      if (json.type === 'ideas') return renderIdeas(json, demo);
+      if (json.type === 'review') return renderReview(json, demo);
+      if (json.type === 'compare') return renderCompare(json, demo);
+    } catch (e) { /* fallback ke teks */ }
+  }
+  return resultShell(type, demo, [el('div', { class: 'copybox', textContent: readable }), copyRow([['📋 Salin', readable]])]);
+}
+function scriptPlain(j) {
+  const L = [];
+  L.push('SCRIPT ' + (j.platform || '') + ' · ±' + (j.duration_sec || '?') + ' detik');
+  (j.hooks || []).forEach((h, i) => L.push('Hook ' + (i + 1) + ' [' + (h.pattern || '') + ']: ' + (h.text || h)));
+  L.push('');
+  (j.scenes || []).forEach(s => L.push('Scene ' + s.scene + ' (' + s.duration_sec + 's)\n  Visual: ' + s.visual + '\n  VO: ' + s.voiceover + '\n  Teks: ' + s.onscreen_text));
+  L.push('\nCTA: ' + (j.cta || '')); if (j.sound_suggestion) L.push('Sound: ' + j.sound_suggestion);
+  return L.join('\n');
+}
+function renderScript(j, demo) {
+  const kids = [];
+  kids.push(el('div', { class: 'row' }, [
+    el('span', { class: 'chip', textContent: '📱 ' + (j.platform || 'Reels/TikTok') }),
+    el('span', { class: 'chip', textContent: '⏱️ ±' + (j.duration_sec || '?') + ' detik' }),
+    j.sound_suggestion ? el('span', { class: 'chip', textContent: '🎵 ' + j.sound_suggestion }) : null,
+  ]));
+  kids.push(sec('Pilih 1 dari ' + (j.hooks || []).length + ' hook'));
+  const hooks = el('div', { style: 'display:grid; gap:10px;' });
+  (j.hooks || []).forEach((h, i) => {
+    const text = h.text || String(h);
+    hooks.append(el('div', { class: 'hook-opt' }, [
+      el('div', { class: 'row between' }, [
+        el('span', { class: 'chip', textContent: 'Hook ' + (i + 1) + (h.pattern ? ' · ' + h.pattern : '') }),
+        el('button', { class: 'ghost', textContent: '📋', title: 'Salin hook', onclick: () => copyText(text, 'Hook') }),
+      ]),
+      el('b', { textContent: '“' + text + '”' }),
+      h.why ? el('div', { class: 'why', textContent: '💡 ' + h.why }) : null,
+    ]));
+  });
+  kids.push(hooks);
+  kids.push(sec('Scene per scene'));
+  const tw = el('div', { class: 'tscroll' });
+  const table = el('table', { class: 't' });
+  table.append(el('tr', {}, ['#', 'Visual', 'Voiceover', 'Teks di layar', '⏱'].map(h => el('th', { textContent: h }))));
+  (j.scenes || []).forEach(s => table.append(el('tr', {}, [
+    el('td', { textContent: s.scene }), el('td', { textContent: s.visual }), el('td', { textContent: s.voiceover }),
+    el('td', {}, [el('b', { textContent: s.onscreen_text })]), el('td', { textContent: (s.duration_sec || '') + 's' }),
+  ])));
+  tw.append(table); kids.push(tw);
+  kids.push(el('div', { class: 'copybox', style: 'margin-top:12px;', html: '<b>📣 CTA:</b> ' + escapeHtml(j.cta || '') }));
+  kids.push(learnBox(j.learning_note)); kids.push(compBox(j.compliance_notes));
+  kids.push(copyRow([['📋 Salin script lengkap', scriptPlain(j)]]));
+  return resultShell('script', demo, kids);
+}
+function carouselPlain(j) {
+  const L = ['CAROUSEL: ' + (j.title || '')];
+  (j.slides || []).forEach(s => L.push('Slide ' + s.slide + ' [' + (s.role || '') + ']: ' + s.headline + '\n  ' + (s.subtext || '') + '\n  Visual: ' + (s.visual || '')));
+  L.push('\nCAPTION:\n' + (j.caption || '')); L.push('\nHashtag: ' + (j.hashtags || []).join(' '));
+  return L.join('\n');
+}
+function renderCarousel(j, demo) {
+  const kids = [];
+  if (Array.isArray(j.cover_alternatives) && j.cover_alternatives.length > 1) {
+    kids.push(sec('Alternatif judul cover'));
+    kids.push(el('div', { class: 'pills' }, j.cover_alternatives.map(t => el('span', { class: 'chip copy', textContent: '“' + t + '”', onclick: () => copyText(t, 'Judul') }))));
+  }
+  kids.push(sec((j.slides || []).length + ' slide — geser 👉'));
+  const slides = el('div', { class: 'slides' });
+  (j.slides || []).forEach(s => slides.append(el('div', { class: 'slide' }, [
+    el('span', { class: 'no', textContent: 'SLIDE ' + s.slide + (s.role ? ' · ' + s.role.toUpperCase() : '') }),
+    el('b', { textContent: s.headline }),
+    el('span', { style: 'font-size:12.5px; color:var(--ink-2);', textContent: s.subtext || '' }),
+    el('span', { class: 'vis', textContent: '🎨 ' + (s.visual || '') }),
+  ])));
+  kids.push(slides);
+  kids.push(sec('Caption'));
+  kids.push(el('div', { class: 'copybox', textContent: j.caption || '' }));
+  if ((j.hashtags || []).length) {
+    kids.push(el('div', { class: 'row', style: 'margin-top:10px;' },
+      j.hashtags.map(h => el('span', { class: 'chip copy', textContent: h, onclick: () => copyText(h, 'Hashtag') }))));
+  }
+  kids.push(learnBox(j.learning_note)); kids.push(compBox(j.compliance_notes));
+  kids.push(copyRow([['📋 Salin semua', carouselPlain(j)], ['✍️ Salin caption + hashtag', (j.caption || '') + '\n\n' + (j.hashtags || []).join(' ')]]));
+  return resultShell('carousel', demo, kids);
+}
+function renderStoryboard(j, demo) {
+  const kids = [];
+  kids.push(el('div', { class: 'copybox', html: '<b>🎬 Konsep:</b> ' + escapeHtml(j.concept || '') + ' · ±' + (j.duration_sec || '?') + ' detik' }));
+  kids.push(sec('Shot list'));
+  const tw = el('div', { class: 'tscroll' });
+  const table = el('table', { class: 't' });
+  table.append(el('tr', {}, ['#', 'Visual', 'Kamera', 'Talent/Props', 'VO', 'Teks', '⏱'].map(h => el('th', { textContent: h }))));
+  (j.shots || []).forEach(s => table.append(el('tr', {}, [
+    el('td', { textContent: s.shot }), el('td', { textContent: s.visual }), el('td', { textContent: s.camera }),
+    el('td', { textContent: s.talent_props }), el('td', { textContent: s.voiceover }), el('td', {}, [el('b', { textContent: s.onscreen_text })]),
+    el('td', { textContent: (s.duration_sec || '') + 's' }),
+  ])));
+  tw.append(table); kids.push(tw);
+  if ((j.broll || []).length) { kids.push(sec('B-roll')); kids.push(el('div', { class: 'row' }, j.broll.map(b => el('span', { class: 'chip', textContent: '🎞️ ' + b })))); }
+  if (j.production_notes) kids.push(el('div', { class: 'copybox', style: 'margin-top:12px;', html: '<b>📝 Catatan produksi:</b> ' + escapeHtml(j.production_notes) }));
+  kids.push(learnBox(j.learning_note)); kids.push(compBox(j.compliance_notes));
+  const plain = 'STORYBOARD: ' + (j.concept || '') + '\n' + (j.shots || []).map(s => 'Shot ' + s.shot + ' (' + s.duration_sec + 's): ' + s.visual + ' | ' + s.camera + ' | VO: ' + s.voiceover + ' | Teks: ' + s.onscreen_text).join('\n') + '\nB-roll: ' + (j.broll || []).join(', ') + '\nCatatan: ' + (j.production_notes || '');
+  kids.push(copyRow([['📋 Salin storyboard', plain]]));
+  return resultShell('storyboard', demo, kids);
+}
+function renderCaption(j, demo) {
+  const kids = [];
+  kids.push(sec('Caption utama'));
+  kids.push(el('div', { class: 'copybox', textContent: j.caption_long || '' }));
+  kids.push(sec('Versi pendek'));
+  kids.push(el('div', { class: 'copybox', textContent: j.caption_short || '' }));
+  if ((j.hooks || []).length) {
+    kids.push(sec('Hook cadangan (klik = salin)'));
+    kids.push(el('div', { style: 'display:grid; gap:8px;' }, j.hooks.map(h =>
+      el('div', { class: 'chip copy', style: 'justify-content:flex-start; padding:9px 14px; font-size:14px;', textContent: '💬 ' + h, onclick: () => copyText(h, 'Hook') }))));
+  }
+  if ((j.hashtags || []).length) {
+    kids.push(sec('Hashtag'));
+    kids.push(el('div', { class: 'row' }, j.hashtags.map(h => el('span', { class: 'chip copy', textContent: h, onclick: () => copyText(h, 'Hashtag') }))));
+  }
+  kids.push(learnBox(j.learning_note)); kids.push(compBox(j.compliance_notes));
+  kids.push(copyRow([['📋 Salin caption + hashtag', (j.caption_long || '') + '\n\n' + (j.hashtags || []).join(' ')], ['📋 Salin versi pendek', (j.caption_short || '') + '\n\n' + (j.hashtags || []).join(' ')]]));
+  return resultShell('caption', demo, kids);
+}
+function renderIdeas(j, demo) {
+  const kids = [];
+  kids.push(sec('Rencana seminggu'));
+  const tw = el('div', { class: 'tscroll' });
+  const table = el('table', { class: 't' });
+  table.append(el('tr', {}, ['Hari', 'Pillar', 'Format', 'Hook', 'Konsep', 'CTA'].map(h => el('th', { textContent: h }))));
+  (j.ideas || []).forEach(i => table.append(el('tr', {}, [
+    el('td', {}, [el('b', { textContent: i.day || i.no })]), el('td', { textContent: i.pillar }), el('td', { textContent: i.format }),
+    el('td', {}, [el('b', { textContent: i.hook })]), el('td', { textContent: i.concept }), el('td', { textContent: i.cta }),
+  ])));
+  tw.append(table); kids.push(tw);
+  kids.push(learnBox(j.learning_note));
+  const plain = (j.ideas || []).map(i => (i.day || i.no) + ' · ' + i.pillar + ' · ' + i.format + '\nHook: ' + i.hook + '\nKonsep: ' + i.concept + '\nCTA: ' + i.cta).join('\n\n');
+  kids.push(copyRow([['📋 Salin semua ide', plain]]));
+  return resultShell('ideas', demo, kids);
+}
+function scoreBadge(v) {
+  const label = v >= 8 ? 'Bagus' : v >= 5.5 ? 'Cukup' : 'Perlu kerja';
+  const cls = v >= 8 ? 'live' : v >= 5.5 ? 'demo' : '';
+  return el('span', { class: 'badge ' + (cls || ''), style: cls ? '' : 'background:var(--red-soft); color:var(--red);', textContent: v + '/10 · ' + label });
+}
+function renderReview(j, demo) {
+  const kids = [];
+  kids.push(el('div', { class: 'hero-score' }, [
+    el('span', { class: 'n', textContent: (j.overall != null ? j.overall : '?') }),
+    el('span', { class: 'd', textContent: '/ 10 · skor akun keseluruhan' }),
+  ]));
+  kids.push(sec('Skor per aspek'));
+  const meters = el('div');
+  (j.scores || []).forEach(s => {
+    meters.append(el('div', { class: 'meter-row' }, [
+      el('span', { class: 'meter-label', textContent: s.aspect }),
+      el('div', { class: 'meter' }, [el('i', { style: 'width:' + Math.max(4, Math.min(100, (s.score / 10) * 100)) + '%;' })]),
+      el('span', { class: 'score-num' }, [scoreBadge(s.score)]),
+    ]));
+    if (s.note) meters.append(el('div', { class: 'tiny', style: 'margin:-4px 0 8px;', textContent: '↳ ' + s.note }));
+  });
+  kids.push(meters);
+  const g2 = el('div', { class: 'grid-2', style: 'margin-top:14px;' });
+  g2.append(el('div', {}, [sec('Yang udah bagus'), el('ul', { class: 'clean good' }, (j.strengths || []).map(s => el('li', { textContent: s })))]));
+  g2.append(el('div', {}, [sec('Yang bocor'), el('ul', { class: 'clean bad' }, (j.weaknesses || []).map(s => el('li', { textContent: s })))]));
+  kids.push(g2);
+  kids.push(sec('Rekomendasi'));
+  kids.push(el('ul', { class: 'clean num' }, (j.recommendations || []).map(s => el('li', { textContent: s }))));
+  if ((j.quick_wins || []).length) {
+    kids.push(sec('⚡ Quick wins minggu ini'));
+    kids.push(el('ul', { class: 'clean idea' }, j.quick_wins.map(s => el('li', { textContent: s }))));
+  }
+  const plain = 'REVIEW AKUN — skor ' + j.overall + '/10\n\n' + (j.scores || []).map(s => s.aspect + ': ' + s.score + '/10 — ' + (s.note || '')).join('\n') + '\n\nKekuatan:\n' + (j.strengths || []).map(s => '+ ' + s).join('\n') + '\n\nKelemahan:\n' + (j.weaknesses || []).map(s => '- ' + s).join('\n') + '\n\nRekomendasi:\n' + (j.recommendations || []).map((s, i) => (i + 1) + '. ' + s).join('\n');
+  kids.push(copyRow([['📋 Salin review', plain]]));
+  return resultShell('review', demo, kids);
+}
+function renderCompare(j, demo) {
+  const kids = [];
+  (j.competitors || []).forEach(cp => {
+    const box = el('div', { class: 'hook-opt', style: 'margin-top:10px;' });
+    box.append(el('div', { class: 'row between' }, [
+      el('b', { style: 'font-size:16px; margin:0;', textContent: cp.handle }),
+      el('span', { class: 'chip', textContent: 'kompetitor' }),
+    ]));
+    box.append(el('div', { style: 'font-size:14px; color:var(--ink-2); margin-top:4px;', textContent: cp.positioning || '' }));
+    if ((cp.hook_patterns || []).length) box.append(el('div', { class: 'row', style: 'margin-top:8px;' }, cp.hook_patterns.map(h => el('span', { class: 'chip', textContent: '🪝 ' + h }))));
+    const g2 = el('div', { class: 'grid-2', style: 'margin-top:10px;' });
+    g2.append(el('div', {}, [el('b', { style: 'font-size:13px;', textContent: '✅ Bisa kita tiru-adaptasi' }), el('ul', { class: 'clean', style: 'font-size:13.5px;' }, (cp.tiru_adaptasi || []).map(s => el('li', { style: 'padding-left:4px;', textContent: '• ' + s })))]));
+    g2.append(el('div', {}, [el('b', { style: 'font-size:13px;', textContent: '🕳️ Kelemahan mereka' }), el('ul', { class: 'clean', style: 'font-size:13.5px;' }, (cp.kelemahan || []).map(s => el('li', { style: 'padding-left:4px;', textContent: '• ' + s })))]));
+    box.append(g2);
+    kids.push(box);
+  });
+  kids.push(sec('🎯 Celah buat kamu menang'));
+  kids.push(el('ul', { class: 'clean idea' }, (j.gaps || []).map(s => el('li', { textContent: s }))));
+  if ((j.hook_bank || []).length) {
+    kids.push(sec('🪝 Hook bank — sudah disesuaikan voice brand-mu (klik = salin)'));
+    kids.push(el('div', { style: 'display:grid; gap:8px;' }, j.hook_bank.map(h =>
+      el('div', { class: 'chip copy', style: 'justify-content:flex-start; padding:9px 14px; font-size:14px;', textContent: '💬 ' + h, onclick: () => copyText(h, 'Hook') }))));
+  }
+  kids.push(sec('🚀 5 langkah menang'));
+  kids.push(el('ul', { class: 'clean num' }, (j.action_ideas || []).map(s => el('li', { textContent: s }))));
+  const plain = 'PERBANDINGAN KOMPETITOR\n\n' + (j.competitors || []).map(c => c.handle + ' — ' + c.positioning + '\nHook: ' + (c.hook_patterns || []).join(', ') + '\nTiru: ' + (c.tiru_adaptasi || []).join('; ') + '\nLemah: ' + (c.kelemahan || []).join('; ')).join('\n\n') + '\n\nCELAH:\n' + (j.gaps || []).map(s => '• ' + s).join('\n') + '\n\nHOOK BANK:\n' + (j.hook_bank || []).map(s => '• ' + s).join('\n') + '\n\nLANGKAH:\n' + (j.action_ideas || []).map((s, i) => (i + 1) + '. ' + s).join('\n');
+  kids.push(copyRow([['📋 Salin analisis', plain]]));
+  return resultShell('compare', demo, kids);
+}
+
+/* ── TAB: RISET ────────────────────────────────────────────── */
+const TYPES_RISET = { review: { e: '🔍', label: 'Review IG-ku' }, compare: { e: '⚔️', label: 'Bandingkan Kompetitor' } };
+function renderRiset(body, c) {
+  const grid = el('div', { class: 'grid-2' });
+  // Review card
+  const rev = el('div', { class: 'card' });
+  rev.append(el('h3', { style: 'font-size:19px;', textContent: '🔍 Review IG-ku' }));
+  rev.append(el('p', { class: 'muted', style: 'font-size:14px; margin:6px 0 0;', textContent: 'AI menilai akunmu jujur: skor per aspek, yang bocor, dan cara benerinnya.' }));
+  rev.append(el('label', { textContent: 'Akun IG kamu' }));
+  const rh = el('input', { type: 'text', value: c.social || '', placeholder: '@brandku' }); rev.append(rh);
+  rev.append(el('div', { class: 'hint', textContent: hasApify() ? 'Post diambil otomatis via Apify.' : 'Tanpa kunci Apify (⚙️): tempel caption di bawah.' }));
+  rev.append(el('label', { textContent: 'Atau tempel 5-10 caption terakhirmu' }));
+  const rt = el('textarea', { placeholder: 'Pisahkan antar caption dengan baris kosong…' }); rev.append(rt);
+  const rbtn = el('button', { class: 'primary big', style: 'margin-top:14px;', textContent: '🔍 Review akunku' });
+  rev.append(rbtn);
+  grid.append(rev);
+  // Compare card
+  const cmp = el('div', { class: 'card' });
+  cmp.append(el('h3', { style: 'font-size:19px;', textContent: '⚔️ Bandingkan Kompetitor' }));
+  cmp.append(el('p', { class: 'muted', style: 'font-size:14px; margin:6px 0 0;', textContent: 'Lihat pola mereka, temukan celah, dapatkan hook bank versi brand-mu.' }));
+  cmp.append(el('label', { textContent: 'Kompetitor (1-3 akun, pisah koma)' }));
+  const ch = el('input', { type: 'text', value: (c.competitors || []).join(', '), placeholder: '@saingan1, @saingan2' }); cmp.append(ch);
+  cmp.append(el('div', { class: 'hint', textContent: hasApify() ? 'Post kompetitor diambil otomatis via Apify.' : 'Tanpa kunci Apify (⚙️): tempel caption mereka di bawah.' }));
+  cmp.append(el('label', { textContent: 'Atau tempel caption kompetitor' }));
+  const ct = el('textarea', { placeholder: 'Awali tiap blok dengan @handle lalu captionnya…\n\n@saingan1\ncaption mereka…' }); cmp.append(ct);
+  const cbtn = el('button', { class: 'primary big', style: 'margin-top:14px;', textContent: '⚔️ Bandingkan' });
+  cmp.append(cbtn);
+  grid.append(cmp);
+  body.append(grid);
+  const out = el('div', { id: 'risetResults' }); body.append(out);
+
+  rbtn.onclick = async () => {
+    rbtn.disabled = true;
+    const live = liveCard('🔍', 'Lagi review akun…'); out.prepend(live.card);
+    try {
+      let data = '';
+      const pasted = rt.value.trim();
+      const handle = rh.value.trim();
+      if (handle && hasApify()) {
+        live.update('Mengambil post ' + handle + ' via Apify… (±1 menit)');
+        try { const m = await apifyFetchIg([handle]); const k = Object.keys(m)[0]; if (k) data = formatIgBlock(k, m[k]); } catch (e) { if (!pasted) throw e; }
+      }
+      if (pasted) data += (data ? '\n\n' : '') + 'CAPTION (manual):\n' + pasted;
+      if (!data && !hasKey()) data = '(mode demo)';
+      if (!data) throw new Error('Isi akun IG (dengan kunci Apify) atau tempel caption dulu ya.');
+      const outp = await callLLM(REVIEW_SYSTEM, buildReviewPrompt(buildBrandProfile(c), data), { onDelta: live.update, demoType: 'review' });
+      const { readable, json } = splitOutput(outp.text);
+      live.card.replaceWith(json && json.type === 'review' ? renderReview(json, outp.demo) : resultShell('review', outp.demo, [el('div', { class: 'copybox', textContent: readable })]));
+    } catch (e) { live.card.replaceWith(errorCard(e)); }
+    finally { rbtn.disabled = false; }
+  };
+  cbtn.onclick = async () => {
+    cbtn.disabled = true;
+    const live = liveCard('⚔️', 'Lagi bandingin kompetitor…'); out.prepend(live.card);
+    try {
+      const handles = ch.value.split(',').map(s => s.trim()).filter(Boolean).slice(0, 3);
+      const pasted = ct.value.trim();
+      let compData = '';
+      if (handles.length && hasApify()) {
+        live.update('Mengambil post ' + handles.join(', ') + ' via Apify… (±1-2 menit)');
+        try {
+          const m = await apifyFetchIg(handles);
+          compData = Object.entries(m).map(([k, v]) => formatIgBlock(k, v)).join('\n\n');
+        } catch (e) { if (!pasted) throw e; }
+      }
+      if (pasted) compData += (compData ? '\n\n' : '') + pasted;
+      if (!compData && !hasKey()) compData = '(mode demo)';
+      if (!compData) throw new Error('Isi kompetitor (dengan kunci Apify) atau tempel caption mereka dulu ya.');
+      let myData = '';
+      const va = c.voiceAnalysis;
+      if (va && Array.isArray(va.sample_captions)) myData = va.sample_captions.join('\n---\n');
+      if (c.sampleCaptions) myData += (myData ? '\n---\n' : '') + c.sampleCaptions;
+      const outp = await callLLM(COMPARE_SYSTEM, buildComparePrompt(buildBrandProfile(c), myData, compData), { onDelta: live.update, demoType: 'compare' });
+      const { readable, json } = splitOutput(outp.text);
+      live.card.replaceWith(json && json.type === 'compare' ? renderCompare(json, outp.demo) : resultShell('compare', outp.demo, [el('div', { class: 'copybox', textContent: readable })]));
+    } catch (e) { live.card.replaceWith(errorCard(e)); }
+    finally { cbtn.disabled = false; }
+  };
 }
 
 /* ============================== WIRING ================================= */
@@ -665,6 +1510,92 @@ function applyDialogProvider(p) {
 $('#btnSettings').onclick = () => {
   $('#inpProvider').value = activeProvider();
   applyDialogProvider(activeProvider());
+/* ── TAB: PROFIL ───────────────────────────────────────────── */
+function renderProfil(body, c) {
+  // Latih AI
+  const train = el('div', { class: 'card', style: 'margin-bottom:14px;' });
+  train.append(el('h3', { style: 'font-size:19px;', textContent: '🧠 Latih AI dari Instagram' }));
+  train.append(el('p', { class: 'muted', style: 'font-size:14px; margin:6px 0 0;', textContent: 'AI belajar gaya nulis brand-mu dari kontennya sendiri — habis ini semua hasil makin "kamu banget".' }));
+  train.append(el('label', { textContent: 'Akun IG' }));
+  const vh = el('input', { type: 'text', value: c.social || '', placeholder: '@brandku' }); train.append(vh);
+  train.append(el('label', { textContent: 'Atau tempel caption terbaikmu (pisah baris kosong)' }));
+  const vs = el('textarea', { placeholder: 'Tempel 3-10 caption di sini…' }); train.append(vs);
+  const vbtn = el('button', { class: 'primary big', style: 'margin-top:14px;', textContent: '🧠 Pelajari brand-ku' });
+  train.append(vbtn);
+  const vout = el('div'); train.append(vout);
+  if (c.voiceAnalysis) {
+    vout.append(el('div', { class: 'learn', style: 'margin-top:14px;', html: '<b>✓ Voice sudah terlatih.</b> ' + escapeHtml(c.voiceAnalysis.style_summary || '') + ' — Latih ulang kapan saja.' }));
+  }
+  body.append(train);
+  vbtn.onclick = async () => {
+    vbtn.disabled = true; vout.innerHTML = '';
+    const live = liveCard('🧠', 'Lagi mempelajari brand…'); vout.append(live.card);
+    try {
+      const handle = vh.value.trim();
+      const pasted = vs.value.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+      const parts = [];
+      if (handle && hasApify()) {
+        live.update('Mengambil post ' + handle + '…');
+        try { const m = await apifyFetchIg([handle]); const k = Object.keys(m)[0]; if (k) parts.push(formatIgBlock(k, m[k])); } catch (e) { if (!pasted.length) throw e; }
+      }
+      if (pasted.length) parts.push('CONTOH CAPTION (manual):\n' + pasted.map(s => '---\n' + s).join('\n'));
+      if (!parts.length && !hasKey()) parts.push('(mode demo)');
+      if (!parts.length) throw new Error('Isi akun IG (dengan kunci Apify) atau tempel caption dulu ya.');
+      const outp = await callLLM(VOICE_SYSTEM, buildVoicePrompt(buildBrandProfile(c), parts.join('\n\n')), { onDelta: live.update, demoType: 'voice' });
+      const { readable, json } = splitOutput(outp.text);
+      live.card.remove();
+      if (json && typeof json === 'object' && (json.style_summary || json.sample_captions)) {
+        c.voiceAnalysis = json;
+        if (json.sapaan) c.sapaan = json.sapaan;
+        if (Array.isArray(json.signature_phrases) && json.signature_phrases.length) c.signature = json.signature_phrases.join(', ');
+        if (Array.isArray(json.avoid_words) && json.avoid_words.length) c.forbidden = json.avoid_words.join(', ');
+        saveClient(c);
+        vout.append(el('div', { class: 'learn', html: '<b>🎉 Kelar!</b> ' + escapeHtml(json.style_summary || '') + (outp.demo ? ' <i>(contoh demo)</i>' : '') }));
+        vout.append(el('div', { class: 'copybox', style: 'margin-top:10px; font-size:13px;', textContent: readable }));
+        toast('Voice brand tersimpan 🧠');
+      } else {
+        vout.append(el('div', { class: 'copybox', textContent: readable + '\n\n⚠️ Analisis tidak lengkap — coba lagi.' }));
+      }
+    } catch (e) { vout.innerHTML = ''; vout.append(errorCard(e)); }
+    finally { vbtn.disabled = false; }
+  };
+
+  // Ringkasan profil
+  const prof = el('div', { class: 'card' });
+  prof.append(el('div', { class: 'row between' }, [
+    el('h3', { style: 'font-size:19px;', textContent: '👤 Profil brand' }),
+    el('button', { textContent: '✏️ Ubah jawaban', onclick: () => startWizard(getClient(currentId)) }),
+  ]));
+  const dl = el('div', { style: 'margin-top:10px;' });
+  for (const [k, label] of Object.entries(PROFILE_LABELS)) {
+    const v = c[k];
+    if (!v || !String(v).trim()) continue;
+    dl.append(el('div', { style: 'padding:9px 0; border-bottom:1px dashed var(--line); font-size:14.5px;' }, [
+      el('span', { class: 'tiny', style: 'display:block;', textContent: label }),
+      el('span', { textContent: k === 'category' ? (CATS.find(x => x.id === v)?.label || v) : String(v) }),
+    ]));
+  }
+  if ((c.competitors || []).length) dl.append(el('div', { style: 'padding:9px 0; font-size:14.5px;' }, [
+    el('span', { class: 'tiny', style: 'display:block;', textContent: 'Kompetitor' }),
+    el('span', { textContent: c.competitors.join(', ') }),
+  ]));
+  prof.append(dl);
+  body.append(prof);
+
+  const danger = el('div', { class: 'row', style: 'margin-top:18px; justify-content:flex-end;' });
+  danger.append(el('button', { class: 'danger', textContent: '🗑️ Hapus brand ini', onclick: () => {
+    if (!confirm('Yakin hapus ' + c.name + '? Tidak bisa dibalikin.')) return;
+    saveClients(loadClients().filter(x => x.id !== c.id));
+    toast('Brand dihapus'); renderHome();
+  } }));
+  body.append(danger);
+}
+
+/* ═══════════════════════ SETTINGS & INIT ═══════════════════════ */
+$('#btnSettings').onclick = () => {
+  $('#inpKey').value = store.get('ce_apikey', '');
+  $('#inpModel').value = store.get('ce_model', 'claude-sonnet-4-6');
+  $('#inpApify').value = store.get('ce_apify', '');
   $('#dlgSettings').showModal();
 };
 $('#inpProvider').onchange = (e) => applyDialogProvider(e.target.value);
@@ -681,20 +1612,14 @@ $('#btnAddBrand').onclick = () => {
   const list = loadClients();
   const c = { id: uid(), name: '', category: 'other' };
   list.push(c); saveClients(list); openClient(c.id); switchTab('profile');
+  store.set('ce_apikey', $('#inpKey').value.trim());
+  store.set('ce_model', $('#inpModel').value);
+  store.set('ce_apify', $('#inpApify').value.trim());
+  $('#dlgSettings').close(); refreshModeBadge(); toast('Pengaturan tersimpan ✓');
 };
-$('#btnBack').onclick = () => { $('#viewClient').hidden = true; $('#viewDashboard').hidden = false; renderDashboard(); };
-$('#btnDelete').onclick = () => {
-  if (!confirm('Hapus brand ini?')) return;
-  saveClients(loadClients().filter(x => x.id !== currentId));
-  $('#btnBack').onclick();
-  toast('Brand dihapus');
-};
-$('#btnSaveProfile').onclick = saveProfile;
-document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
-
-/* init */
-refreshKeyState();
-renderDashboard();
+$('#logoHome').onclick = () => { if (wiz && wiz.isNew && !confirm('Keluar? Isian belum tersimpan.')) return; wiz = null; renderHome(); };
+refreshModeBadge();
+renderHome();
 </script>
 </body>
 </html>
