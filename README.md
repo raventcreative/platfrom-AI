@@ -117,6 +117,8 @@ Ditutup dengan orkestrasi end-to-end, scheduler/publish, report ke klien, lalu p
 | **Generator**: script · carousel · storyboard · caption · ide mingguan | ✅ via chat |
 | **LLM caller** (Anthropic, Sonnet default) + **mode demo** tanpa API key | ✅ |
 | **Brand Voice "training"** dari IG handle (scrape Apify / caption manual) | ✅ chat, API & prototype |
+| **Review IG** (skor per aspek + rekomendasi) & **Bandingkan Kompetitor** (gap + hook bank) | ✅ prototype |
+| **Onboarding wizard** + UI redesign (hasil terstruktur, streaming, mobile-ready) | ✅ prototype |
 | Worker generator (rakit prompt → LLM → simpan hasil → update chat) | ✅ |
 | Web UI chat-first + brand switcher + polling hasil | ✅ |
 | Pilar berat: Research (Meta Ads) · desain Canva · Video (Higgsfield) | ⬜ Fase 2+ |

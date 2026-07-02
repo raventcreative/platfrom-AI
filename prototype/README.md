@@ -1,40 +1,41 @@
 # Content Engine — Prototype (standalone)
 
-Prototipe **satu file** untuk uji coba cepat, tanpa install / database / server.
-Ini jalur paling ringan dari [handbook §11 Opsi A](../docs/CONTENT_ENGINE_HANDBOOK.md).
+Aplikasi **satu file** untuk bikin konten sosmed multi-brand — tanpa install, database, atau server.
+Didesain supaya siapa pun bisa pakai: onboarding tanya-jawab santai, satu tombol besar per aksi,
+hasil dirender rapi (bukan tembok teks).
 
 > Untuk versi aplikasi penuh (NestJS + Next.js + Postgres), lihat `apps/` dan
 > [DEVELOPMENT.md](../docs/DEVELOPMENT.md). Prototipe ini terpisah & mandiri.
 
-## Cara pakai (30 detik)
+## Cara pakai (1 menit)
 
-1. **Buka** `content-engine.html` — double-click, atau seret ke browser.
-2. Klik **Muat contoh** → 2 brand contoh (GlowUp Skincare, Mie Gacoan) muncul.
-3. Klik salah satu brand → tab **Generate** → isi fokus hari ini → klik
-   **Script / Carousel / Storyboard / Caption / Ide mingguan** atau **⚡ Paket Lengkap**.
-4. Hasil muncul sebagai **teks enak-dibaca + blok JSON** dengan tombol **Copy**.
+1. **Buka** `content-engine.html` di browser (double-click). Untuk API sungguhan, lebih baik
+   lewat server lokal: `python3 -m http.server 8000` → `http://localhost:8000/content-engine.html`.
+2. Klik **🎁 Coba pakai brand contoh** (langsung jalan) — atau **➕ Bikin brand-ku** dan jawab
+   wizard-nya (±2 menit, bisa dilewati sebagian).
+3. Tab **✨ Bikin Konten** → pilih jenis → ceritakan fokus hari ini → **✨ Bikinin!**
+4. Tanpa kunci AI, semua jalan di **mode demo** (hasil contoh). Isi kunci di **⚙️** untuk hasil
+   sungguhan dari brand-mu.
 
-Tanpa API key, prototipe jalan di **mode demo** (output contoh) — cukup untuk
-mencoba alurnya. Untuk hasil sungguhan, klik **⚙️ API key** dan isi Anthropic API key
-(disimpan di browser kamu saja, `localStorage`).
+## Fitur
 
-## Apa yang ada di dalamnya
+| Fitur | Isi |
+|---|---|
+| **Onboarding wizard** | Profil brand via tanya-jawab bertahap: produk, pembeli, gaya bicara, CTA, aturan aman (BPOM/halal), modul per vertikal, sosmed & kompetitor |
+| **5 generator + Paket Lengkap** | 🎬 Script video (3 opsi hook + alasan kenapa works + scene + CTA) · 🎠 Carousel (slide cards) · ✍️ Caption+Hashtag · 🎥 Storyboard shoot-pakai-HP · 🗓️ Ide seminggu — semua dengan **catatan pembelajaran** |
+| **🔍 Review IG-ku** | AI menilai akunmu: skor per aspek (meter), kekuatan, kelemahan, rekomendasi, quick wins |
+| **⚔️ Bandingkan Kompetitor** | Pola hook kompetitor, yang layak ditiru-adaptasi, kelemahan mereka, **celah buat menang**, hook bank yang sudah disesuaikan voice brand-mu |
+| **🧠 Latih AI dari Instagram** | AI belajar gaya nulis brand dari kontennya → voice profile disuntik ke semua hasil |
+| **Streaming** | Hasil AI mengalir real-time saat ditulis — terasa cepat |
+| **Sumber data IG** | Scrape handle via **Apify** (isi token di ⚙️) atau **tempel caption manual** (tanpa token) |
 
-- **Intake profil brand** per vertikal (modul skincare / F&B muncul sesuai kategori).
-- **🧠 Latih AI dari Instagram** (tab Profil): AI menganalisis konten IG brand → mengekstrak
-  **brand voice profile** (nada, sapaan, frasa khas, contoh caption asli) → otomatis disuntik
-  ke semua generate. Sumber data: **scrape IG handle via Apify** (isi Apify token di ⚙️)
-  dan/atau **tempel contoh caption manual** (tanpa token). Field intake (sapaan, signature,
-  kata terlarang, emoji, nada) ikut terisi otomatis.
-- **Daily input** (fokus harian) → **5 generator** + Paket Lengkap.
-- **Knowledge Playbook** + **Compliance** (BPOM / halal / SARA) disuntik ke tiap prompt.
-- **Multi-brand** tersimpan di `localStorage` (per browser, tidak sinkron antar perangkat).
-- Panggilan LLM langsung dari browser ke Anthropic Messages API + fallback mode demo.
+Semua hasil = tampilan terstruktur (kartu hook, tabel scene, slide, meter skor) + tombol **salin**
+per bagian. Prinsip: **AI = drafter, manusia = approver** — selalu review sebelum posting.
 
 ## Catatan
 
-- **AI = drafter, manusia = approver.** Selalu review sebelum posting.
-- Data & API key disimpan **hanya di browser ini** (localStorage). Bersihkan lewat
-  tombol hapus brand atau clear site data.
-- Untuk deploy: upload `content-engine.html` ke shared hosting (rename `index.html`),
-  pastikan HTTPS aktif. Lihat [handbook §12](../docs/CONTENT_ENGINE_HANDBOOK.md).
+- Data & kunci disimpan **hanya di browser ini** (localStorage) — tidak sinkron antar perangkat.
+- Kunci AI: buat di console.anthropic.com → API Keys (`sk-ant-...`). Model bisa dipilih:
+  seimbang (Sonnet), paling cepat (Haiku), paling bagus (Opus).
+- Deploy: upload `content-engine.html` ke shared hosting (rename `index.html`), pastikan HTTPS.
+  Lihat [handbook §12](../docs/CONTENT_ENGINE_HANDBOOK.md).
