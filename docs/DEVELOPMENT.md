@@ -10,16 +10,33 @@ docs/    PRD, tech spec, dokumen ini
 docker-compose.yml   Postgres + Redis untuk dev lokal
 ```
 
-## Yang sudah ada di Sprint 1
+## Yang sudah ada
 
 - **Auth** — Bearer token = `User.apiToken` (`AuthGuard`).
 - **Multi-tenant** — semua query ter-scope ke `orgId`.
-- **Org/Brand/User** — model + endpoint `GET /me`, CRUD brand dasar.
+- **Org/Brand/User** — model + endpoint `GET /me`, CRUD brand dasar + `category`/`profile` intake.
 - **Brand Voice Profile & Brand Kit** — sudah di schema + diisi oleh seed.
-- **Chat shell** — `Conversation`/`Message`, kirim pesan → buat Job → balasan placeholder.
-- **Job queue** — BullMQ (`agent-jobs`) + worker stub (`JobsProcessor`).
+- **Chat shell** — `Conversation`/`Message`, kirim pesan → deteksi jenis output → buat Job.
+- **Job queue** — BullMQ (`agent-jobs`) + worker generator (`JobsProcessor`).
+- **Content Engine (otak)** — `src/content` (playbook + compliance + generators + prompt builder)
+  & `src/llm` (Anthropic caller + mode demo). Worker merakit system prompt (profil brand +
+  playbook + compliance), memanggil LLM, menyimpan hasil (teks + JSON) & menampilkannya di chat.
 
-> Agent asli (research/script/carousel/video) **belum** diimplementasi — itu Sprint 3+. Worker saat ini hanya menandai job `SUCCEEDED` dengan output placeholder.
+**Generator yang aktif:** script · carousel · storyboard · caption · ide mingguan.
+
+- **Brand Voice "training" dari Instagram** — `src/instagram` (scrape post publik via **Apify**,
+  set `APIFY_TOKEN`) + agent `BRANDVOICE`: analisis konten IG / contoh caption → ekstrak voice
+  profile (nada, sapaan, frasa khas, contoh caption asli) → tersimpan di `BrandVoiceProfile` +
+  `Brand.profile` → **otomatis disuntik ke semua generate berikutnya**.
+  - Via chat: `"Pelajari brand dari IG @brandku"`.
+  - Via API: `POST /brands/:id/voice-profile` body `{ "igHandle": "@brandku" }` atau
+    `{ "samples": ["caption 1", "caption 2"] }` → `202 { jobId }` → poll `GET /jobs/:id`.
+  - Tanpa `APIFY_TOKEN`, scraping nonaktif — kirim `samples` manual.
+  - Catatan: hanya data publik; hormati ToS platform (PRD §14). Ini ekstraksi voice + few-shot,
+    bukan fine-tuning model.
+
+> Tanpa `ANTHROPIC_API_KEY` worker jalan di **mode demo** (output contoh) — alur tetap bisa diuji.
+> Pilar berat (Research/Meta Ads, desain Canva, Video Higgsfield) = **Fase 2+**.
 
 ## Prasyarat
 
@@ -38,6 +55,7 @@ npm install
 # 3. Env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.local.example apps/web/.env.local
+# (opsional) isi ANTHROPIC_API_KEY di apps/api/.env untuk hasil sungguhan; kosong = mode demo
 
 # 4. DB: generate client, migrate, seed
 npm run prisma:generate -w @prodpilot/api
@@ -66,7 +84,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
   -d '{"brandId":"BRAND_ID","title":"Tes"}' $BASE/conversations
 
 curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"content":"Riset kompetitor @brandA"}' $BASE/conversations/CONVO_ID/messages
+  -d '{"content":"Buatkan script Reels 30 detik promo bundling"}' $BASE/conversations/CONVO_ID/messages
 
 # Cek status job (jobId dari respons di atas)
 curl -H "Authorization: Bearer $TOKEN" $BASE/jobs/JOB_ID
@@ -87,8 +105,12 @@ Di UI: buka http://localhost:3000 → pilih brand di kanan atas → ketik perint
 | GET | `/conversations?brandId=` | daftar percakapan brand |
 | GET | `/conversations/:id/messages` | pesan dalam percakapan |
 | POST | `/conversations/:id/messages` | kirim pesan → enqueue job |
+| POST | `/brands/:id/voice-profile` | "training" voice dari IG handle / samples → `202 {jobId}` |
 | GET | `/jobs/:id` | status & output job |
 
 ## Berikutnya (Sprint 2+)
 
-Lihat [TECH_SPEC_MVP.md §11](TECH_SPEC_MVP.md): Brand Voice extraction → Research Agent (IG + Meta Ads Library) → Script → Carousel → Video.
+MVP = **Content Engine** (lihat [Handbook](CONTENT_ENGINE_HANDBOOK.md) & [TECH_SPEC_MVP.md §11](TECH_SPEC_MVP.md)):
+Intake + Brand Profile → Prompt Engine (system prompt + playbook + compliance) → Generator inti (script + carousel copy) → Generator lengkap (storyboard/caption/ide) → Compliance & QA.
+
+> Pilar berat (Research/Meta Ads, desain Canva, Video Higgsfield) = **Fase 2+**.

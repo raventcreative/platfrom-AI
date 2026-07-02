@@ -14,6 +14,10 @@ export class CreateBrandDto {
   description?: string;
 
   @IsOptional()
+  @IsIn(['skincare', 'fnb', 'fashion', 'service', 'other'])
+  category?: 'skincare' | 'fnb' | 'fashion' | 'service' | 'other';
+
+  @IsOptional()
   @IsArray()
   @IsIn(['instagram', 'tiktok'], { each: true })
   platforms?: ('instagram' | 'tiktok')[];

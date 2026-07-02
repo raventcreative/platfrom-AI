@@ -3,8 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { JobAgent, MessageRole } from '@prisma/client';
+import { MessageRole } from '@prisma/client';
 import { AuthContext } from '../auth/auth.decorator';
+import { detectAgent, generatorLabel } from '../content';
 import { JobsService } from '../jobs/jobs.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -54,9 +55,10 @@ export class ConversationsService {
   }
 
   /**
-   * Chat shell. Sprint 1: orchestrator is a stub — every message is routed to a
-   * placeholder STRATEGY job and acknowledged. Later sprints add intent routing
-   * to the real agents and stream their output back as assistant messages.
+   * Chat shell. Mendeteksi jenis output dari perintah (script/carousel/
+   * storyboard/caption/ideas), membuat balasan placeholder, lalu mengantrikan
+   * job generator. Worker mengisi balasan dengan hasil sungguhan (lihat
+   * JobsProcessor). Pesan dibuat sebelum enqueue agar worker tidak balapan.
    */
   async postMessage(auth: AuthContext, conversationId: string, content: string) {
     const convo = await this.loadConversation(auth, conversationId);
@@ -65,7 +67,8 @@ export class ConversationsService {
       data: { conversationId, role: MessageRole.USER, content },
     });
 
-    const job = await this.jobs.enqueue(convo.brandId, JobAgent.STRATEGY, {
+    const agent = detectAgent(content);
+    const job = await this.jobs.create(convo.brandId, agent, {
       conversationId,
       content,
     });
@@ -74,11 +77,13 @@ export class ConversationsService {
       data: {
         conversationId,
         role: MessageRole.ASSISTANT,
-        content:
-          'Diterima. Orchestrator/agent belum diimplementasi (Sprint 1) — pekerjaan diantrikan.',
+        content: `Sedang menyusun ${generatorLabel(agent)}…`,
         jobId: job.id,
       },
     });
+
+    // Job baru masuk antrian setelah balasan tersimpan.
+    await this.jobs.enqueue(job.id, agent);
 
     // Touch the conversation so it sorts to the top of the list.
     await this.prisma.conversation.update({

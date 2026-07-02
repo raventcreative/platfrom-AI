@@ -29,12 +29,25 @@ enum VoiceStatus {
   READY
 }
 
+enum BrandCategory {
+  SKINCARE
+  FNB
+  FASHION
+  SERVICE
+  OTHER
+}
+
 enum JobAgent {
-  RESEARCH
-  BRANDVOICE
-  STRATEGY
+  // MVP — Content Engine generators
   SCRIPT
   CAROUSEL
+  STORYBOARD
+  CAPTION
+  IDEAS
+  BRANDVOICE
+  // Fase 2+
+  RESEARCH
+  STRATEGY
   VIDEO
 }
 
@@ -84,7 +97,9 @@ model Brand {
   name          String
   niche         String?
   description   String?
+  category      BrandCategory      @default(OTHER)
   platforms     Platform[]
+  profile       Json?              // jawaban intake (modul per vertikal)
   status        String             @default("active")
   voiceProfile  BrandVoiceProfile?
   kit           BrandKit?

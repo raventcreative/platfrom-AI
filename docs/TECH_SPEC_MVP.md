@@ -1,31 +1,62 @@
-# Technical Spec — MVP Fase 1
+# Technical Spec — ProdPilot (MVP: Content Engine)
 
-> **Status:** Draft v1.0
+> **Status:** Draft v1.1
 > **Tanggal:** 2026-06-30
-> **Mengacu pada:** [PRD.md](PRD.md) §6 (Empat Pilar), §13 (Roadmap Fase 1)
+> **Mengacu pada:** [PRD.md](PRD.md) §1.1 (Visi vs MVP), §6 (Empat Pilar), §13 (Roadmap) · [Content Engine Handbook](CONTENT_ENGINE_HANDBOOK.md) (spec MVP)
 > **Referensi produk sejenis:** Vamos AI (getvamos.ai) — chat-first, brand voice profile, riset terintegrasi, model routing, multi-brand (agency plan)
 
-Dokumen ini mendefinisikan **arsitektur, data model, desain agent, kontrak API, integrasi tool, dan model routing** untuk MVP internal (mode done-for-you). Tujuan: tim bisa menjalankan 4 pilar untuk banyak brand.
+Dokumen ini mendefinisikan **arsitektur, data model, desain agent, kontrak API, integrasi tool, dan model routing** untuk ProdPilot. Mengikuti framing PRD §1.1: **MVP = Content Engine** (§1–§1.1) dibangun lebih dulu; bagian arsitektur/data/agent/API/tool selebihnya mendeskripsikan **platform penuh (visi, Fase 2+)** dengan subset MVP ditandai per bagian.
 
 ---
 
-## 1. Lingkup MVP Fase 1
+## 1. Lingkup MVP — Content Engine
 
-**Masuk:**
-- Multi-brand workspace + **Brand Voice Profile** (ekstrak dari contoh konten / link sosial).
-- **Pilar 1 — Research Agent**: organik IG + **Meta Ads Library**.
-- **Pilar 2 — Script Engine**: multi-varian, per platform (Reels/TikTok).
-- **Pilar 3 — Carousel Engine**: copy + desain (Canva).
-- **Pilar 4 — Video Engine**: script → video + voice-over (Higgsfield).
-- **Antarmuka chat-first** per brand + approval manual + export.
-- **Model routing** (Claude untuk tulis, model murah untuk riset/klasifikasi).
+**Masuk (MVP):**
+- **Multi-brand**: intake profil brand (1x/klien, modul per vertikal) + **Brand Voice Profile**.
+- **Daily input** (fokus harian) → **generate** on-demand.
+- **5 generator**: script Reels/TikTok, carousel IG (copy), storyboard video, caption+hashtag, ide konten mingguan + **Paket Lengkap**.
+- **Knowledge Playbook** + **Compliance per vertikal** (BPOM/halal/SARA) disuntik ke tiap generate.
+- **Output**: teks enak-dibaca + **blok JSON terstruktur**; **review & approve** manual; copy/export.
+- **Antarmuka chat-first** per brand; **LLM-only** (belum perlu tool berat).
+- **Model routing** (Sonnet default; Opus untuk kualitas tertinggi).
 
-**Ditunda (fase berikut):**
+**Ditunda → Fase 2+ (lihat [PRD §13](PRD.md)):**
+- **Pilar 1 — Research Agent** (organik IG + **Meta Ads Library**).
+- **Pilar 3 — desain Carousel** (render Canva) — di MVP hanya **copy**.
+- **Pilar 4 — Video Engine** (Higgsfield) — di MVP hanya **storyboard** (shoot pakai HP).
 - Auto-publish/scheduler, integrasi TikTok resmi, billing/kuota SaaS, analytics performa, kolaborasi multi-user lanjutan.
 
 ---
 
+## 1.1 Desain MVP — Content Engine
+
+Inti MVP **bukan** multi-agent berat, tapi **satu persona AI** (Content Strategist) + **generator** per jenis output. Tiap generate = satu panggilan LLM dengan system prompt yang dirakit:
+
+```
+System Prompt = Persona
+              + {{BRAND_PROFILE}}     (jawaban intake → "Label: nilai")
+              + {{PLAYBOOK}}          (knowledge playbook, konstan)
+              + {{COMPLIANCE_FOCUS}}  (aturan per vertikal: skincare/F&B/umum)
+              + Self-check
+User Prompt   = Generator instruction + {{DAILY_INPUT}}
+```
+
+**Komponen (mirror [Handbook §5–§8](CONTENT_ENGINE_HANDBOOK.md)):**
+- `buildSystemPrompt(profile, category)` — gabung persona + profil + playbook + compliance.
+- `complianceFocus(category)` — pilih aturan vertikal (BPOM / F&B / umum).
+- `GENERATORS` — instruksi + skema JSON output per tipe (script/carousel/storyboard/caption/ideas).
+- `buildBrandProfile(client)` / `buildDailyInput(d)` — map field intake → label.
+- **LLM caller** — Anthropic Messages API; fallback **mode demo** kalau tak ada API key.
+
+**Output tiap generate:** versi enak-dibaca + **blok JSON** (skema per tipe) → disimpan sebagai `Generation`, di-review/approve, copy/export.
+
+**Tidak dibutuhkan di MVP:** Meta Ads Library, Higgsfield, render Canva, scraping. Hanya **LLM**. Tool berat masuk Fase 2.
+
+---
+
 ## 2. Arsitektur Sistem
+
+> _Diagram di bawah = **platform penuh (visi)**. Di **MVP (Content Engine)** jalurnya lebih ringkas: Client → API → **Prompt Engine + LLM** (generator). Queue dipakai untuk antrian generate, **tanpa** tool layer berat (Meta Ads / Higgsfield / Canva). Lihat §1.1._
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -74,6 +105,8 @@ Dokumen ini mendefinisikan **arsitektur, data model, desain agent, kontrak API, 
 
 Setiap brand punya **conversation thread**. User mengetik perintah natural; orchestrator memutuskan agent/tool mana yang dipanggil, lalu menstream hasil. Output yang "berbobot" (script, carousel, video) juga tersimpan sebagai **artifact** terstruktur yang bisa di-review/approve di luar chat.
 
+> _**MVP:** contoh di bawah menampilkan alur **visi penuh**. Di MVP, perintah chat berkisar pada **generate** (script/carousel/storyboard/caption/ideas) dari profil brand + daily input; langkah **Riset** dan **Video** = Fase 2+._
+
 ```
 User: "Riset 3 kompetitor ini: @brandA @brandB @brandC, fokus serum wajah"
    → Orchestrator → Research Agent → IG + Meta Ads Library
@@ -95,6 +128,8 @@ User: "Bikin videonya dari script varian 1"
 
 Notasi: TypeScript-style untuk keterbacaan; implementasi di Postgres (kolom JSONB untuk field fleksibel). Semua entitas ber-`id` (uuid), `createdAt`, `updatedAt`, dan multi-tenant via `orgId`.
 
+> _**Entitas MVP (Content Engine):** `Organization`, `User`, `Brand` (+ `profile` JSONB dari intake), `BrandVoiceProfile`, `BrandKit`, `DailyInput`, `Generation`, `Conversation`, `Message`, `Job`. Entitas `Competitor`, `ResearchReport`, `ContentIdea`, `ContentProject`, `Script`/`Carousel`/`Video` (artifact terpisah), `Asset` = **Fase 2+** (di MVP, output cukup `Generation`; info kompetitor cukup di `Brand.profile`)._
+
 ```ts
 // ── Tenant & user ──────────────────────────────────────────────
 interface Organization { id; name; plan: 'agency'|'saas'; }      // akun (agency/klien)
@@ -104,6 +139,8 @@ interface User { id; orgId; email; name; role: 'owner'|'editor'|'viewer'; }
 interface Brand {
   id; orgId; name; niche; description;
   platforms: ('instagram'|'tiktok')[];
+  category: 'skincare'|'fnb'|'fashion'|'service'|'other';  // pilih modul intake/compliance
+  profile?: any;                           // jawaban intake (JSONB, sumber: intake-schema)
   status: 'active'|'archived';
 }
 
@@ -189,10 +226,28 @@ interface Asset {
   url; source:'higgsfield'|'canva'|'upload'; meta?;
 }
 
+// ── MVP: intake & generation ───────────────────────────────────
+interface DailyInput {                     // diisi tiap pagi (per brand)
+  id; brandId; date;
+  focus; focusDetail; goal;                // fokus + detail + tujuan hari ini
+  moment?; angle?; outputTypes: string[];  // momen/event, hook, jenis output
+  platform?; notes?;
+}
+
+interface Generation {                     // output tiap generate (MVP)
+  id; brandId; dailyInputId?;
+  type: 'script'|'carousel'|'storyboard'|'caption'|'ideas';
+  readable: string;                        // versi enak-dibaca
+  json: any;                               // blok JSON terstruktur (skema per tipe)
+  complianceNotes?: string;
+  status: 'draft'|'approved'|'exported';
+}
+
 // ── Orkestrasi & chat ──────────────────────────────────────────
 interface Job {
   id; brandId; projectId?;
-  agent: 'research'|'brandvoice'|'strategy'|'script'|'carousel'|'video';
+  agent: 'brandvoice'|'script'|'carousel'|'storyboard'|'caption'|'ideas'   // MVP
+       | 'research'|'strategy'|'video';                                    // Fase 2+
   status:'queued'|'running'|'succeeded'|'failed';
   input; output?; error?;
   costCredits?: number; tokensUsed?: number;
@@ -209,12 +264,13 @@ interface Message {
 ```
 Organization 1─* Brand 1─1 BrandVoiceProfile
                  Brand 1─1 BrandKit
-                 Brand 1─* Competitor
-                 Brand 1─* ResearchReport 1─* ContentIdea
-                 Brand 1─* ContentProject ──< Script | Carousel | Video
-                 Brand 1─* Asset
+                 Brand 1─* DailyInput 1─* Generation        # MVP
+                 Brand 1─* Competitor                       # Fase 2+
+                 Brand 1─* ResearchReport 1─* ContentIdea   # Fase 2+
+                 Brand 1─* ContentProject ──< Script | Carousel | Video   # Fase 2+
+                 Brand 1─* Asset                            # Fase 2+
                  Brand 1─* Conversation 1─* Message
-Job *─1 Brand   (melacak setiap eksekusi agent)
+Job *─1 Brand   (melacak setiap eksekusi agent/generator)
 ```
 
 ---
@@ -222,6 +278,8 @@ Job *─1 Brand   (melacak setiap eksekusi agent)
 ## 5. Desain Agent
 
 Setiap agent = fungsi murni `(input, brandContext, tools) → output terstruktur`. Orchestrator memilih agent berdasarkan intent (dari chat) atau pemanggilan API langsung.
+
+> _**MVP (Content Engine):** tidak ada multi-agent berat — **satu persona** (Content Strategist) menjalankan **generator** (script / carousel-copy / storyboard / caption / ideas) via system prompt terakit (§1.1). `BrandVoice` opsional (cukup paste contoh caption di intake). Baris **Research**, **Video**, dan **Carousel-desain** di tabel = **Fase 2+**._
 
 | Agent | Tugas | Model (default) | Tools |
 |---|---|---|---|
@@ -254,6 +312,8 @@ type BrandContext = {
 
 Tujuan: kualitas tinggi di tugas menulis, hemat di tugas volume/riset.
 
+> _**MVP:** generator pakai **`claude-sonnet-4-6`** (default, hemat & cepat); **`claude-opus-4-8`** untuk kualitas tertinggi. Routing **Haiku** untuk volume (rangkum riset/komentar) relevan di **Fase 2** (Research)._
+
 | Jenis tugas | Model | Alasan |
 |---|---|---|
 | Script, carousel copy (kualitas kreatif) | `claude-opus-4-8` | Output paling tajam, langsung dipakai produksi |
@@ -267,6 +327,21 @@ Router membaca `agent` + ukuran/jenis input → pilih model; bisa di-override pe
 ## 7. Kontrak API (REST)
 
 Base: `/api/v1`. Auth: Bearer token; setiap request ter-scope ke `orgId`; `brandId` wajib untuk operasi brand.
+
+> _Blok **Content Engine (MVP)** di bawah = endpoint yang aktif lebih dulu (semua generate lewat `/brands/:id/generate`). Blok **Pilar 1–4** & **project/approve/export** = model lebih kaya untuk **Fase 2+**; `/conversations` & `/jobs` tetap dipakai di MVP._
+
+### Content Engine (MVP)
+```http
+GET  /schema                      → intake schema (sumber form, per vertikal)
+POST /brands                      → buat brand + simpan profil intake   { name, category, profile }
+PUT  /brands/:id/profile          → update jawaban intake (JSONB)
+POST /brands/:id/generate
+     body: { outputType:'script'|'carousel'|'storyboard'|'caption'|'ideas', dailyInput }
+     → 200|202 { generation }     # ringan → sinkron/stream; berat → { jobId }
+POST /brands/:id/generate-package → script + carousel + caption sekaligus (Paket Lengkap)
+GET  /generations/:id             → Generation (readable + json + status)
+POST /generations/:id/approve     → status → approved
+```
 
 ### Brand & Voice
 ```http
@@ -328,6 +403,8 @@ POST /projects/:id/export          → { format } → URL hasil
 
 ## 8. Pemetaan Tool (MCP) → Agent
 
+> _**MVP (Content Engine) hanya butuh LLM (Anthropic).** Semua tool di tabel ini (IG / Meta Ads / Higgsfield / Canva) dipakai di **Fase 2+**. Di MVP, generator murni **prompt + LLM** (+ mode demo bila tak ada API key)._
+
 | Kebutuhan | Tool (MCP) | Dipakai oleh |
 |---|---|---|
 | Riset organik IG | `Instagram (Composio)` | Research, BrandVoice |
@@ -371,19 +448,28 @@ POST /projects/:id/export          → { format } → URL hasil
 
 ---
 
-## 11. Rencana Build Fase 1 (urutan)
+## 11. Rencana Build (urutan)
+
+**Fase 1 — MVP Content Engine:**
 
 | Sprint | Fokus | Deliverable |
 |---|---|---|
-| 1 | Fondasi | Auth, Org/Brand/User, multi-tenant, chat shell, job queue |
-| 2 | Brand Voice | Ekstrak voice profile dari contoh/link, brand kit |
-| 3 | **Research Agent** | Organik IG + Meta Ads Library → ResearchReport + ideas |
-| 4 | **Script Engine** | Multi-varian per platform, streaming, approval, export |
-| 5 | **Carousel Engine** | Copy slide + desain Canva + export |
-| 6 | **Video Engine** | Storyboard → Higgsfield scene + voice → assembly 9:16 |
-| 7 | Polish | Cost guard, error handling, asset library, QA end-to-end |
+| 1 | Fondasi | Auth, Org/Brand/User, multi-tenant, chat shell, job queue — ✅ scaffold |
+| 2 | Intake + Brand Profile | Intake schema per vertikal, profil brand lengkap, Brand Voice, Brand Kit |
+| 3 | Prompt Engine | `buildSystemPrompt` (profil + playbook + compliance), LLM caller + mode demo |
+| 4 | Generator inti | Script + Carousel (copy): output teks + JSON, review/approve, copy/export |
+| 5 | Generator lengkap | Storyboard + Caption + Ide mingguan + Paket Lengkap |
+| 6 | Compliance & QA | Self-check, compliance per vertikal diperketat, cost guard, QA end-to-end |
 
-> Urutan ini sesuai PRD: Riset → Script → Carousel → Video (video paling berat, terakhir).
+**Fase 2+ — Pilar berat (lihat [PRD §13](PRD.md) Fase 2):**
+
+| Fokus | Deliverable |
+|---|---|
+| **Research Agent** | Organik IG + Meta Ads Library → ResearchReport + ideas, feed ke generator |
+| **Carousel desain** | Render Canva brand-consistent + export gambar |
+| **Video Engine** | Storyboard → Higgsfield scene + voice → assembly 9:16 |
+
+> Build order MVP sesuai handbook: prompt + playbook + compliance → generator inti → generator lengkap → QA. Pilar berat (Research/Canva/Video) menyusul di Fase 2.
 
 ---
 
@@ -397,4 +483,4 @@ POST /projects/:id/export          → { format } → URL hasil
 
 ---
 
-_Spec ini untuk MVP internal (done-for-you). Setelah disepakati, lanjut ke: skema DB final (Prisma), definisi prompt tiap agent, dan implementasi Sprint 1._
+_MVP = Content Engine (done-for-you). Lanjutan: skema DB final (Prisma) untuk entitas MVP, definisi prompt tiap generator ([Handbook §5–§8](CONTENT_ENGINE_HANDBOOK.md)), implementasi Sprint 2 (intake + brand profile). Pilar berat = Fase 2+._

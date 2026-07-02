@@ -1,4 +1,4 @@
-import { Platform, PrismaClient } from '@prisma/client';
+import { BrandCategory, Platform, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -33,7 +33,18 @@ async function main() {
         name: 'Glow Serum',
         niche: 'Skincare / Beauty',
         description: 'Serum Vitamin C untuk wanita 25-35.',
+        category: BrandCategory.SKINCARE,
         platforms: [Platform.INSTAGRAM, Platform.TIKTOK],
+        profile: {
+          'Produk unggulan': 'Serum Vitamin C, Sunscreen SPF50',
+          'Range harga': 'Rp79k–145k',
+          'Target audience': 'Wanita 25-35, profesional muda',
+          'Pain point audiens': 'Kulit kusam, takut produk abal-abal',
+          Sapaan: 'kak',
+          'Signature phrase': 'glow tiap hari bareng Glow Serum',
+          CTA: 'checkout link bio',
+          'Status izin': 'BPOM terdaftar',
+        },
         voiceProfile: {
           create: {
             toneAttributes: ['fresh', 'premium', 'meyakinkan'],
