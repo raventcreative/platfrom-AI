@@ -22,6 +22,7 @@ import { AGENT_QUEUE } from './jobs.constants';
 type JobInput = {
   conversationId?: string;
   content?: string;
+  provider?: string;
   igHandle?: string;
   samples?: string[];
 };
@@ -74,6 +75,8 @@ export class JobsProcessor extends WorkerHost {
     super();
   }
 
+  async process(job: Job<{ jobId: string; apiKey?: string; model?: string }>) {
+    const { jobId, apiKey, model } = job.data;
   private loadBrand(brandId: string) {
     return this.prisma.brand.findUnique({
       where: { id: brandId },
@@ -98,6 +101,20 @@ export class JobsProcessor extends WorkerHost {
 
       const input = (record.input ?? {}) as unknown as JobInput;
 
+      const result = await this.llm.complete(system, user, {
+        provider: input.provider,
+        apiKey,
+        model,
+      });
+      const { readable, json } = splitGeneratorOutput(result.text);
+
+      const output = {
+        type: outputType,
+        model: result.model,
+        demo: result.demo,
+        readable,
+        json,
+      };
       const result =
         record.agent === 'BRANDVOICE'
           ? await this.runBrandVoice(brand, input)

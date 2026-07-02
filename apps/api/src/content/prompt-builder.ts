@@ -43,11 +43,80 @@ export function buildBrandProfile(b: BrandContextInput): string {
     push('Panduan visual', b.kit.guidelines);
   }
   if (b.profile && typeof b.profile === 'object') {
-    for (const [key, val] of Object.entries(b.profile)) push(key, val);
+    for (const [key, val] of Object.entries(b.profile)) {
+      // Daftar SKU (array objek) dirender khusus agar rapi, bukan JSON mentah.
+      if (key === 'skus') {
+        push('Produk / SKU', formatSkus(val));
+        continue;
+      }
+      // Gambar referensi = base64 besar → JANGAN dump ke prompt teks, cukup catat.
+      if (key === 'reference_image') {
+        push('Gambar referensi', 'tersedia (dipakai sebagai acuan visual saat generate gambar)');
+        continue;
+      }
+      push(INTAKE_LABELS[key] ?? key, val);
+    }
   }
 
   return lines.join('\n');
 }
+
+/** Format array SKU jadi satu baris ringkas: "Nama [Kategori] — harga: catatan | …". */
+function formatSkus(val: unknown): string {
+  if (!Array.isArray(val)) return '';
+  return val
+    .map((s) => {
+      if (!s || typeof s !== 'object') return '';
+      const sku = s as {
+        name?: string;
+        category?: string;
+        price?: string;
+        notes?: string;
+      };
+      if (!sku.name?.trim()) return '';
+      let line = sku.name.trim();
+      if (sku.category?.trim()) line += ` [${sku.category.trim()}]`;
+      if (sku.price?.trim()) line += ` — ${sku.price.trim()}`;
+      if (sku.notes?.trim()) line += `: ${sku.notes.trim()}`;
+      return line;
+    })
+    .filter(Boolean)
+    .join(' | ');
+}
+
+/** Label rapi untuk field intake yang disimpan di Brand.profile (JSON). */
+export const INTAKE_LABELS: Record<string, string> = {
+  area: 'Area / pasar',
+  ig_handle: 'Username Instagram',
+  social: 'Akun sosial lain',
+  brand_colors: 'Palet warna brand',
+  visual_style: 'Gaya visual',
+  guidelines: 'BRAND GUIDELINE (patuhi)',
+  products: 'Produk/jasa unggulan',
+  price: 'Range harga',
+  problem: 'Masalah pelanggan yang diselesaikan',
+  usp: 'USP / pembeda utama',
+  proof: 'Bukti/keunggulan konkret',
+  buyer: 'Pembeli utama',
+  painpoint: 'Pain point / kekhawatiran',
+  desire: 'Keinginan / aspirasi',
+  tone: 'Nada brand',
+  sapaan: 'Sapaan ke audiens',
+  signature: 'Frasa signature (wajib dipakai)',
+  forbidden: 'Frasa / kata TERLARANG',
+  emoji: 'Penggunaan emoji',
+  goal: 'Tujuan utama konten',
+  cta: 'CTA / aksi yang diinginkan',
+  promo: 'Promo yang sedang jalan',
+  forbiddenClaims: 'Klaim yang TIDAK BOLEH dipakai',
+  certifications: 'Sertifikasi yang boleh disebut',
+  sk_ingredients: 'Kandungan unggulan & manfaat',
+  sk_bpom: 'Status izin / no. BPOM',
+  fb_menu: 'Menu andalan + harga',
+  fb_channels: 'Channel order',
+  fb_location: 'Lokasi/cabang + jam',
+  fb_halal: 'Status halal / alergen',
+};
 
 /** System prompt = persona + profil + playbook + compliance + self-check (Handbook §5). */
 export function buildSystemPrompt(
@@ -94,10 +163,12 @@ const AGENT_TO_TYPE: Partial<Record<JobAgent, OutputType>> = {
   IDEAS: 'ideas',
 };
 
+// Map enum Job.agent (DB) → jenis output internal.
 export function agentToOutputType(agent: JobAgent): OutputType {
   return AGENT_TO_TYPE[agent] ?? 'ideas';
 }
 
+// Kebalikannya: jenis output internal → enum Job.agent.
 export function outputTypeToAgent(type: OutputType): JobAgent {
   return GENERATORS[type].agent;
 }
@@ -114,6 +185,7 @@ export function detectOutputType(text: string): OutputType {
   return 'script';
 }
 
+// Deteksi Job.agent langsung dari perintah natural di chat.
 /** Perintah "training": pelajari brand / analisis akun IG → BrandVoice agent. */
 const VOICE_PATTERN =
   /(brand ?voice|pelajari brand|belajar (dari )?(ig|instagram)|analisis (ig|instagram|akun)|training brand|latih (ai|brand))/i;
@@ -123,6 +195,7 @@ export function detectAgent(text: string): JobAgent {
   return outputTypeToAgent(detectOutputType(text));
 }
 
+// Label ramah-manusia untuk sebuah agent (dipakai di UI/log).
 export function generatorLabel(agent: JobAgent): string {
   if (agent === 'BRANDVOICE') return 'analisis brand voice';
   return GENERATORS[agentToOutputType(agent)].label;

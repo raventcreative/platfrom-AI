@@ -265,6 +265,30 @@
 
 <main id="app"></main>
 
+    <!-- TAB PROFILE -->
+    <div id="tabProfile" hidden>
+      <div class="card">
+        <div id="profileForm"></div>
+        <div class="row" style="margin-top:16px;">
+          <button class="primary" id="btnSaveProfile">Simpan profil</button>
+          <span class="muted" id="saveHint"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- SETTINGS DIALOG -->
+<dialog id="dlgSettings" class="backdrop">
+  <div class="dlg-body">
+    <h3>Pengaturan LLM</h3>
+    <p class="muted" style="margin-top:2px;">Kunci disimpan di browser ini saja (localStorage). Kosongkan untuk pakai <b>mode demo</b>.</p>
+    <label>Provider</label>
+    <select id="inpProvider">
+      <option value="anthropic">Anthropic (Claude)</option>
+      <option value="openai">OpenAI (ChatGPT)</option>
+    </select>
+    <label id="lblKey">Anthropic API key</label>
 <dialog id="dlgSettings">
   <div class="body">
     <h2 style="font-size:22px;">Pengaturan</h2>
@@ -274,6 +298,14 @@
     <div class="hint">Bikin di console.anthropic.com → API Keys. Ini yang bikin hasilnya beneran.</div>
     <label>⚡ Kecepatan vs kualitas</label>
     <select id="inpModel">
+      <optgroup id="optAnthropic" label="Claude">
+        <option value="claude-sonnet-4-6">claude-sonnet-4-6 (hemat & cepat)</option>
+        <option value="claude-opus-4-8">claude-opus-4-8 (kualitas tertinggi)</option>
+      </optgroup>
+      <optgroup id="optOpenai" label="ChatGPT">
+        <option value="gpt-4o">gpt-4o (seimbang)</option>
+        <option value="gpt-4o-mini">gpt-4o-mini (hemat & cepat)</option>
+      </optgroup>
       <option value="claude-sonnet-4-6">Seimbang — cepat & bagus (disarankan)</option>
       <option value="claude-haiku-4-5-20251001">Paling cepat — buat draft kilat</option>
       <option value="claude-opus-4-8">Paling bagus — buat konten penting</option>
@@ -522,6 +554,108 @@ function splitOutput(text) {
   return { readable: (text.slice(0, m.index).trim()) || text.trim(), json };
 }
 
+/* ================================ LLM CALL ================================ */
+const DEFAULT_MODEL = { anthropic: 'claude-sonnet-4-6', openai: 'gpt-4o' };
+function activeProvider() { return store.get('ce_provider', 'anthropic'); }
+function keyFor(p) { return store.get('ce_key_' + p, ''); }
+function modelFor(p) { return store.get('ce_model_' + p, DEFAULT_MODEL[p]); }
+
+async function callLLM(system, user) {
+  const provider = activeProvider();
+  const key = keyFor(provider);
+  const model = modelFor(provider);
+  if (!key) return { text: demoOutput(user), demo: true };
+  return provider === 'openai'
+    ? callOpenAI(key, model, system, user)
+    : callAnthropic(key, model, system, user);
+}
+
+async function callAnthropic(key, model, system, user) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({ model, max_tokens: 2000, system, messages: [{ role: 'user', content: user }] }),
+  });
+  if (!res.ok) throw new Error('Anthropic API ' + res.status + ': ' + (await res.text()).slice(0, 300));
+  const data = await res.json();
+  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  return { text, demo: false };
+}
+
+async function callOpenAI(key, model, system, user) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + key },
+    body: JSON.stringify({
+      model, max_tokens: 2000,
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+    }),
+  });
+  if (!res.ok) throw new Error('OpenAI API ' + res.status + ': ' + (await res.text()).slice(0, 300));
+  const data = await res.json();
+  const text = (data.choices || []).map(c => (c.message && c.message.content) || '').join('\n').trim();
+  return { text, demo: false };
+}
+function demoOutput(user) {
+  const type = (user.match(/"type":"(\w+)"/) || [])[1] || 'script';
+  const samples = {
+    script: `HOOK A: "Kulit kusam? Ini 1 hal yang sering kelewat ✨"
+HOOK B: "POV: kamu udah skincare-an tapi glow gak nongol juga"
+
+Scene 1 (0-3s) — Close-up wajah, teks on-screen "Stop skip step ini" — VO: "Banyak yang lupa langkah ini."
+Scene 2 (3-12s) — Tunjukkan produk dipakai — VO: "Pakai tipis, ratakan, tunggu meresap."
+Scene 3 (12-20s) — Before/after tampilan kulit — VO: "Hasilnya kulit tampak lebih segar."
+CTA: checkout link bio.
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"script","platform":"IG Reels","duration_sec":20,"hooks":["Kulit kusam? Ini 1 hal yang sering kelewat","POV: skincare-an tapi glow gak nongol"],"scenes":[{"scene":1,"visual":"close-up wajah","voiceover":"Banyak yang lupa langkah ini.","onscreen_text":"Stop skip step ini","duration_sec":3}],"cta":"checkout link bio","sound_suggestion":"audio trending lembut","caption_hint":"hook di 125 char pertama","compliance_notes":"klaim dibingkai tampak/membantu"}
+\`\`\``,
+    carousel: `Judul: 5 tanda kulitmu butuh perhatian ekstra
+Slide 1 (hook): "5 tanda ini sering diabaikan"
+Slide 2-6: 1 tanda per slide + tips singkat
+Slide 7 (CTA): "Save dulu, checkout link bio"
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"carousel","platform":"Instagram","title":"5 tanda kulit butuh perhatian","slides":[{"slide":1,"role":"hook","headline":"5 tanda ini sering diabaikan","subtext":"swipe ->","visual":"teks bold di background bersih"}],"caption":"Kenali tandanya sebelum makin kusam...","hashtags":["#skincarepemula","#glowup","#skincarelokal"],"compliance_notes":"tanpa klaim menyembuhkan"}
+\`\`\``,
+    storyboard: `Konsep: GRWM pakai serum, 30 detik, shoot pakai HP.
+Shot 1: meja rias, tangan ambil produk (eye-level, 4s)
+Shot 2: aplikasi ke wajah (close-up, 6s)
+B-roll: tetesan serum, tekstur.
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"storyboard","concept":"GRWM serum","duration_sec":30,"shots":[{"shot":1,"visual":"meja rias","camera":"eye-level statis","talent_props":"serum","voiceover":"pagi ini coba rutinitas simpel","onscreen_text":"GRWM","sfx_music":"lofi","duration_sec":4}],"broll":["tetesan serum"],"production_notes":"cahaya jendela","cta":"checkout link bio","compliance_notes":"-"}
+\`\`\``,
+    caption: `Caption: Kulit kusam itu bukan akhir dunia ✨ Ini cara simpel biar tampak lebih segar tiap hari...
+Hook variasi: "Jangan beli serum sebelum baca ini" / "3 mitos skincare yang bikin boros" ...
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"caption","caption_long":"Kulit kusam bukan akhir dunia...","caption_short":"Glow simpel tiap hari ✨","hooks":["Jangan beli serum sebelum baca ini","3 mitos skincare bikin boros","POV kulit mulai glow","Stop buang uang buat ini","Checklist skincare pemula"],"hashtags":["#skincarelokal","#glowup","#tipskulit"],"compliance_notes":"-"}
+\`\`\``,
+    ideas: `1. Edukasi — Reels — "3 mitos skincare" — bahas mitos umum — CTA save
+2. Social proof — Carousel — "Sebelum/sesudah rutin" — testimoni — CTA DM
+... (7 ide)
+
+(MODE DEMO — isi API key untuk hasil sungguhan.)
+
+\`\`\`json
+{"type":"ideas","ideas":[{"no":1,"pillar":"Edukasi","format":"Reels","hook":"3 mitos skincare yang bikin boros","concept":"bongkar mitos umum","cta":"save & share"},{"no":2,"pillar":"Social proof","format":"Carousel","hook":"Sebelum vs sesudah rutin","concept":"perjalanan kulit","cta":"DM order"}]}
+\`\`\``,
+  };
+  return '⚙️ MODE DEMO (API key belum diisi)\n\n' + (samples[type] || samples.script);
 /* ═══════════════════════ DEMO DATA (mode latihan) ═══════════════════════ */
 const DEMO = {
   script: { type: 'script', platform: 'IG Reels', duration_sec: 30,
@@ -1356,6 +1490,26 @@ function renderRiset(body, c) {
   };
 }
 
+/* ============================== WIRING ================================= */
+function refreshKeyState() {
+  const p = activeProvider();
+  const has = !!keyFor(p);
+  const b = $('#keyState');
+  b.textContent = has ? ('live · ' + modelFor(p)) : 'mode demo';
+  b.className = 'badge ' + (has ? 'live' : 'demo');
+}
+// Tampilkan field key + opsi model sesuai provider yang dipilih di dialog.
+function applyDialogProvider(p) {
+  $('#lblKey').textContent = p === 'openai' ? 'OpenAI API key' : 'Anthropic API key';
+  $('#inpKey').placeholder = p === 'openai' ? 'sk-...' : 'sk-ant-...';
+  $('#inpKey').value = keyFor(p);
+  $('#optAnthropic').hidden = p !== 'anthropic';
+  $('#optOpenai').hidden = p !== 'openai';
+  $('#inpModel').value = modelFor(p);
+}
+$('#btnSettings').onclick = () => {
+  $('#inpProvider').value = activeProvider();
+  applyDialogProvider(activeProvider());
 /* ── TAB: PROFIL ───────────────────────────────────────────── */
 function renderProfil(body, c) {
   // Latih AI
@@ -1444,8 +1598,20 @@ $('#btnSettings').onclick = () => {
   $('#inpApify').value = store.get('ce_apify', '');
   $('#dlgSettings').showModal();
 };
+$('#inpProvider').onchange = (e) => applyDialogProvider(e.target.value);
 $('#btnCloseSettings').onclick = () => $('#dlgSettings').close();
 $('#btnSaveSettings').onclick = () => {
+  const p = $('#inpProvider').value;
+  store.set('ce_provider', p);
+  store.set('ce_key_' + p, $('#inpKey').value.trim());
+  store.set('ce_model_' + p, $('#inpModel').value);
+  $('#dlgSettings').close(); refreshKeyState(); toast('Pengaturan disimpan');
+};
+$('#btnSeed').onclick = seedClients;
+$('#btnAddBrand').onclick = () => {
+  const list = loadClients();
+  const c = { id: uid(), name: '', category: 'other' };
+  list.push(c); saveClients(list); openClient(c.id); switchTab('profile');
   store.set('ce_apikey', $('#inpKey').value.trim());
   store.set('ce_model', $('#inpModel').value);
   store.set('ce_apify', $('#inpApify').value.trim());

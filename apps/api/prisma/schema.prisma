@@ -191,3 +191,19 @@ model Job {
 
   @@index([brandId])
 }
+
+// Riwayat generasi GAMBAR dari AI Automation (brief → beberapa gambar).
+// results = array {imagePrompt, caption, hashtags, image(dataURL), size, model}.
+model ImageGeneration {
+  id        String   @id @default(uuid())
+  orgId     String
+  brandId   String?
+  brief     String
+  aspect    String
+  style     String?
+  count     Int
+  results   Json
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+}

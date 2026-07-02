@@ -1,0 +1,17 @@
+# Override lokal (tidak untuk produksi).
+# Di mesin ini port host 5432 sudah dipakai PostgreSQL native (Homebrew PG17),
+# jadi container Postgres dipetakan ke 5433 agar tidak bentrok.
+# Docker Compose otomatis menggabungkan file ini dengan docker-compose.yml.
+#
+# restart: unless-stopped → Docker otomatis menghidupkan container ini lagi
+# saat daemon start (mis. setelah PC menyala), kecuali di-`docker stop` manual.
+# Syarat: Docker Desktop juga harus start saat login (Settings → General →
+# "Start Docker Desktop when you sign in").
+services:
+  postgres:
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped

@@ -2,10 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { AuthContext } from '../auth/auth.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
+/** Service untuk mengambil data user & org terkait berdasarkan konteks auth. */
 @Injectable()
 export class OrgService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Kembalikan ringkasan user + org; lempar 404 bila user tak ditemukan. */
   async me(auth: AuthContext) {
     const user = await this.prisma.user.findUnique({
       where: { id: auth.userId },
