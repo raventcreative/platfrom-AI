@@ -117,6 +117,23 @@
 
     <!-- TAB PROFILE -->
     <div id="tabProfile" hidden>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="section-title" style="margin-top:0;">🧠 Latih AI dari Instagram (brand voice)</div>
+        <p class="muted" style="margin:4px 0 0; font-size:13px;">
+          AI menganalisis konten IG brand-mu → mengekstrak voice profile (nada, sapaan, frasa khas,
+          contoh caption) → otomatis dipakai di semua generate. Isi handle (butuh Apify token di ⚙️)
+          dan/atau tempel contoh caption.
+        </p>
+        <label>IG handle</label>
+        <input id="v_handle" type="text" placeholder="@brandku" />
+        <label>Contoh caption (opsional / fallback) — pisahkan antar caption dengan baris kosong</label>
+        <textarea id="v_samples" style="min-height:90px;" placeholder="Tempel 3-10 caption terbaik brand di sini..."></textarea>
+        <div class="row" style="margin-top:12px;">
+          <button class="primary" id="btnTrainVoice">🧠 Pelajari brand</button>
+          <span id="voiceStatus" class="muted"></span>
+        </div>
+        <div id="voiceResult"></div>
+      </div>
       <div class="card">
         <div id="profileForm"></div>
         <div class="row" style="margin-top:16px;">
@@ -140,6 +157,9 @@
       <option value="claude-sonnet-4-6">claude-sonnet-4-6 (hemat & cepat)</option>
       <option value="claude-opus-4-8">claude-opus-4-8 (kualitas tertinggi)</option>
     </select>
+    <label>Apify token (opsional — untuk scraping IG)</label>
+    <input id="inpApify" type="password" placeholder="apify_api_..." autocomplete="off" />
+    <div class="field-hint">Dipakai fitur "Latih AI dari Instagram". Tanpa token, tempel contoh caption manual.</div>
     <div class="row" style="justify-content:flex-end; margin-top:18px;">
       <button id="btnCloseSettings">Batal</button>
       <button class="primary" id="btnSaveSettings">Simpan</button>
@@ -290,6 +310,22 @@ function buildBrandProfile(c) {
     const v = c[f.id];
     if (v && String(v).trim()) lines.push(FIELD_LABEL[f.id] + ': ' + v);
   }));
+  // Hasil "training" voice dari IG — ikut disuntik ke system prompt.
+  const va = c.voiceAnalysis;
+  if (va && typeof va === 'object') {
+    const add = (label, v) => {
+      const t = Array.isArray(v) ? v.filter(Boolean).join(' · ') : (v == null ? '' : String(v).trim());
+      if (t) lines.push(label + ': ' + t);
+    };
+    add('Ringkasan voice (hasil analisis IG)', va.style_summary);
+    add('Atribut tone (analisis)', va.tone_attributes);
+    add('Pola hook khas brand', va.hook_patterns);
+    add('Content pillars terlihat', va.content_pillars);
+    add('Do (analisis voice)', va.do);
+    add("Don't (analisis voice)", va.dont);
+    const caps = Array.isArray(va.sample_captions) ? va.sample_captions.filter(Boolean) : [];
+    if (caps.length) lines.push('Contoh caption asli brand (tiru gayanya):\n' + caps.map(s => '• ' + s).join('\n'));
+  }
   return lines.join('\n');
 }
 function buildSystemPrompt(c) {
@@ -328,6 +364,154 @@ function splitOutput(text) {
   let json = null; try { json = JSON.parse(m[1].trim()); } catch (e) { json = null; }
   const before = text.slice(0, m.index).trim();
   return { readable: before || text.trim(), json };
+}
+
+/* ========================= BRAND VOICE TRAINING =========================== */
+const VOICE_SYSTEM = 'Kamu adalah Brand Strategist senior di agency konten Indonesia. Tugasmu: menganalisis konten Instagram sebuah brand dan mengekstrak BRAND VOICE PROFILE yang presisi, supaya AI copywriter bisa meniru gaya brand itu secara konsisten. Jawab dalam Bahasa Indonesia. Jangan mengarang fakta di luar data yang diberikan.';
+
+function buildVoicePrompt(brandInfo, data) {
+  return (brandInfo ? 'INFO BRAND SAAT INI:\n' + brandInfo + '\n\n' : '') +
+`DATA KONTEN:
+${data}
+
+TUGAS: analisis pola dari data di atas — nada & kepribadian brand, sapaan ke audiens, frasa/kata khas (signature), kata yang dihindari, pemakaian emoji, pola hook pembuka, pilar konten yang terlihat, dan gaya penulisan caption secara umum.
+
+Keluarkan: (1) ringkasan analisis singkat yang enak dibaca (maks ~10 baris); (2) blok JSON valid di dalam pagar kode \`\`\`json:
+{"tone_attributes":["",""],"style_summary":"","sapaan":"","signature_phrases":[""],"preferred_words":[""],"avoid_words":[""],"emoji_usage":"banyak|secukupnya|none","hook_patterns":[""],"content_pillars":[""],"sample_captions":["",""],"do":[""],"dont":[""]}
+
+Catatan: sample_captions = 2-3 caption ASLI yang paling mewakili gaya brand (salin persis dari data). style_summary = 1-2 kalimat ringkas yang bisa dipakai langsung sebagai instruksi gaya.`;
+}
+
+// Scrape post publik via Apify (run-sync). Butuh token di ⚙️. Data publik saja.
+async function apifyFetchIg(handle) {
+  const token = store.get('ce_apify', '');
+  if (!token) throw new Error('Apify token belum diisi (⚙️) — tempel contoh caption manual saja.');
+  const username = handle.replace(/^@/, '').trim();
+  const res = await fetch('https://api.apify.com/v2/acts/apify~instagram-profile-scraper/run-sync-get-dataset-items?token=' + encodeURIComponent(token), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ usernames: [username], resultsLimit: 12 }),
+  });
+  if (!res.ok) throw new Error('Apify ' + res.status + ': ' + (await res.text()).slice(0, 200));
+  const items = await res.json();
+  const posts = []; let bio = '';
+  (items || []).forEach(it => {
+    if (it && Array.isArray(it.latestPosts)) { bio = it.biography || bio; it.latestPosts.forEach(p => posts.push(p)); }
+    else if (it && (it.caption != null || it.type)) posts.push(it);
+  });
+  const withCaption = posts.filter(p => p.caption && String(p.caption).trim()).slice(0, 12);
+  if (!withCaption.length) throw new Error('Tidak ada post publik terambil untuk @' + username + '. Cek handle / akun publik.');
+  const lines = ['KONTEN INSTAGRAM @' + username + ':'];
+  if (bio) lines.push('Bio: ' + bio);
+  withCaption.forEach((p, i) => {
+    const eng = [p.likesCount != null ? p.likesCount + ' likes' : null, p.commentsCount != null ? p.commentsCount + ' komentar' : null].filter(Boolean).join(', ');
+    lines.push('\nPost ' + (i + 1) + (eng ? ' [' + eng + ']' : '') + ':\n' + String(p.caption).trim());
+  });
+  return lines.join('\n');
+}
+
+const DEMO_VOICE = {
+  tone_attributes: ['santai', 'edukatif', 'hangat'],
+  style_summary: '(demo) Bahasa santai-akrab, edukatif ringan, kalimat pendek, sapaan personal, fokus manfaat nyata tanpa over-claim.',
+  sapaan: 'kak',
+  signature_phrases: ['glow bareng'],
+  preferred_words: ['glow', 'aman', 'teruji'],
+  avoid_words: ['ajaib', 'instan', 'permanen'],
+  emoji_usage: 'secukupnya',
+  hook_patterns: ['pertanyaan relatable', 'mitos vs fakta', 'POV'],
+  content_pillars: ['Edukasi', 'Social proof', 'Promosi'],
+  sample_captions: ['(contoh demo) Kulit kusam padahal udah rajin skincare? Coba cek urutan pakainya, kak ✨', '(contoh demo) Mitos: makin perih makin ampuh. Faktanya, kulit sehat justru butuh yang lembut.'],
+  do: ['pakai bahasa sehari-hari', 'tutup dengan CTA jelas'],
+  dont: ['klaim menyembuhkan', 'superlatif nomor 1'],
+};
+
+async function trainVoice() {
+  const c = loadClients().find(x => x.id === currentId);
+  if (!c) return;
+  const handle = $('#v_handle').value.trim();
+  const pasted = $('#v_samples').value.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+  const status = $('#voiceStatus');
+  const btn = $('#btnTrainVoice');
+  const parts = [];
+  btn.disabled = true;
+  try {
+    if (handle) {
+      if (store.get('ce_apify', '')) {
+        status.innerHTML = '<span class="spin" style="border-color:#999; border-top-color:transparent;"></span> Mengambil post @' + handle.replace(/^@/, '') + ' via Apify… (bisa ~1 menit)';
+        try { parts.push(await apifyFetchIg(handle)); }
+        catch (e) {
+          if (!pasted.length) throw e;
+          parts.push('(Scraping gagal: ' + (e.message || e) + ' — lanjut pakai caption manual.)');
+        }
+      } else if (!pasted.length) {
+        throw new Error('Isi Apify token di ⚙️ untuk scraping @' + handle.replace(/^@/, '') + ', atau tempel contoh caption manual.');
+      }
+    }
+    if (pasted.length) parts.push('CONTOH CAPTION (manual):\n' + pasted.map(s => '---\n' + s).join('\n'));
+    if (!parts.length) throw new Error('Isi IG handle dan/atau tempel contoh caption dulu.');
+
+    status.innerHTML = '<span class="spin" style="border-color:#999; border-top-color:transparent;"></span> Menganalisis brand voice…';
+    let readable, json, demo;
+    if (!store.get('ce_apikey', '')) {
+      demo = true; json = DEMO_VOICE;
+      readable = '⚙️ MODE DEMO — contoh hasil analisis (isi API key untuk analisis sungguhan dari datamu):\n\nVoice: santai-akrab & edukatif, sapaan "kak", frasa khas "glow bareng". Hook favorit: pertanyaan relatable, mitos vs fakta, POV. Hindari: klaim menyembuhkan & superlatif.';
+    } else {
+      const out = await callLLM(VOICE_SYSTEM, buildVoicePrompt(buildBrandProfile(c), parts.join('\n\n')));
+      demo = out.demo;
+      const split = splitOutput(out.text);
+      readable = split.readable; json = split.json;
+    }
+
+    if (json && typeof json === 'object') {
+      applyVoice(c, json);
+      status.textContent = '';
+      renderVoiceSummary(readable, json, demo);
+      toast('Brand voice tersimpan & dipakai di generate');
+    } else {
+      status.textContent = '';
+      renderVoiceSummary(readable + '\n\n⚠️ JSON tidak valid — profil belum tersimpan, coba ulangi.', null, demo);
+    }
+  } catch (e) {
+    status.textContent = '';
+    renderVoiceSummary('Gagal: ' + (e.message || e), null, false);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function applyVoice(c, v) {
+  c.voiceAnalysis = v;
+  // Auto-isi field intake dari hasil analisis (bisa diedit manual setelahnya).
+  if (v.sapaan) c.sapaan = v.sapaan;
+  if (Array.isArray(v.signature_phrases) && v.signature_phrases.length) c.signature = v.signature_phrases.join(', ');
+  if (Array.isArray(v.avoid_words) && v.avoid_words.length) c.forbidden = v.avoid_words.join(', ');
+  if (v.emoji_usage && ['banyak', 'secukupnya', 'none'].includes(v.emoji_usage)) c.emoji = v.emoji_usage;
+  if (Array.isArray(v.tone_attributes)) {
+    const tones = ['Edukatif', 'Santai/Friendly', 'Lucu/Relatable', 'Premium/Elegan', 'Tegas/Bold', 'Hangat/Caring'];
+    const hit = tones.find(t => v.tone_attributes.some(a => t.toLowerCase().includes(String(a).toLowerCase())));
+    if (hit) c.tone = hit;
+  }
+  const list = loadClients();
+  const idx = list.findIndex(x => x.id === c.id);
+  if (idx >= 0) list[idx] = c; else list.push(c);
+  saveClients(list);
+  renderProfileForm(c);
+}
+
+function renderVoiceSummary(readable, json, demo) {
+  const box = $('#voiceResult'); box.innerHTML = '';
+  const kids = [
+    el('div', { class: 'row', style: 'justify-content:space-between; margin-top:12px;' }, [
+      el('h4', { style: 'margin:0; font-size:14px;', textContent: 'Hasil analisis brand voice' }),
+      el('span', { class: 'badge ' + (demo ? 'demo' : 'live'), textContent: demo ? 'mode demo' : 'live' }),
+    ]),
+    el('div', { class: 'readable', style: 'margin-top:6px;', textContent: readable }),
+  ];
+  if (json) {
+    kids.push(el('div', { class: 'muted', style: 'font-size:12px; margin:8px 0 4px;', textContent: 'Voice profile (JSON) — tersimpan di brand' }));
+    kids.push(el('pre', { textContent: JSON.stringify(json, null, 2) }));
+  }
+  box.append(el('div', {}, kids));
 }
 
 /* ================================ LLM CALL ================================ */
@@ -475,6 +659,14 @@ function openClient(id) {
   renderGenButtons();
   $('#results').innerHTML = '';
   renderProfileForm(c);
+  // reset panel "Latih AI"
+  $('#v_handle').value = '';
+  $('#v_samples').value = '';
+  $('#voiceStatus').textContent = '';
+  $('#voiceResult').innerHTML = '';
+  if (c.voiceAnalysis) {
+    renderVoiceSummary('Brand ini sudah punya voice profile (dipakai otomatis di generate). Latih ulang kapan saja untuk memperbarui.', c.voiceAnalysis, false);
+  }
 }
 function switchTab(tab) {
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -617,12 +809,14 @@ function refreshKeyState() {
 $('#btnSettings').onclick = () => {
   $('#inpKey').value = store.get('ce_apikey', '');
   $('#inpModel').value = store.get('ce_model', 'claude-sonnet-4-6');
+  $('#inpApify').value = store.get('ce_apify', '');
   $('#dlgSettings').showModal();
 };
 $('#btnCloseSettings').onclick = () => $('#dlgSettings').close();
 $('#btnSaveSettings').onclick = () => {
   store.set('ce_apikey', $('#inpKey').value.trim());
   store.set('ce_model', $('#inpModel').value);
+  store.set('ce_apify', $('#inpApify').value.trim());
   $('#dlgSettings').close(); refreshKeyState(); toast('Pengaturan disimpan');
 };
 $('#btnSeed').onclick = seedClients;
@@ -639,6 +833,7 @@ $('#btnDelete').onclick = () => {
   toast('Brand dihapus');
 };
 $('#btnSaveProfile').onclick = saveProfile;
+$('#btnTrainVoice').onclick = trainVoice;
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 
 /* init */

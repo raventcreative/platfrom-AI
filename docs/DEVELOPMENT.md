@@ -24,6 +24,17 @@ docker-compose.yml   Postgres + Redis untuk dev lokal
 
 **Generator yang aktif:** script · carousel · storyboard · caption · ide mingguan.
 
+- **Brand Voice "training" dari Instagram** — `src/instagram` (scrape post publik via **Apify**,
+  set `APIFY_TOKEN`) + agent `BRANDVOICE`: analisis konten IG / contoh caption → ekstrak voice
+  profile (nada, sapaan, frasa khas, contoh caption asli) → tersimpan di `BrandVoiceProfile` +
+  `Brand.profile` → **otomatis disuntik ke semua generate berikutnya**.
+  - Via chat: `"Pelajari brand dari IG @brandku"`.
+  - Via API: `POST /brands/:id/voice-profile` body `{ "igHandle": "@brandku" }` atau
+    `{ "samples": ["caption 1", "caption 2"] }` → `202 { jobId }` → poll `GET /jobs/:id`.
+  - Tanpa `APIFY_TOKEN`, scraping nonaktif — kirim `samples` manual.
+  - Catatan: hanya data publik; hormati ToS platform (PRD §14). Ini ekstraksi voice + few-shot,
+    bukan fine-tuning model.
+
 > Tanpa `ANTHROPIC_API_KEY` worker jalan di **mode demo** (output contoh) — alur tetap bisa diuji.
 > Pilar berat (Research/Meta Ads, desain Canva, Video Higgsfield) = **Fase 2+**.
 
@@ -94,6 +105,7 @@ Di UI: buka http://localhost:3000 → pilih brand di kanan atas → ketik perint
 | GET | `/conversations?brandId=` | daftar percakapan brand |
 | GET | `/conversations/:id/messages` | pesan dalam percakapan |
 | POST | `/conversations/:id/messages` | kirim pesan → enqueue job |
+| POST | `/brands/:id/voice-profile` | "training" voice dari IG handle / samples → `202 {jobId}` |
 | GET | `/jobs/:id` | status & output job |
 
 ## Berikutnya (Sprint 2+)

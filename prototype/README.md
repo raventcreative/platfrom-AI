@@ -21,6 +21,11 @@ mencoba alurnya. Untuk hasil sungguhan, klik **⚙️ API key** dan isi Anthropi
 ## Apa yang ada di dalamnya
 
 - **Intake profil brand** per vertikal (modul skincare / F&B muncul sesuai kategori).
+- **🧠 Latih AI dari Instagram** (tab Profil): AI menganalisis konten IG brand → mengekstrak
+  **brand voice profile** (nada, sapaan, frasa khas, contoh caption asli) → otomatis disuntik
+  ke semua generate. Sumber data: **scrape IG handle via Apify** (isi Apify token di ⚙️)
+  dan/atau **tempel contoh caption manual** (tanpa token). Field intake (sapaan, signature,
+  kata terlarang, emoji, nada) ikut terisi otomatis.
 - **Daily input** (fokus harian) → **5 generator** + Paket Lengkap.
 - **Knowledge Playbook** + **Compliance** (BPOM / halal / SARA) disuntik ke tiap prompt.
 - **Multi-brand** tersimpan di `localStorage` (per browser, tidak sinkron antar perangkat).

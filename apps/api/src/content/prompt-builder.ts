@@ -114,11 +114,17 @@ export function detectOutputType(text: string): OutputType {
   return 'script';
 }
 
+/** Perintah "training": pelajari brand / analisis akun IG → BrandVoice agent. */
+const VOICE_PATTERN =
+  /(brand ?voice|pelajari brand|belajar (dari )?(ig|instagram)|analisis (ig|instagram|akun)|training brand|latih (ai|brand))/i;
+
 export function detectAgent(text: string): JobAgent {
+  if (VOICE_PATTERN.test(text)) return 'BRANDVOICE';
   return outputTypeToAgent(detectOutputType(text));
 }
 
 export function generatorLabel(agent: JobAgent): string {
+  if (agent === 'BRANDVOICE') return 'analisis brand voice';
   return GENERATORS[agentToOutputType(agent)].label;
 }
 
