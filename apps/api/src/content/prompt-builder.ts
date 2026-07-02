@@ -43,11 +43,37 @@ export function buildBrandProfile(b: BrandContextInput): string {
     push('Panduan visual', b.kit.guidelines);
   }
   if (b.profile && typeof b.profile === 'object') {
-    for (const [key, val] of Object.entries(b.profile)) push(key, val);
+    for (const [key, val] of Object.entries(b.profile)) {
+      push(INTAKE_LABELS[key] ?? key, val);
+    }
   }
 
   return lines.join('\n');
 }
+
+/** Label rapi untuk field intake onboarding yang disimpan di Brand.profile (JSON). */
+export const INTAKE_LABELS: Record<string, string> = {
+  area: 'Area / pasar',
+  ig_handle: 'Username Instagram',
+  products: 'Produk/jasa unggulan',
+  price: 'Range harga',
+  usp: 'Pembeda utama (USP)',
+  problem: 'Masalah pelanggan yang diselesaikan',
+  proof: 'Bukti/keunggulan konkret',
+  buyer: 'Pembeli utama',
+  painpoint: 'Pain point / kekhawatiran audiens',
+  desire: 'Keinginan / aspirasi audiens',
+  tone: 'Nada bicara brand',
+  sapaan: 'Sapaan ke audiens',
+  signature: 'Frasa signature (wajib dipakai)',
+  forbidden: 'Kata / frasa TERLARANG',
+  emoji: 'Aturan emoji',
+  goal: 'Tujuan utama konten',
+  cta: 'CTA brand',
+  promo: 'Promo yang sedang jalan',
+  forbiddenClaims: 'Klaim yang TIDAK BOLEH dipakai',
+  certifications: 'Sertifikasi yang boleh disebut',
+};
 
 /** System prompt = persona + profil + playbook + compliance + self-check (Handbook §5). */
 export function buildSystemPrompt(

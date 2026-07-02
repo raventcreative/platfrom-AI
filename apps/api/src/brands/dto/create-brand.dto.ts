@@ -1,4 +1,12 @@
-import { IsArray, IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsIn,
+  IsObject,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateBrandDto {
   @IsString()
@@ -21,4 +29,16 @@ export class CreateBrandDto {
   @IsArray()
   @IsIn(['instagram', 'tiktok'], { each: true })
   platforms?: ('instagram' | 'tiktok')[];
+
+  /** Jawaban onboarding (field intake bebas) — disimpan di Brand.profile (JSON). */
+  @IsOptional()
+  @IsObject()
+  profile?: Record<string, unknown>;
+
+  /** Handle IG kompetitor (maks 5) — disinkronkan ke tabel Competitor. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsString({ each: true })
+  competitors?: string[];
 }

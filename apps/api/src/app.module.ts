@@ -4,7 +4,9 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { BrandsModule } from './brands/brands.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { GenerateModule } from './generate/generate.module';
 import { HealthController } from './health/health.controller';
+import { InsightsModule } from './insights/insights.module';
 import { JobsModule } from './jobs/jobs.module';
 import { OrgModule } from './org/org.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -24,6 +26,8 @@ import { PrismaModule } from './prisma/prisma.module';
     BrandsModule,
     ConversationsModule,
     JobsModule,
+    GenerateModule,
+    InsightsModule,
   ],
   controllers: [HealthController],
 })
