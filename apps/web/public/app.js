@@ -1302,6 +1302,76 @@ function igExtras(type, d, c, daily) {
   return box.children.length ? box : null;
 }
 
+/* ═══════════════════════ EXPORT PDF-TEKS (in-browser, tanpa library) ═══════════════════════
+ * Merender hasil generate (teks) jadi dokumen PDF A4 rapi pakai font inti Helvetica.
+ * Dipakai untuk semua jenis kecuali carousel (carousel diekspor sebagai gambar slide).
+ */
+const pdfEsc = s => String(s).replace(/([\\()])/g, '\\$1');
+function toLatin1(s) { let o = ''; for (const ch of String(s == null ? '' : s)) { const c = ch.codePointAt(0); if (c === 9 || c === 10 || (c >= 32 && c <= 255)) o += (c <= 255 ? ch : ''); } return o; }
+function buildDocPDF(title, body) {
+  const PW = 595.28, PH = 841.89, M = 50, SIZE = 10.5, TSIZE = 19, LEAD = 14.5, maxW = PW - 2 * M;
+  const wrapCount = sz => Math.max(8, Math.floor(maxW / (sz * 0.505)));
+  const src = (String(title) + '\nTITLEBREAK\n' + String(body)).split('\n');
+  // 1) styling + word-wrap tiap baris
+  const flow = [];
+  src.forEach((raw, idx) => {
+    const clean = toLatin1(raw).replace(/\s+$/, '');
+    if (clean === 'TITLEBREAK') { flow.push({ t: '', size: SIZE, bold: false, gap: 6 }); return; }
+    const isTitle = idx === 0;
+    const trimmed = clean.trim();
+    const isHead = !isTitle && trimmed.length > 0 && trimmed.length < 46 && (/:\s*$/.test(trimmed) || /^[A-Z0-9][A-Z0-9 \/&.\-]{2,}$/.test(trimmed));
+    const size = isTitle ? TSIZE : SIZE;
+    const bold = isTitle || isHead;
+    if (trimmed === '') { flow.push({ t: '', size, bold, gap: 7 }); return; }
+    wrapText(clean, wrapCount(size)).forEach(w => flow.push({ t: w, size, bold, gap: 0 }));
+  });
+  // 2) paginate → halaman berisi baris ber-koordinat
+  const pages = [[]]; let y = PH - M;
+  flow.forEach(it => {
+    const lead = (it.size > SIZE ? it.size + 8 : LEAD) + (it.gap || 0);
+    if (y - lead < M) { pages.push([]); y = PH - M; }
+    pages[pages.length - 1].push({ t: it.t, size: it.size, bold: it.bold, y: y - it.size });
+    y -= lead;
+  });
+  // 3) rakit objek PDF (2 font inti + tiap halaman: page + content)
+  const parts = []; const offsets = {}; let cursor = 0;
+  const push = b => { const buf = typeof b === 'string' ? b : b; parts.push(buf); cursor += buf.length; };
+  const startObj = id => { offsets[id] = cursor; push(id + ' 0 obj\n'); };
+  const endObj = () => push('endobj\n');
+  push('%PDF-1.4\n');
+  startObj(1); push('<< /Type /Catalog /Pages 2 0 R >>\n'); endObj();
+  const pageObjId = i => 5 + i * 2;
+  const kids = pages.map((_, i) => `${pageObjId(i)} 0 R`).join(' ');
+  startObj(2); push(`<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>\n`); endObj();
+  startObj(3); push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\n'); endObj();
+  startObj(4); push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\n'); endObj();
+  pages.forEach((lines, i) => {
+    const pid = pageObjId(i), cid = pid + 1;
+    let cs = '';
+    lines.forEach(l => { if (l.t === '') return; cs += `BT /${l.bold ? 'F2' : 'F1'} ${l.size} Tf ${M} ${l.y.toFixed(1)} Td (${pdfEsc(l.t)}) Tj ET\n`; });
+    startObj(pid); push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${cid} 0 R >>\n`); endObj();
+    startObj(cid); push(`<< /Length ${cs.length} >>\nstream\n`); push(cs); push('endstream\n'); endObj();
+  });
+  const xrefStart = cursor;
+  const maxId = 4 + pages.length * 2;
+  let xref = `xref\n0 ${maxId + 1}\n0000000000 65535 f \n`;
+  for (let id = 1; id <= maxId; id++) xref += String(offsets[id] || 0).padStart(10, '0') + ' 00000 n \n';
+  push(xref);
+  push(`trailer\n<< /Size ${maxId + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+  const str = parts.join('');
+  const bytes = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i) & 0xff;
+  return bytes;
+}
+function downloadDocPDF(name, title, body) {
+  try {
+    const blob = new Blob([buildDocPDF(title, body)], { type: 'application/pdf' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name + '.pdf'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('PDF diunduh ✓');
+  } catch (e) { toast('Gagal bikin PDF: ' + String(e.message || e).slice(0, 40)); }
+}
+
 /* ═══════════════════════ PDF BRAND GUIDELINE (offline) ═══════════════════════ */
 async function inflateMaybe(bytes) {
   for (const fmt of ['deflate', 'deflate-raw']) {
@@ -1337,6 +1407,30 @@ async function extractPdfText(arrayBuffer) {
   }
   text = (text + ' ' + parts.join(' ')).replace(/\s+/g, ' ').trim();
   return text.slice(0, 6000);
+}
+
+/* Uploader brand guideline PDF — dipakai di tab Profil (upload/ganti/hapus langsung, tanpa wizard) */
+function brandGuideUploader(c) {
+  const wrap = el('div', { style: 'margin-top:12px; padding-top:12px; border-top:1px dashed var(--line);' });
+  wrap.append(el('div', { style: 'font-weight:700; font-size:13.5px; margin-bottom:6px;', textContent: '📄 Brand guideline (PDF)' }));
+  const status = el('div', { class: 'hint', textContent: c.brandGuideName ? ('Terpasang: ' + c.brandGuideName + ' — ' + String(c.brandGuide || '').length + ' karakter dipakai buat nyetir hasil AI.') : 'Belum ada. Upload PDF panduan brand (warna, tone, do/don\'t) — diproses di browser, tidak diunggah.' });
+  const inp = el('input', { type: 'file', accept: 'application/pdf,.pdf', style: 'margin-top:2px;' });
+  inp.onchange = async () => {
+    const file = inp.files && inp.files[0]; if (!file) return;
+    status.textContent = '⏳ Membaca ' + file.name + '…';
+    try {
+      const text = await extractPdfText(await file.arrayBuffer());
+      c.brandGuide = text; c.brandGuideName = file.name; saveClient(c);
+      status.textContent = text && text.length > 40
+        ? ('✓ ' + file.name + ' — ' + text.length + ' karakter terbaca & tersimpan.')
+        : ('⚠️ ' + file.name + ' kebaca tapi teksnya sedikit (mungkin PDF gambar). Tetap tersimpan; poin penting bisa ditulis manual.');
+      openBrand(c.id, 'profil');
+    } catch (e) { status.textContent = '❌ Gagal baca PDF: ' + String(e.message || e).slice(0, 60); }
+  };
+  wrap.append(inp);
+  wrap.append(status);
+  if (c.brandGuideName) wrap.append(el('button', { class: 'ghost', style: 'margin-top:8px; color:var(--red);', textContent: '🗑️ Hapus guideline', onclick: () => { delete c.brandGuide; delete c.brandGuideName; saveClient(c); toast('Guideline dihapus'); openBrand(c.id, 'profil'); } }));
+  return wrap;
 }
 
 /* ═══════════════════════ PROFIL: KEKUATAN ═══════════════════════ */
@@ -1910,6 +2004,8 @@ function resultShell(type, title, badgeText) {
 function actionsBar(type, data, c, daily) {
   const bar = el('div', { class: 'row', style: 'margin-top:16px;' });
   bar.append(el('button', { class: 'primary', textContent: '📋 Salin semua', onclick: () => copyText(FMT[type](data), TYPES[type].label) }));
+  // ⬇️ PDF untuk semua jenis kecuali carousel (carousel diekspor sebagai gambar slide)
+  if (type !== 'carousel') bar.append(el('button', { textContent: '⬇️ PDF', onclick: () => downloadDocPDF(slugTag(c.name) + '-' + type, (data.title || data.concept || TYPES[type].label) + ' — ' + c.name, FMT[type](data)) }));
   bar.append(el('button', { textContent: '🎲 Versi lain', onclick: async e => {
     const btn = e.target; const card0 = btn.closest('.result-card');
     btn.disabled = true; btn.textContent = hasAI() ? '🤖 minta AI…' : '🎲 …';
@@ -2284,6 +2380,8 @@ function renderProfil(body, c) {
       ])));
       g.append(dl);
     } else g.append(el('div', { class: 'hint', style: 'margin-top:8px;', textContent: 'Belum diisi — bagian ini bikin hasil makin personal.' }));
+    // upload/ganti brand guideline langsung di profil (kalau grup ini punya field brandGuide)
+    if (keys.includes('brandGuide')) g.append(brandGuideUploader(c));
     body.append(g);
   });
   const danger = el('div', { class: 'card', style: 'margin-top:14px;' });
