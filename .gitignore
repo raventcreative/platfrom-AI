@@ -9,3 +9,6 @@ out/
 coverage/
 *.tsbuildinfo
 apps/api/prisma/migrations/dev.db*
+
+# stray secret file (jangan pernah commit kunci API)
+apps/web/public/api
