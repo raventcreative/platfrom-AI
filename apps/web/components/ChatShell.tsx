@@ -95,11 +95,7 @@ export function ChatShell({ brandId }: { brandId?: string }) {
         {messages.map((m) => (
           <div key={m.id} className={m.role === 'USER' ? 'text-right' : 'text-left'}>
             <span
-              className={`inline-block max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2 text-left text-sm ${
-                m.role === 'USER'
-                  ? 'bg-blue-600 text-white'
-                  : 'border border-neutral-200 bg-white'
-              }`}
+              className={`ce-bubble ${m.role === 'USER' ? 'ce-bubble-user' : 'ce-bubble-bot'}`}
             >
               {m.content}
             </span>
@@ -111,7 +107,7 @@ export function ChatShell({ brandId }: { brandId?: string }) {
       <div className="border-t border-neutral-200 bg-white p-3">
         <div className="flex gap-2">
           <input
-            className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className="ce-input flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
             placeholder="Ketik perintah untuk agent..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -121,7 +117,7 @@ export function ChatShell({ brandId }: { brandId?: string }) {
           <button
             onClick={send}
             disabled={busy || !input.trim()}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="ce-send"
           >
             {busy ? '...' : 'Kirim'}
           </button>

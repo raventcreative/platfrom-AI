@@ -30,16 +30,25 @@ export interface LlmOpts {
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
 
-  private readonly anthropicKey = process.env.ANTHROPIC_API_KEY;
-  private readonly anthropicModel =
-    process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
-
-  private readonly openaiKey = process.env.OPENAI_API_KEY;
-  private readonly openaiModel = process.env.OPENAI_MODEL ?? 'gpt-4o';
-
-  private readonly maxTokens = Number(
-    process.env.LLM_MAX_TOKENS ?? process.env.ANTHROPIC_MAX_TOKENS ?? 2600,
-  );
+  // Env dibaca LAZY (getter, bukan field) supaya tidak tergantung urutan
+  // inisialisasi ConfigModule/dotenv saat provider dibangun.
+  private get anthropicKey() {
+    return process.env.ANTHROPIC_API_KEY?.trim() || undefined;
+  }
+  private get anthropicModel() {
+    return process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
+  }
+  private get openaiKey() {
+    return process.env.OPENAI_API_KEY?.trim() || undefined;
+  }
+  private get openaiModel() {
+    return process.env.OPENAI_MODEL ?? 'gpt-4o';
+  }
+  private get maxTokens() {
+    return Number(
+      process.env.LLM_MAX_TOKENS ?? process.env.ANTHROPIC_MAX_TOKENS ?? 2600,
+    );
+  }
 
   get enabled(): boolean {
     return Boolean(this.anthropicKey || this.openaiKey);
