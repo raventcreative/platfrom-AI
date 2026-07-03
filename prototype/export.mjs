@@ -102,8 +102,15 @@ async function main() {
     localStorage.clear();
     seedClients();
     const c = loadClients()[brand] || loadClients()[0];
+    // topik & referensi visual wajib → isi otomatis sebelum generate
+    const bank = bankOf(c);
+    const px = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="8" height="10"><rect width="8" height="10" fill="#1C5B43"/></svg>');
+    if (typeof setRefs === 'function' && getRefs(c).length < 1) setRefs(c, [{ name: 'ref', data: px }]);
     openBrand(c.id, 'bikin');
     pickedType = type;
+    if (typeof pickedTypes !== 'undefined') pickedTypes = [type];
+    const topicEl = document.querySelector('#g_topic');
+    if (topicEl) topicEl.value = (c.promo || (bank.topics && bank.topics[0]) || 'topik contoh').trim();
     // set platform IG Feed biar keluar 8 referensi foto juga (kalau relevan)
     const pf = document.querySelector('#g_platform');
     if (pf) { pf.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p.dataset.v === 'IG Feed')); }

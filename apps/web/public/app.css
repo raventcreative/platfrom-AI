@@ -1,3 +1,4 @@
+  /* ── token desain: warna (pasir/pinus/koral), font, bayangan, radius ── */
   :root {
     --bg: #F6F0E3;
     --bg-2: #FBF7EC;
@@ -25,6 +26,7 @@
     --r-lg: 22px;
     --r-md: 16px;
   }
+  /* ── reset & dasar body ── */
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
@@ -39,6 +41,7 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .04 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   ::selection { background: var(--coral-soft); }
+  /* ── tipografi & util teks/layout ── */
   h1,h2,h3,h4 { font-family: var(--serif); font-weight: 700; letter-spacing: -.015em; margin: 0; line-height: 1.15; }
   em.fancy { font-style: italic; font-weight: 600; color: var(--pine); }
   .muted { color: var(--ink-2); }
@@ -47,6 +50,7 @@
   .between { justify-content: space-between; }
   .spacer { flex: 1; }
 
+  /* ── kartu dasar ── */
   .card {
     background: var(--card); border: 1px solid var(--line);
     border-radius: var(--r-lg); padding: 22px; box-shadow: var(--sh-1);
@@ -206,9 +210,15 @@
   }
   .type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; }
   .type-card {
-    border: 1.5px solid var(--line); border-radius: 18px; padding: 18px 16px;
+    position: relative; border: 1.5px solid var(--line); border-radius: 18px; padding: 18px 16px;
     background: var(--card); cursor: pointer; transition: all .13s ease; box-shadow: var(--sh-1);
   }
+  .type-card .chk {
+    position: absolute; top: 13px; right: 13px; width: 24px; height: 24px; border-radius: 7px;
+    border: 2px solid var(--line-2); background: var(--bg-2); display: flex; align-items: center;
+    justify-content: center; font-size: 15px; color: transparent; font-weight: 800;
+  }
+  .type-card.on .chk { background: var(--pine); border-color: var(--pine); color: #fff; }
   .type-card .e { font-size: 30px; }
   .type-card h4 { margin: 9px 0 4px; font-size: 15.5px; font-family: var(--sans); font-weight: 800; }
   .type-card p { margin: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.45; }
@@ -302,6 +312,7 @@
   .mockup .cap span { font-size:12px; color:var(--ink-3); }
   .mockup .dl { font:700 12px var(--sans); border:1.5px solid var(--line-2); background:var(--card); box-shadow:none; padding:5px 10px; border-radius:999px; }
   .mockup .dl:hover { border-color:var(--pine); color:var(--pine); transform:none; }
+  .mockup .illo-title { padding:0 10px 10px; font:600 12.5px/1.35 var(--sans); color:var(--ink); }
   .feedgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
   .feedcell img { width:100%; aspect-ratio:1/1; display:block; border-radius:8px; }
   @media (max-width:680px){ .feedgrid { grid-template-columns:repeat(2,1fr); } }
@@ -352,6 +363,7 @@
   @keyframes cook { 0%,100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.1) rotate(-6deg); } }
   .cook-step { font-size: 14px; color: var(--ink-2); margin-top: 3px; min-height: 20px; }
 
+  /* ── dialog & toast ── */
   dialog { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 0; width: min(500px, 92vw); box-shadow: var(--sh-2); background: var(--card); }
   dialog::backdrop { background: rgba(28,23,18,.5); }
   dialog .body { padding: 26px; }
@@ -362,12 +374,72 @@
     box-shadow: var(--sh-2);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.ok { background: var(--pine); color: #FDFBF3; }
+  .toast.err { background: var(--red); color: #fff; }
+
+  /* ── file upload (rapi, bukan bawaan browser) ── */
+  .filedrop {
+    display: flex; align-items: center; gap: 13px; width: 100%;
+    padding: 15px 16px; border-radius: var(--r-md); cursor: pointer;
+    border: 1.6px dashed var(--line-2); background: var(--bg-2);
+    text-align: left; box-shadow: none; color: var(--ink);
+    transition: border-color .15s, background .15s;
+  }
+  .filedrop:hover { border-color: var(--pine); background: var(--pine-soft); transform: none; box-shadow: none; }
+  .filedrop.drag { border-color: var(--pine); border-style: solid; background: var(--pine-soft); }
+  .filedrop.done { border-style: solid; border-color: var(--pine); background: #fff; }
+  .filedrop .fi { font-size: 22px; line-height: 1; flex: 0 0 auto; }
+  .filedrop .ft { flex: 1 1 auto; min-width: 0; }
+  .filedrop .ft b { display: block; font-size: 14px; font-weight: 700; }
+  .filedrop .ft span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .filedrop .fbtn { flex: 0 0 auto; font: 700 12.5px var(--sans); padding: 7px 13px; border-radius: 999px; background: var(--ink); color: var(--bg); }
+  .file-clear { margin-top: 8px; font: 600 12.5px var(--sans); color: var(--red); border-color: var(--red); box-shadow: 0 2px 0 var(--red); padding: 6px 12px; }
+
+  /* ── grid referensi gambar user ── */
+  .refgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 9px; margin-top: 11px; }
+  .refcell { position: relative; aspect-ratio: 4/5; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--line-2); background: var(--track); }
+  .refcell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .refcell .x {
+    position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0;
+    border-radius: 999px; background: rgba(28,23,18,.82); color: #fff; border: none;
+    font-size: 13px; line-height: 22px; box-shadow: none; display: flex; align-items: center; justify-content: center;
+  }
+  .refcell .x:hover { background: var(--red); transform: none; box-shadow: none; }
+  .refcell .num { position: absolute; bottom: 4px; left: 5px; font: 700 10px var(--sans); color: #fff; background: rgba(28,23,18,.6); padding: 1px 6px; border-radius: 999px; }
+  /* ── panel gambar AI (OpenAI Images) ── */
+  .aiimg { border: 1.5px solid var(--pine); background: var(--pine-soft); border-radius: var(--r-md); padding: 15px 16px; margin-top: 4px; }
+  .aiimg-load, .aiimg-err {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    aspect-ratio: 4/5; padding: 12px; font: 600 12.5px var(--sans); line-height: 1.4;
+    border-radius: 12px; background: var(--bg-2); color: var(--ink-2);
+  }
+  .aiimg-err { background: var(--red-soft); color: var(--red); }
+  /* ── checklist audit akun ── */
+  .audit-sec { margin-top: 16px; }
+  .audit-sec > b { display: block; font-size: 15px; margin-bottom: 8px; }
+  .audit-item {
+    display: flex; align-items: flex-start; gap: 11px; padding: 11px 13px; margin-bottom: 7px;
+    border: 1.5px solid var(--line-2); border-radius: 12px; background: var(--bg-2);
+    cursor: pointer; box-shadow: none; text-align: left; width: 100%; font: 500 14.5px/1.5 var(--sans); color: var(--ink);
+    transition: background .12s, border-color .12s;
+  }
+  .audit-item:hover { border-color: var(--pine); transform: none; box-shadow: none; }
+  .audit-item .box {
+    flex: 0 0 auto; width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--line-2);
+    display: flex; align-items: center; justify-content: center; font-size: 14px; color: transparent; margin-top: 1px;
+  }
+  .audit-item.done { background: var(--pine-soft); border-color: var(--pine); }
+  .audit-item.done .box { background: var(--pine); border-color: var(--pine); color: #fff; }
+  .audit-item.done .lbl { color: var(--ink-2); text-decoration: line-through; text-decoration-color: var(--ink-3); }
+  .audit-progress { font-weight: 800; font-size: 14px; color: var(--pine); margin-top: 4px; }
+  /* ── pemisah, accordion (details), grid 2 kolom ── */
   .divider { height: 1px; background: var(--line); margin: 20px 0; }
   details.adv { margin-top: 16px; }
   details.adv summary { cursor: pointer; font-weight: 700; font-size: 14px; color: var(--ink-2); user-select: none; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .hist-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 
+  /* ── responsif: penyesuaian layar sempit (HP) ── */
   @media (max-width: 680px) {
     .grid-2 { grid-template-columns: 1fr; }
     .meter-row { grid-template-columns: 112px 1fr 40px; }

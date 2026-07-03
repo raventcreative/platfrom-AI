@@ -39,6 +39,16 @@
     <label style="display:block; font-weight:700; font-size:14px; margin:16px 0 6px;">🛠️ Nama model manual (opsional)</label>
     <input id="inpModel" type="text" placeholder="kosongkan = otomatis (mis. claude-sonnet-5)" autocomplete="off" />
     <div class="hint">Isi kalau mau pakai model spesifik, mis. <b>claude-opus-4-8</b>, <b>claude-fable-5</b>, atau <b>gpt-4o</b>.</div>
+    <div class="divider"></div>
+    <label style="display:block; font-weight:700; font-size:14px; margin:4px 0 6px;">🎨 Gambar AI (OpenAI) — opsional</label>
+    <input id="inpImgKey" type="password" placeholder="sk-… OpenAI (buat generate GAMBAR asli)" autocomplete="off" />
+    <div class="hint">Bikin <b>gambar carousel/feed asli</b> (bukan mockup teks) lewat OpenAI Images. Cuma OpenAI yang punya image-gen. Kalau kunci utama di atas sudah <b>sk-…</b> OpenAI, kolom ini boleh dikosongkan — otomatis dipakai.</div>
+    <label style="display:block; font-weight:700; font-size:14px; margin:16px 0 6px;">🖼️ Model gambar</label>
+    <select id="inpImgModel">
+      <option value="gpt-image-1">gpt-image-1 — kualitas tinggi (disarankan)</option>
+      <option value="dall-e-3">dall-e-3</option>
+    </select>
+    <div class="hint">Prosesnya 2 tahap ala JSON: AI menyusun spesifikasi gambar (subjek, komposisi, palet, mood) → lalu dirender jadi gambar. Referensi visual brand-mu (kalau ada) dipakai sebagai acuan gaya.</div>
     <div class="row" style="justify-content:flex-end; gap:10px; margin-top:22px;">
       <button id="btnCloseSettings" class="ghost">Batal</button>
       <button class="primary" id="btnSaveSettings">Simpan</button>
