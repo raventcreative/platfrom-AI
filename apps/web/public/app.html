@@ -838,6 +838,9 @@ function buildHashtags(f, topic, rng) {
 
 /* ── HOOK PATTERNS (dipakai script, carousel, caption, ide) ── */
 const HOOKS = [
+  { id: 'problem', pattern: 'Problem hook',
+    make: (f, t, rng) => ({ text: `${cap1(pick(rng, f.pains))}? Ini biang sama solusinya`,
+      why: 'Tembak masalah audiens di detik 0. Yang lagi ngalamin langsung berhenti scroll.' }) },
   { id: 'pov', pattern: 'POV relatable',
     make: (f, t, rng) => ({ text: `POV: ${lower1(pick(rng, f.pains))}` + emo(f, '😩'),
       why: `Nunjuk langsung masalah ${f.buyer || 'audiensmu'} — yang ngerasa pasti berhenti scroll.` }) },
@@ -902,10 +905,29 @@ const HOOKS = [
     make: (f, t, rng) => ({ text: `Semua ${pick(rng, ['lagi ngomongin', 'ngira'])} ${t ? lower1(t) : lower1(f.pain)} — tapi ini yang kelewat`,
       why: 'Menumpang topik yang lagi ramai lalu kasih sudut baru = relevan sekaligus segar.' }) },
 ];
-function makeHooks(f, topic, rng, n) {
-  const picked = pickN(rng, HOOKS, n || 3);
+function makeHooks(f, topic, rng, n, forceId) {
+  n = n || 3;
+  let picked;
+  const forced = forceId ? HOOKS.find(h => h.id === forceId) : null;
+  if (forced) {
+    const rest = pickN(rng, HOOKS.filter(h => h.id !== forceId), Math.max(0, n - 1));
+    picked = [forced, ...rest];
+  } else {
+    picked = pickN(rng, HOOKS, n);
+  }
   return picked.map(h => { const r = h.make(f, topic, rng); return { text: sanitize(cap1(r.text), f), pattern: h.pattern, why: r.why }; });
 }
+// menu tipe hook buat dipilih user (label ringkas). Semua id ada di HOOKS.
+const HOOK_MENU = [
+  ['problem', '😣 Problem'], ['question', '❓ Pertanyaan'], ['secret', '🤫 Curiosity gap'],
+  ['listicle', '🔢 Listicle'], ['mitos', '⚡ Mitos vs fakta'], ['stop', '🚫 Warning/Stop'],
+  ['pov', '🎭 POV relatable'], ['beforeafter', '🔄 Before-after'], ['number', '📊 Statistik'],
+  ['mistake', '⚠️ Kesalahan umum'], ['challenge', '🧪 Eksperimen'], ['harga', '💸 Angka kejut'],
+  ['jujur', '🫶 Kejujuran'], ['callout', '📣 Call-out'], ['timesave', '⏳ Penyesalan'],
+  ['vs', '🥊 Ini vs itu'], ['relate', '🙋 Relatable'], ['wish', '🌈 Pengandaian'],
+  ['checklist', '✅ Tanda/checklist'], ['trend', '🔥 Reaksi tren'], ['nobody', '🔓 Info rahasia'],
+  ['confession', '💚 POV karakter'],
+];
 
 /* ═══════════════════════ GENERATOR KONTEN ═══════════════════════ */
 const SOUNDS = {
@@ -938,7 +960,7 @@ function genScript(c, daily, seedN) {
   const target = parseInt(daily.durasi) || 30;
   const platform = daily.platform || 'IG Reels';
   const goal = daily.goal || f.goal;
-  const hooks = makeHooks(f, t, rng, 3);
+  const hooks = makeHooks(f, t, rng, 3, daily.hook);
   const S = sapa(f);
   const sc = (visual, voiceover, ost, d) => ({ visual, voiceover: sanitize(voiceover, f), onscreen_text: sanitize(ost, f), duration_sec: d });
   let scenes = [], frameName = '', learning = '';
@@ -1059,7 +1081,7 @@ function genCarousel(c, daily, seedN) {
   }
 
   const capRng = rng;
-  const capHook = makeHooks(f, t, capRng, 1)[0];
+  const capHook = makeHooks(f, t, capRng, 1, daily.hook)[0];
   const caption = sanitize([
     capHook.text,
     '',
@@ -1082,7 +1104,7 @@ function genCaption(c, daily, seedN) {
   const t = (daily.topic || '').trim();
   const goal = daily.goal || f.goal;
   const S = sapa(f);
-  const hooks = makeHooks(f, t, rng, 5);
+  const hooks = makeHooks(f, t, rng, 5, daily.hook);
   let body = [], formula = '';
   if (/jual/i.test(goal)) {
     formula = 'AIDA';
@@ -1178,8 +1200,9 @@ function genStoryboard(c, daily, seedN) {
   } else {
     concept = `Talking head + b-roll: ${t ? lower1(t) : lower1(pick(rng, f.bank.topics))}`;
     const tip = pick(rng, f.bank.tips);
+    const openHook = makeHooks(f, t, rng, 1, daily.hook)[0].text;
     shots = [
-      sh('Wajah ke kamera, langsung ke inti (tanpa salam!)', 'Eye-level, sedikit dekat', 'Talent 1, background rapi', `${makeHooks(f, t, rng, 1)[0].text}.`, ostShort(makeHooks(f, t, rng, 1)[0].text), 'Musik minimal', 4),
+      sh('Wajah ke kamera, langsung ke inti (tanpa salam!)', 'Eye-level, sedikit dekat', 'Talent 1, background rapi', `${openHook}.`, ostShort(openHook), 'Musik minimal', 4),
       sh('B-roll menguatkan poin: ' + v1, 'Insert close-up', 'Props sesuai topik', `${cap1(tip.t)} — ${lower1(tip.d)}`, ostShort(tip.t), 'Musik lanjut', 9),
       sh('Kembali ke wajah + gestur tangan', 'Eye-level, angle beda 15°', '-', `Dan yang paling sering dilupain: konsisten. Sekali-dua kali doang nggak akan kelihatan hasilnya.`, 'Konsisten > sempurna', 'Musik lanjut', 8),
       sh('B-roll penutup: ' + v2 + ' + teks CTA', 'Slow push-in', 'Produk/hasil', `${cap1(f.cta)}${closer(f, rng)} — ${pick(rng, ['nggak nyesel.', 'mulai dari yang kecil dulu.'])}`, ostShort(f.cta), 'Outro pendek', 5),
@@ -1854,7 +1877,7 @@ function seedClients() {
 }
 
 /* ═══════════════════════ WORKSPACE ═══════════════════════ */
-let currentId = null, currentTab = 'bikin', pickedType = 'script';
+let currentId = null, currentTab = 'bikin', pickedType = 'script', pickedHook = '';
 function openBrand(id, tab) {
   currentId = id; currentTab = tab || 'bikin';
   const c = getClient(id); if (!c) return renderHome();
@@ -1909,16 +1932,19 @@ function renderBikin(body, c) {
   topicSuggs.forEach(s => suggWrap.append(el('button', { textContent: s, onclick: e => { e.preventDefault(); topic.value = s; } })));
   form.append(suggWrap);
 
-  // colek hook: seed angle konten dari pola hook, sudah pakai voice brand
-  const hookSeeds = makeHooks(factsOf(c), '', mulberry(c.id + '|topichooks'), 5);
-  form.append(el('div', { class: 'tiny', style: 'font-weight:700; margin:14px 0 4px;', textContent: '🪝 …atau colek satu hook buat jadi angle:' }));
-  const hookSugg = el('div', { class: 'sugg' });
-  hookSeeds.forEach(h => hookSugg.append(el('button', {
-    textContent: h.text.length > 46 ? h.text.slice(0, 44) + '…' : h.text,
-    title: h.pattern + ' — ' + h.why,
-    onclick: e => { e.preventDefault(); topic.value = h.text; topic.focus(); },
-  })));
-  form.append(hookSugg);
+  // menu gaya hook (opsional): pilih satu tipe, generator pakai itu sebagai hook utama
+  form.append(el('label', { textContent: '🪝 Gaya hook (opsional — pilih satu, sisanya kami atur)' }));
+  const hookPills = el('div', { class: 'pills', id: 'g_hookmenu' });
+  const setHook = id => { pickedHook = (pickedHook === id ? '' : id); hookPills.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', pickedHook && p.dataset.v === pickedHook)); };
+  HOOK_MENU.forEach(([id, label]) => {
+    const p = el('button', { class: 'pill' + (pickedHook === id ? ' on' : ''), textContent: label });
+    p.dataset.v = id;
+    p.title = (HOOKS.find(h => h.id === id) || {}).pattern || label;
+    p.onclick = e => { e.preventDefault(); setHook(id); };
+    hookPills.append(p);
+  });
+  form.append(hookPills);
+  form.append(el('div', { class: 'hint', textContent: 'Nggak dipilih = kami pilihkan hook terbaik otomatis. Yang dipilih dipakai sebagai hook #1.' }));
 
   const mkPills = (id, label, opts, defIdx) => {
     const wrap = el('div', { id: id + '_wrap' });
@@ -1979,6 +2005,7 @@ function collectDaily() {
     topic: ($('#g_topic') || {}).value || '',
     goal: pill('g_goal'), platform: pill('g_platform'),
     durasi: ($('#g_durasi_wrap') && $('#g_durasi_wrap').style.display !== 'none') ? pill('g_durasi') : '',
+    hook: pickedHook || '',
   };
 }
 function bumpSeed(c, type) {
