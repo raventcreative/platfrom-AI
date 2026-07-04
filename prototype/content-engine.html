@@ -321,6 +321,25 @@
   .mockup .cap { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:8px 10px; }
   .mockup .cap span { font-size:12px; color:var(--ink-3); }
   .mockup .dl { font:700 12px var(--sans); border:1.5px solid var(--line-2); background:var(--card); box-shadow:none; padding:5px 10px; border-radius:999px; }
+  /* hyperlink handle IG */
+  a.iglink { color:var(--pine); font-weight:700; text-decoration:none; border-bottom:1.5px solid var(--pine-soft); }
+  a.iglink:hover { border-bottom-color:var(--pine); }
+  /* kartu preview IG ASLI (embed resmi Instagram) */
+  .igembed-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; margin-top:6px; }
+  .igembed { margin-top:12px; border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--card); }
+  .igembed-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); }
+  .igembed-open { font:700 12.5px var(--sans); color:var(--pine); text-decoration:none; white-space:nowrap; }
+  .igembed-open:hover { text-decoration:underline; }
+  .igembed-frame { background:var(--bg-2); }
+  .igembed-frame iframe { width:100%; height:560px; display:block; border:0; background:#fff; }
+  /* head-to-head: sel kamu unggul / ketinggalan + kotak verdict */
+  td.cmp-win { color:var(--pine); font-weight:700; background:var(--pine-soft); }
+  td.cmp-lose { color:var(--coral-dark); font-weight:700; background:var(--coral-soft); }
+  .verdict { margin-top:10px; padding:12px 14px; border:1px solid var(--line); border-left:4px solid var(--pine); border-radius:10px; background:var(--bg-2); font-size:14px; line-height:1.6; }
+  /* panel cari kompetitor di IG */
+  .igsearch { margin:14px 0 4px; padding:14px; border:1px dashed var(--line-2); border-radius:14px; background:var(--bg-2); }
+  a.chip.golink { text-decoration:none; cursor:pointer; border-color:var(--pine-soft); color:var(--pine); }
+  a.chip.golink:hover { background:var(--pine); color:#fff; border-color:var(--pine); }
   .mockup .dl:hover { border-color:var(--pine); color:var(--pine); transform:none; }
   .mockup .illo-title { padding:0 10px 10px; font:600 12.5px/1.35 var(--sans); color:var(--ink); }
   .feedgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
@@ -1588,19 +1607,78 @@ function auditChecklist(c, handle, platform) {
     learning_note: 'Ini panduan audit mandiri (bukan skor dari data asli — browser nggak bisa baca ' + plat + '). Buka ' + who + ', centang yang sudah beres, kerjakan yang belum. Yang paling ngefek: hook 3 detik + 1 CTA jelas.',
   };
 }
-// handle kompetitor tipikal per niche (buat mode auto-deteksi)
-const COMP_HANDLES = {
-  skincare: ['@glowrival.id', '@skinsecret.co', '@beautyhaul.id'],
-  fnb: ['@dapurviral.id', '@kulinerhits.co', '@rasajuara.id'],
-  fashion: ['@outfitdaily.id', '@stylehunt.co', '@wardrobe.hits'],
-  service: ['@jasapro.id', '@solusicepat.co', '@partnerbisnis.id'],
-  edu: ['@belajarcepat.id', '@kelaspintar.co', '@skillup.id'],
-  other: ['@rivalbrand.id', '@pesaing.co', '@kompetitorhits.id'],
+// label ARKETIPE pola konten (bukan akun asli — auto-deteksi cuma menganalisis POLA, bukan akun beneran)
+const ARCHETYPE_LABELS = ['Pola "Jualan Terus"', 'Pola "Estetik"', 'Pola "Edukatif"'];
+// Pool akun ASLI & terverifikasi (semua dicek resolve via embed IG). Tiap akun diberi kata kunci
+// jasa/produk → saran kompetitor dicocokkan ke JASA YANG BRAND TAWARKAN, bukan cuma kategori kasar.
+const HANDLE_POOL = [
+  // skincare / beauty
+  { h: 'somethincofficial', d: 'beauty', kw: ['skincare', 'kecantikan', 'beauty', 'serum', 'kosmetik', 'wajah', 'kulit'] },
+  { h: 'avoskinbeauty', d: 'beauty', kw: ['skincare', 'kecantikan', 'beauty', 'serum', 'kulit', 'lokal'] },
+  { h: 'npureofficial', d: 'beauty', kw: ['skincare', 'kecantikan', 'beauty', 'natural', 'kulit'] },
+  { h: 'wardahbeauty', d: 'beauty', kw: ['kosmetik', 'makeup', 'kecantikan', 'halal', 'beauty', 'skincare'] },
+  // f&b
+  { h: 'kopikenangan.id', d: 'fnb', kw: ['kopi', 'minuman', 'cafe', 'coffee', 'fnb', 'ngopi'] },
+  { h: 'haus.indonesia', d: 'fnb', kw: ['minuman', 'teh', 'boba', 'fnb', 'cafe', 'jus', 'thai tea'] },
+  { h: 'geprekbensu', d: 'fnb', kw: ['ayam', 'makanan', 'resto', 'fnb', 'geprek', 'kuliner', 'nasi'] },
+  // fashion
+  { h: 'erigostore', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'streetwear', 'clothing', 'kaos', 'outfit'] },
+  { h: 'hijup', d: 'fashion', kw: ['fashion', 'hijab', 'muslim', 'busana', 'pakaian', 'gamis'] },
+  { h: 'uniqloindonesia', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'clothing', 'outfit'] },
+  // edukasi / kelas / kursus
+  { h: 'ruangguru', d: 'edu', kw: ['edukasi', 'belajar', 'kelas', 'les', 'pendidikan', 'bimbel', 'kursus', 'sekolah'] },
+  { h: 'skillacademy.id', d: 'edu', kw: ['kelas', 'kursus', 'skill', 'online', 'pelatihan', 'edukasi', 'sertifikat'] },
+  { h: 'pahamify', d: 'edu', kw: ['belajar', 'edukasi', 'utbk', 'pendidikan', 'les', 'bimbel'] },
+  { h: 'dicoding', d: 'edu', kw: ['coding', 'programming', 'developer', 'kelas', 'edukasi', 'kursus'] },
+  // rumah / interior / renovasi / desain
+  { h: 'dekoruma', d: 'home', kw: ['interior', 'furnitur', 'rumah', 'desain', 'renovasi', 'dekorasi', 'perabot', 'mebel'] },
+  { h: 'ruparupacom', d: 'home', kw: ['furnitur', 'rumah', 'interior', 'perabot', 'dekorasi', 'peralatan'] },
+  // kesehatan / klinik
+  { h: 'halodoc', d: 'health', kw: ['kesehatan', 'dokter', 'klinik', 'medis', 'konsultasi', 'health', 'obat', 'sehat'] },
+  { h: 'klikdokter', d: 'health', kw: ['kesehatan', 'dokter', 'medis', 'konsultasi', 'sehat'] },
+  { h: 'prodia_lab', d: 'health', kw: ['kesehatan', 'lab', 'tes', 'medis', 'diagnostik', 'cek'] },
+  // logistik / ekspedisi
+  { h: 'jne_id', d: 'logistik', kw: ['logistik', 'ekspedisi', 'kirim', 'pengiriman', 'kurir', 'cargo', 'paket'] },
+  { h: 'sicepat_ekspres', d: 'logistik', kw: ['logistik', 'ekspedisi', 'kirim', 'pengiriman', 'kurir', 'paket'] },
+  { h: 'anteraja.id', d: 'logistik', kw: ['logistik', 'ekspedisi', 'kirim', 'pengiriman', 'kurir', 'paket'] },
+  // keuangan / fintech
+  { h: 'ovo_id', d: 'finance', kw: ['keuangan', 'pembayaran', 'dompet', 'fintech', 'finansial', 'transaksi'] },
+  { h: 'dana.id', d: 'finance', kw: ['keuangan', 'pembayaran', 'dompet', 'fintech', 'finansial', 'transaksi'] },
+  { h: 'bibit.id', d: 'finance', kw: ['investasi', 'keuangan', 'reksadana', 'finansial', 'fintech', 'nabung'] },
+  { h: 'ajaib_investasi', d: 'finance', kw: ['investasi', 'saham', 'keuangan', 'finansial', 'trading'] },
+  // teknologi / software / AI / digital / jasa perusahaan
+  { h: 'dewaweb', d: 'tech', kw: ['hosting', 'website', 'digital', 'teknologi', 'it', 'server', 'web', 'domain', 'cloud', 'software'] },
+  { h: 'nodeflux', d: 'tech', kw: ['ai', 'teknologi', 'software', 'perusahaan', 'it', 'digital', 'otomasi', 'data', 'saas', 'aplikasi', 'sistem'] },
+  // marketplace / jualan online umum
+  { h: 'tokopedia', d: 'market', kw: ['marketplace', 'online', 'belanja', 'ecommerce', 'jual', 'toko'] },
+  { h: 'shopee_id', d: 'market', kw: ['marketplace', 'online', 'belanja', 'ecommerce', 'jual', 'toko'] },
+];
+// fallback per kategori (kalau teks jasa terlalu tipis buat dicocokkan)
+const CATEGORY_FALLBACK = {
+  skincare: ['somethincofficial', 'avoskinbeauty', 'npureofficial'],
+  fnb: ['kopikenangan.id', 'haus.indonesia', 'geprekbensu'],
+  fashion: ['erigostore', 'hijup', 'uniqloindonesia'],
+  edu: ['ruangguru', 'skillacademy.id', 'pahamify'],
+  service: [], other: [], // niche jasa/lainnya kelewat beragam → jangan paksa akun generik, arahkan ke pencarian
 };
-// Deteksi kompetitor OTOMATIS: rakit 3 arketipe akun yang lazim di niche brand
-// (Si Jualan Terus / Si Estetik / Si Edukatif). Caption tiap akun disintesis
-// deterministik dari bank kategori supaya analisisnya realistis & bisa direproduksi.
-// Dipakai kalau user nggak nempel caption kompetitor sendiri.
+// Saran kompetitor DICOCOKKAN ke jasa/produk yang brand tawarkan (skor kata kunci), bukan cuma kategori.
+function suggestCompetitors(c, extra) {
+  // cocokkan ke apa yang brand tawarkan (deskripsi bisnis + produk/jasa/USP/nama) + kategori — bukan tag generik bank
+  const text = ' ' + [extra || '', c.name, c.products, c.usp, c.painpoint, c.desire, c.category].join(' ').toLowerCase() + ' ';
+  const has = k => new RegExp('(^|[^a-z])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z]|$)').test(text); // token utuh, bukan substring
+  const scored = HANDLE_POOL.map(p => ({ h: p.h, d: p.d, s: p.kw.reduce((n, k) => n + (has(k) ? 1 : 0), 0) }))
+    .filter(x => x.s > 0).sort((a, b) => b.s - a.s);
+  // kunci ke domain pemenang → cuma akun se-niche, buang match lintas-domain (mis. fnb nyelip di hasil renovasi)
+  const topDomain = scored.length ? scored[0].d : null;
+  const top = scored.filter(x => x.d === topDomain).slice(0, 3).map(x => x.h);
+  if (top.length >= 2) return top; // cukup relevan → pakai hasil cocokan ke jasanya
+  // kurang cocok → lengkapi dari fallback kategori (kalau ada); service/other sengaja kosong → arahkan ke pencarian
+  return [...new Set([...top, ...(CATEGORY_FALLBACK[c.category] || [])])].slice(0, 3);
+}
+// Deteksi OTOMATIS: rakit 3 arketipe POLA konten yang lazim di niche brand
+// (jualan terus / estetik / edukatif). Caption tiap pola disintesis deterministik dari
+// bank kategori supaya analisisnya realistis. Ini POLA, bukan akun IG asli — jadi
+// nggak ada handle palsu/preview yang menyesatkan. Preview IG asli = dari handle yang user isi.
 function detectCompetitors(c) {
   const f = factsOf(c);
   const rng = mulberry(c.id + '|detect'); // seed tetap → hasil sama tiap kali
@@ -1609,7 +1687,7 @@ function detectCompetitors(c) {
   const tips = (f.bank.tips && f.bank.tips.length) ? f.bank.tips : [{ t: 'Konsistensi', d: 'Rutin posting lebih penting daripada sempurna.' }];
   const mists = (f.bank.mistakes && f.bank.mistakes.length) ? f.bank.mistakes : [{ t: 'Asal posting', d: 'tanpa hook di 3 detik pertama.' }];
   const prod = lower1(f.product || 'produk kami');
-  const handles = COMP_HANDLES[c.category] || COMP_HANDLES.other;
+  const labels = ARCHETYPE_LABELS;
   // 1) Si Jualan Terus — promo terus, pembuka datar, CTA agresif, mega-hashtag
   const hardsell = [];
   for (let i = 0; i < 6; i++) {
@@ -1626,9 +1704,9 @@ function detectCompetitors(c) {
     edu.push(`${hooks[i % hooks.length].text}\n\n${cap1(tip.t)}: ${tip.d} Banyak yang skip ini, padahal ${lower1(mist.d)}\n\nSave biar nggak lupa ya, share ke temen yang butuh! ${tg(i)} ${tg(i + 1)} ${tg(i + 2)}`);
   }
   return [
-    { handle: handles[0], raw: hardsell.join('\n---\n') },
-    { handle: handles[1], raw: aesthetic.join('\n---\n') },
-    { handle: handles[2], raw: edu.join('\n---\n') },
+    { handle: labels[0], archetype: true, raw: hardsell.join('\n---\n') },
+    { handle: labels[1], archetype: true, raw: aesthetic.join('\n---\n') },
+    { handle: labels[2], archetype: true, raw: edu.join('\n---\n') },
   ];
 }
 // contoh caption "akunmu" versi ProdPilot — dipakai buat ngisi kolom "kamu" otomatis
@@ -1652,14 +1730,14 @@ function mySampleFromBrand(c) {
   return posts.join('\n---\n');
 }
 // bandingkan akun kita vs kompetitor (skor, pola hook, tiru/kelemahan) + carikan celah
-function compareReport(c, myRaw, comps, autoDetected) {
+function compareReport(c, myRaw, comps, autoDetected, realHandles) {
   const f = factsOf(c);
   const rng = mulberry(c.id + '|compare|' + comps.map(x => x.handle).join(','));
   // kolom "kamu": pakai caption asli kalau ditempel (≥2 post), kalau nggak → contoh ProdPilot
   const hasMyReal = myRaw && parsePosts(myRaw).length >= 2;
   const mineAuto = !hasMyReal;
   const mine = analyzeAccount(parsePosts(hasMyReal ? myRaw : mySampleFromBrand(c)));
-  const rows = comps.map(cp => ({ handle: cp.handle, a: analyzeAccount(parsePosts(cp.raw)) }));
+  const rows = comps.map(cp => ({ handle: cp.handle, archetype: !!cp.archetype, a: analyzeAccount(parsePosts(cp.raw)) }));
   const all = rows.map(r => r.a);
   const competitors = rows.map(r => {
     const topPatterns = Object.entries(r.a.patternFreq).sort((x, y) => y[1] - x[1]).slice(0, 3).map(([k, v]) => k + ' (' + v + 'x)');
@@ -1675,7 +1753,7 @@ function compareReport(c, myRaw, comps, autoDetected) {
     if (r.a.ctaCoverage >= 0.8) tiru.push('Disiplin CTA di hampir tiap post — kebiasaan yang layak dicontoh');
     if (r.a.varScore >= 7) tiru.push('Campuran kontennya sehat (' + Object.keys(r.a.pillars).join(', ') + ') — struktur mingguannya bisa diadaptasi');
     if (!tiru.length) tiru.push('Konsistensi posting-nya — sisanya justru peluangmu buat tampil lebih rapi');
-    return { handle: r.handle, overall: r.a.overall, n: r.a.n, scores: r.a, hook_patterns: topPatterns.length ? topPatterns : ['(belum ada pola hook yang konsisten)'], tiru_adaptasi: tiru, kelemahan };
+    return { handle: r.handle, archetype: r.archetype, overall: r.a.overall, n: r.a.n, scores: r.a, hook_patterns: topPatterns.length ? topPatterns : ['(belum ada pola hook yang konsisten)'], tiru_adaptasi: tiru, kelemahan };
   });
   const gaps = GAP_PLAYS.filter(g => !all.some(a => a.posts.some(p => g.re.test(p.text))) && (!mine || !mine.posts.some(p => g.re.test(p.text))));
   const hook_bank = makeHooks(f, '', rng, 6).map(h => h.text + '  ·  (' + h.pattern + ')');
@@ -1687,9 +1765,11 @@ function compareReport(c, myRaw, comps, autoDetected) {
   });
   while (action_ideas.length < 5 && gaps[action_ideas.length]) action_ideas.push(gaps[action_ideas.length].idea);
   return {
-    type: 'compare', mine, mineAuto, competitors, autoDetected: !!autoDetected, gaps: gaps.map(g => g.label + ' — belum ada yang menggarap ini'), hook_bank, action_ideas: action_ideas.slice(0, 5),
+    type: 'compare', mine, mineAuto, competitors, autoDetected: !!autoDetected,
+    realHandles: (realHandles || []).map(h => String(h).replace(/^@+/, '').trim().toLowerCase()).filter(h => /^[a-z0-9._]{2,30}$/.test(h)).filter((h, i, a) => a.indexOf(h) === i).slice(0, 4),
+    gaps: gaps.map(g => g.label + ' — belum ada yang menggarap ini'), hook_bank, action_ideas: action_ideas.slice(0, 5),
     learning_note: autoDetected
-      ? 'Kompetitor di atas dideteksi otomatis: 3 arketipe akun yang paling sering muncul di niche-mu (si jualan terus, si estetik, si edukatif). Pola & celahnya nyata untuk niche ini — kalau mau lebih presisi, tempel caption pesaing aslimu di kolomnya. Prinsipnya: tiru polanya, jangan kalimatnya; menang di celah yang mereka tinggalkan.'
+      ? 'Ini analisis 3 POLA konten yang paling sering muncul di niche-mu (jualan terus, estetik, edukatif) — bukan akun asli, jadi nggak ada handle/preview palsu. Pola & celahnya nyata untuk niche ini. Buat preview feed asli, isi @handle kompetitor aslimu di kolom kompetitor. Prinsipnya: tiru polanya, jangan kalimatnya; menang di celah yang mereka tinggalkan.'
       : 'Perbandingan dihitung dari caption asli yang kamu tempel — pola hook, CTA, hashtag, dan campuran konten dideteksi otomatis. Prinsipnya: tiru polanya, jangan kalimatnya; lalu menang di celah yang mereka tinggalkan.',
   };
 }
@@ -3459,18 +3539,48 @@ function renderRiset(body, c) {
     el('span', { class: 'e', textContent: '🥊' }),
     el('h3', { textContent: 'Bandingkan dengan kompetitor' }),
   ]));
-  cmpCard.append(el('p', { class: 'muted', style: 'margin:0 0 12px; font-size:14px;', html: 'Nggak perlu masukin apa-apa — klik <b>Deteksi kompetitor otomatis</b> dan kami rakit 3 arketipe pesaing tipikal di niche-mu, lalu bandingkan & carikan celahmu. Mau lebih presisi? Tempel caption pesaing aslimu (opsional) di kolom bawah.' }));
-  cmpCard.append(el('div', { class: 'hint', style: 'margin-bottom:2px;', html: 'Isi kompetitor <b>opsional</b>. Kosongkan = auto-deteksi dari kategori brand-mu.' }));
+  cmpCard.append(el('p', { class: 'muted', style: 'margin:0 0 12px; font-size:14px;', html: 'Isi <b>@handle kompetitor aslimu</b> → kami tampilkan <b>preview feed asli langsung dari Instagram</b> + analisis pola. Belum tahu mau bandingin siapa? Klik <b>Analisis pola otomatis</b> buat lihat pola konten umum di niche-mu (bukan akun asli).' }));
+  cmpCard.append(el('div', { class: 'hint', style: 'margin-bottom:2px;', html: 'Preview IG butuh <b>internet</b> & handle asli. Tempel caption mereka (opsional) buat skor lebih presisi.' }));
+  // container yang bisa di-refresh
+  const searchWrap = el('div');
+  const noteWrap = el('div');
+  cmpCard.append(searchWrap);
+  cmpCard.append(noteWrap);
+  // ── CONNECT: kompetitor di Riset ↔ kolom Kompetitor di Profil Brand (comp1/2/3) ──
+  const profileComps = () => (Array.isArray(c.competitors) && c.competitors.length ? c.competitors : [c.comp1, c.comp2, c.comp3]).map(x => (x || '').trim()).filter(Boolean);
+  // tulis handle Riset → balik ke Profil Brand (comp1/2/3 + competitors) biar selalu sinkron
+  const syncToProfile = () => { const hs = saved.comps.map(x => (x.handle || '').trim()); c.comp1 = hs[0] || ''; c.comp2 = hs[1] || ''; c.comp3 = hs[2] || ''; c.competitors = hs.filter(Boolean); saveClient(c); };
+  // isi otomatis handle saran (akun asli, dicocokkan ke jasa/produk brand) — lalu tulis ke Profil
+  const fillSuggested = () => { const s = suggestCompetitors(c); saved.comps = (s.length ? s : ['']).slice(0, 3).map(h => ({ handle: h, raw: '' })); saved.suggestedApplied = true; syncToProfile(); persist(); return s; };
+  // inisialisasi: PROFIL = sumber kebenaran handle (pertahankan caption utk handle sama). Kosong → auto-suggest (yang nulis balik ke profil)
+  const prof = profileComps();
+  if (prof.length) {
+    const prev = {}; (saved.comps || []).forEach(x => { if (x.handle) prev[x.handle.replace(/^@/, '').toLowerCase()] = x.raw || ''; });
+    saved.comps = prof.slice(0, 3).map(h => ({ handle: h, raw: prev[h.replace(/^@/, '').toLowerCase()] || '' }));
+    saved.suggestedApplied = true; persist();
+  } else if (!Array.isArray(saved.comps) || !saved.comps.length || (!saved.suggestedApplied && !saved.comps.some(x => (x.handle || '').replace(/^@/, '').trim()))) {
+    fillSuggested();
+  }
+  // render ulang panel pencarian + catatan saran
+  function refreshSearchNote() {
+    const s = suggestCompetitors(c);
+    searchWrap.innerHTML = ''; searchWrap.append(renderIgSearchPanel(c));
+    noteWrap.innerHTML = ''; noteWrap.append(el('div', { class: 'hint', style: 'margin:2px 0;', html: s.length
+      ? '✨ <b>Saran kompetitor dicocokkan ke jasa/produk brand-mu</b> (akun asli & terverifikasi) — sudah terisi di bawah. Ganti/hapus kalau kurang pas.'
+      : '🔎 Belum ada akun yang pas. Pakai <b>chip pencarian</b> di atas → salin @handle pesaing aslinya ke kolom bawah.' }));
+  }
+  refreshSearchNote();
+  // dipanggil tombol "Isi ulang saran": isi ulang saran + pencarian
+  function regen() { fillSuggested(); drawComps(); refreshSearchNote(); toast('Saran kompetitor diisi ✓', 'ok'); }
   const compsWrap = el('div');
-  saved.comps = Array.isArray(saved.comps) && saved.comps.length ? saved.comps : [{ handle: c.comp1 || c.competitors && c.competitors[0] || '', raw: '' }];
   // gambar ulang daftar input kompetitor (handle + textarea caption)
   function drawComps() {
     compsWrap.innerHTML = '';
     saved.comps.forEach((cp, i) => {
       const box = el('div', { style: 'margin-top:14px;' });
       box.append(el('label', { textContent: 'Kompetitor ' + (i + 1) }));
-      const h = el('input', { type: 'text', placeholder: '@handle_kompetitor (opsional)', value: cp.handle || '', style: 'margin-bottom:8px;' });
-      h.oninput = () => { cp.handle = h.value; persist(); };
+      const h = el('input', { type: 'text', placeholder: '@handle_kompetitor_asli (buat preview IG)', value: cp.handle || '', style: 'margin-bottom:8px;' });
+      h.oninput = () => { cp.handle = h.value; persist(); syncToProfile(); }; // sinkron ke Profil Brand
       const ta = el('textarea', { style: 'min-height:110px;', placeholder: 'Tempel caption mereka di sini…\n---\ncaption berikutnya…', value: cp.raw || '' });
       ta.oninput = () => { cp.raw = ta.value; persist(); };
       box.append(h); box.append(ta);
@@ -3484,17 +3594,20 @@ function renderRiset(body, c) {
   const runCompare = forceAuto => {
     const pasted = saved.comps.filter(cp => cp.raw && parsePosts(cp.raw).length >= 2)
       .map(cp => ({ handle: (cp.handle || '@kompetitor').trim(), raw: cp.raw }));
+    // handle asli yang user isi → buat preview embed IG asli
+    const realHandles = saved.comps.map(cp => (cp.handle || '').trim()).filter(Boolean);
     const auto = forceAuto || !pasted.length;
     const comps = auto ? detectCompetitors(c) : pasted;
-    const rep = compareReport(c, saved.myPosts || '', comps, auto);
+    const rep = compareReport(c, saved.myPosts || '', comps, auto, realHandles);
     cmpOut.innerHTML = '';
     cmpOut.append(renderCompare(rep, c));
     cmpOut.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    toast(auto ? 'Kompetitor terdeteksi otomatis ✓' : 'Perbandingan siap ✓', 'ok');
+    toast(auto ? 'Pola niche dianalisis ✓' : 'Perbandingan siap ✓', 'ok');
   };
-  cmpCard.append(el('div', { class: 'row', style: 'margin-top:14px;' }, [
-    el('button', { class: 'primary', textContent: '🔍 Deteksi kompetitor otomatis', onclick: () => runCompare(true) }),
-    el('button', { textContent: '🥊 Bandingkan caption yang ditempel', onclick: () => runCompare(false) }),
+  cmpCard.append(el('div', { class: 'row', style: 'margin-top:14px; flex-wrap:wrap;' }, [
+    el('button', { class: 'primary', textContent: '📸 Bandingkan + preview IG', onclick: () => runCompare(false) }),
+    el('button', { textContent: '🔍 Analisis pola otomatis', onclick: () => runCompare(true) }),
+    el('button', { textContent: '✨ Isi ulang saran', onclick: () => regen() }),
     saved.comps.length < 3 ? el('button', { textContent: '＋ Tambah kompetitor', onclick: () => { saved.comps.push({ handle: '', raw: '' }); persist(); drawComps(); } }) : null,
   ]));
   body.append(cmpCard);
@@ -3587,6 +3700,63 @@ function renderReview(d) {
   card.append(learnBox(d.learning_note));
   return card;
 }
+// hyperlink ke profil IG dari sebuah handle (buang @, buka tab baru)
+function igUrl(handle) { return 'https://www.instagram.com/' + encodeURIComponent(String(handle).replace(/^@+/, '').trim().toLowerCase()); }
+function igHandleLink(handle, style) {
+  const clean = '@' + String(handle).replace(/^@+/, '').trim();
+  return el('a', { class: 'iglink', href: igUrl(handle), target: '_blank', rel: 'noopener noreferrer', title: 'Buka ' + clean + ' di Instagram', textContent: clean, style: style || '' });
+}
+// PREVIEW IG ASLI: sematkan widget embed resmi Instagram (profil, followers, feed asli).
+// Tanpa API key / server — cukup <iframe> ke /<handle>/embed. Butuh internet & handle asli.
+function igEmbedCard(handle) {
+  const clean = String(handle).replace(/^@+/, '').trim().toLowerCase();
+  const wrap = el('div', { class: 'igembed' });
+  wrap.append(el('div', { class: 'igembed-head' }, [
+    igHandleLink(clean, 'font-size:15px;'),
+    el('a', { class: 'igembed-open', href: igUrl(clean), target: '_blank', rel: 'noopener noreferrer', textContent: 'Buka di Instagram ↗' }),
+  ]));
+  // iframe embed resmi IG — render profil + feed asli. sandbox longgar krn butuh script IG.
+  const frame = el('iframe', {
+    src: 'https://www.instagram.com/' + encodeURIComponent(clean) + '/embed',
+    loading: 'lazy', scrolling: 'no', title: 'Instagram @' + clean,
+    allowtransparency: 'true', frameborder: '0',
+  });
+  frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+  wrap.append(el('div', { class: 'igembed-frame' }, frame));
+  wrap.append(el('div', { class: 'tiny', style: 'padding:8px 12px 10px; opacity:.75;', textContent: 'Preview asli dari Instagram (butuh internet). Kalau kosong, handle-nya mungkin keliru, private, atau IG minta login.' }));
+  return wrap;
+}
+// CARI KOMPETITOR: link cari resmi Instagram (hashtag niche + kata kunci) dari profil brand.
+// Bukan scraping — buka pencarian IG sendiri di tab baru (kamu login) → intip akun nyata → salin handle-nya.
+function igSearchLinks(c, extra) {
+  const f = factsOf(c);
+  const tagUrl = t => 'https://www.instagram.com/explore/tags/' + encodeURIComponent(String(t).replace(/[^a-z0-9]/gi, '').toLowerCase()) + '/';
+  const kwUrl = q => 'https://www.instagram.com/explore/search/keyword/?q=' + encodeURIComponent(q);
+  const tags = (f.bank.tags && f.bank.tags.length) ? f.bank.tags.slice(0, 5) : ['bisnislokal', 'umkm'];
+  const catKw = { skincare: 'skincare lokal', fnb: 'kuliner', fashion: 'fashion lokal', service: 'jasa', edu: 'kelas online', other: 'brand lokal' }[c.category] || 'brand lokal';
+  const area = (f.area || '').replace(/\(.*?\)/g, '').replace(/[^\w\s]/g, ' ').trim().split(/\s+/)[0] || '';
+  const kws = [];
+  // DESKRIPSI bisnis (kalau ada) jadi kata kunci utama → hasil pencarian paling pas
+  const desc = String(extra || '').replace(/\s+/g, ' ').trim();
+  if (desc) { const q = desc.split(/\s+/).slice(0, 5).join(' '); if (q.length >= 3) kws.push(q); }
+  // JASA/PRODUK yang ditawarkan berikutnya
+  (f.products || []).slice(0, 2).forEach(pr => { const q = lower1(String(pr).split(/[,/]/)[0].trim()); if (q) kws.push(q); });
+  kws.push(catKw + (area ? ' ' + area : ' indonesia')); // niche + lokasi
+  const links = [];
+  [...new Set(kws)].filter(Boolean).slice(0, 3).forEach(q => links.push({ label: '🔎 ' + q, url: kwUrl(q) }));
+  tags.forEach(t => links.push({ label: '#' + t, url: tagUrl(t) }));
+  return links;
+}
+// panel "Cari kompetitor di Instagram" — chip link yang buka pencarian IG asli (pakai deskripsi bisnis kalau ada)
+function renderIgSearchPanel(c, extra) {
+  const box = el('div', { class: 'igsearch' });
+  box.append(el('b', { style: 'display:block;', textContent: '🔎 Cari kompetitor di Instagram' }));
+  box.append(el('div', { class: 'tiny', style: 'margin:3px 0 10px;', html: 'Klik salah satu → pencarian Instagram asli kebuka di tab baru (kamu lagi login). Intip akun yang muncul, <b>salin @handle-nya</b>, tempel di kolom kompetitor bawah → preview feed aslinya langsung tampil.' }));
+  const chips = el('div', { class: 'row', style: 'flex-wrap:wrap; gap:8px;' });
+  igSearchLinks(c, extra).forEach(l => chips.append(el('a', { class: 'chip golink', href: l.url, target: '_blank', rel: 'noopener noreferrer', textContent: l.label })));
+  box.append(chips);
+  return box;
+}
 // render hasil banding kompetitor (tabel skor + tiru/kelemahan + celah + bank hook + langkah menang)
 function renderCompare(d, c) {
   const card = el('div', { class: 'card result-card' });
@@ -3594,32 +3764,72 @@ function renderCompare(d, c) {
     el('span', { class: 'e', textContent: '🥊' }),
     el('h3', { textContent: 'Kamu vs kompetitor' }),
   ]));
-  if (d.autoDetected) card.append(el('div', { class: 'hint', style: 'margin:0 0 12px;', html: '🔍 <b>Kompetitor terdeteksi otomatis</b> — 3 arketipe pesaing tipikal di niche-mu. Tempel caption pesaing aslimu di kolom di atas untuk hasil lebih presisi.' }));
+  if (d.autoDetected) card.append(el('div', { class: 'hint', style: 'margin:0 0 12px;', html: '🔍 <b>Analisis POLA niche</b> (bukan akun asli) — 3 pola konten tipikal. Buat preview feed asli, isi @handle kompetitor aslimu di kolom di atas.' }));
   const tbl = el('table', { class: 't' });
   const cols = [{ label: c.name + (d.mineAuto ? ' (kamu · contoh ProdPilot)' : ' (kamu)'), a: d.mine }].concat(d.competitors.map(cp => ({ label: cp.handle, a: cp.scores })));
   tbl.append(el('thead', {}, el('tr', {}, [el('th', { textContent: 'Aspek' })].concat(cols.map(col => el('th', { textContent: col.label }))))));
   const tb = el('tbody');
-  const rows = [
-    ['Skor total', a => a ? a.overall : '—'],
-    ['Hook 3 detik', a => a ? a.hookScore : '—'],
-    ['CTA', a => a ? Math.round(a.ctaCoverage * 100) + '%' : '—'],
-    ['Hashtag (median)', a => a ? a.medianTags : '—'],
-    ['Porsi jualan', a => a ? Math.round(a.promoShare * 100) + '%' : '—'],
+  // metrik + arah "lebih baik" ('up' makin tinggi bagus, 'down' makin rendah bagus). null = netral
+  const metrics = [
+    { label: 'Skor total', num: a => a ? a.overall : null, fmt: v => v, dir: 'up' },
+    { label: 'Hook 3 detik', num: a => a ? a.hookScore : null, fmt: v => v, dir: 'up' },
+    { label: 'CTA', num: a => a ? a.ctaCoverage * 100 : null, fmt: v => Math.round(v) + '%', dir: 'up' },
+    { label: 'Hashtag (median)', num: a => a ? a.medianTags : null, fmt: v => v, dir: null },
+    { label: 'Porsi jualan', num: a => a ? a.promoShare * 100 : null, fmt: v => Math.round(v) + '%', dir: 'down' },
   ];
-  rows.forEach(([label, fn]) => tb.append(el('tr', {}, [el('td', { html: '<b>' + label + '</b>' })].concat(cols.map(col => el('td', { textContent: String(fn(col.a)) }))))));
+  const wins = [], losses = [];
+  metrics.forEach(m => {
+    const tr = el('tr');
+    tr.append(el('td', { html: '<b>' + m.label + '</b>' }));
+    const compVals = d.competitors.map(cp => m.num(cp.scores)).filter(v => v != null);
+    cols.forEach((col, ci) => {
+      const v = m.num(col.a);
+      let disp = v == null ? '—' : String(m.fmt(v)), cls = '';
+      // KOLOM KAMU (ci===0): adu vs kompetitor terbaik → ▲ unggul / ▼ ketinggalan
+      if (ci === 0 && v != null && m.dir && compVals.length) {
+        const best = m.dir === 'up' ? Math.max(...compVals) : Math.min(...compVals);
+        if ((m.dir === 'up' && v > best) || (m.dir === 'down' && v < best)) { disp = '▲ ' + disp; cls = 'cmp-win'; wins.push(m.label); }
+        else if ((m.dir === 'up' && v < best) || (m.dir === 'down' && v > best)) { disp = '▼ ' + disp; cls = 'cmp-lose'; losses.push(m.label); }
+        else { disp = '= ' + disp; }
+      }
+      tr.append(el('td', { textContent: disp, class: cls }));
+    });
+    tb.append(tr);
+  });
   tbl.append(tb);
   card.append(el('div', { class: 'tscroll' }, tbl));
+  // verdict head-to-head: kamu unggul di mana, ketinggalan di mana
+  const vs = d.competitors.length > 1 ? 'kompetitor terbaik' : (d.competitors[0] ? d.competitors[0].handle : 'kompetitor');
+  card.append(el('div', { class: 'verdict' }, [
+    wins.length ? el('div', {}, [el('b', { textContent: '🏆 Kamu unggul: ' }), document.createTextNode(wins.join(', '))]) : null,
+    losses.length ? el('div', {}, [el('b', { textContent: '🎯 Perlu dikejar: ' }), document.createTextNode(losses.join(', '))]) : null,
+    el('div', { class: 'tiny', style: 'margin-top:4px;', textContent: '▲/▼ = kolom kamu dibanding ' + vs + '.' + (d.competitors.some(cp => cp.archetype) ? ' Kompetitor di sini = POLA niche, bukan akun asli — tempel caption asli mereka buat angka nyata.' : '') }),
+  ].filter(Boolean)));
   if (d.mineAuto) card.append(el('div', { class: 'hint', style: 'margin-top:8px;', textContent: 'Kolom "kamu" diisi otomatis dari contoh konten ProdPilot untuk brand-mu (jadi patokan target). Mau pakai data akun aslimu? Tempel caption-mu di kotak "Caption akunmu" di Review Akun, terus bandingkan lagi.' }));
-  d.competitors.forEach(cp => {
+  d.competitors.forEach((cp) => {
     card.append(el('div', { class: 'divider' }));
-    card.append(el('div', { class: 'row between' }, [
-      el('b', { style: 'font-size:16px;', textContent: cp.handle }),
-      el('span', { class: 'chip', textContent: cp.n + ' post · skor ' + cp.overall }),
-    ]));
-    card.append(el('div', { class: 'tiny', style: 'margin-top:6px;', textContent: 'Pola hook mereka: ' + cp.hook_patterns.join(' · ') }));
+    // arketipe = pola (bukan akun asli) → label biasa; kompetitor asli (dari caption) → handle link
+    const head = cp.archetype
+      ? el('b', { style: 'font-size:16px;', textContent: cp.handle })
+      : igHandleLink(cp.handle, 'font-size:16px;');
+    card.append(el('div', { class: 'row between' }, [head, el('span', { class: 'chip', textContent: cp.n + ' post · skor ' + cp.overall })]));
+    if (!cp.archetype) card.append(igEmbedCard(cp.handle)); // preview IG ASLI untuk handle beneran
+    card.append(el('div', { class: 'tiny', style: 'margin-top:10px;', textContent: 'Pola hook mereka: ' + cp.hook_patterns.join(' · ') }));
     const ul1 = el('ul', { class: 'clean good' }); cp.tiru_adaptasi.forEach(t => ul1.append(el('li', { textContent: 'Tiru-adaptasi: ' + t }))); card.append(ul1);
     const ul2 = el('ul', { class: 'clean bad' }); cp.kelemahan.forEach(t => ul2.append(el('li', { textContent: t }))); card.append(ul2);
   });
+  // ── PREVIEW IG ASLI dari handle yang kamu masukin (embed resmi Instagram) ──
+  card.append(el('div', { class: 'divider' }));
+  card.append(el('b', { style: 'display:block;', textContent: '📸 Preview Instagram kompetitor (asli)' }));
+  if (d.realHandles && d.realHandles.length) {
+    card.append(el('div', { class: 'tiny', style: 'margin:4px 0 10px;', textContent: 'Profil & feed asli langsung dari Instagram — bukan gambar buatan.' }));
+    const grid = el('div', { class: 'igembed-grid' });
+    d.realHandles.forEach(h => grid.append(igEmbedCard(h)));
+    card.append(grid);
+  } else {
+    card.append(el('div', { class: 'hint', style: 'margin-top:4px; margin-bottom:12px;', html: 'Belum ada handle. Cari kompetitor aslimu lewat pencarian Instagram di bawah → salin @handle-nya → tempel di kolom kompetitor → bandingkan lagi. Feed aslinya bakal tampil di sini.' }));
+    card.append(renderIgSearchPanel(c));
+  }
   if (d.gaps.length) {
     card.append(el('b', { style: 'display:block; margin-top:18px;', textContent: '🕳️ Celah yang belum digarap siapa pun:' }));
     const ul = el('ul', { class: 'clean idea' }); d.gaps.forEach(g => ul.append(el('li', { textContent: g }))); card.append(ul);
