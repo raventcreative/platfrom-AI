@@ -12,6 +12,7 @@ export type IgScrapedPost = {
   caption: string;
   likes: number | null;
   comments: number | null;
+  views: number | null; // play count untuk video/Reels (foto = null)
   takenAt: number | null; // unix seconds
 };
 
@@ -82,6 +83,7 @@ export async function scrapeIgProfile(handle: string): Promise<IgScrapedProfile>
       caption: n?.edge_media_to_caption?.edges?.[0]?.node?.text ?? '',
       likes: n?.edge_liked_by?.count ?? n?.edge_media_preview_like?.count ?? null,
       comments: n?.edge_media_to_comment?.count ?? null,
+      views: n?.video_view_count ?? n?.video_play_count ?? null,
       takenAt: n?.taken_at_timestamp ?? null,
     };
   });

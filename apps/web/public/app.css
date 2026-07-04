@@ -86,6 +86,13 @@
     transition: border-color .15s, box-shadow .15s;
   }
   input:focus, textarea:focus { border-color: var(--pine); box-shadow: 0 0 0 4px rgba(28,91,67,.13); background: #fff; }
+  /* highlight field wajib yang belum diisi saat klik Lanjut */
+  .field-invalid input, .field-invalid textarea { border-color: var(--coral); background: rgba(224,122,95,.05); }
+  .field-invalid > label { color: var(--coral); }
+  .field-invalid .pills, .field-invalid .cat-grid { outline: 2px solid rgba(224,122,95,.5); outline-offset: 4px; border-radius: var(--r-md); }
+  .field-err { color: var(--coral); font-size: 12.5px; font-weight: 600; margin-top: 6px; }
+  /* checkbox/radio jangan kena width:100% & padding input teks */
+  input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; flex: 0 0 auto; padding: 0; margin: 0; border-radius: 4px; accent-color: var(--pine); cursor: pointer; }
   textarea { min-height: 96px; resize: vertical; line-height: 1.55; }
   label { display: block; font-weight: 700; font-size: 14.5px; margin: 18px 0 7px; }
   label:first-child { margin-top: 0; }
@@ -322,10 +329,16 @@
   .igembed-open:hover { text-decoration:underline; }
   .igembed-frame { background:var(--bg-2); }
   .igembed-frame iframe { width:100%; height:560px; display:block; border:0; background:#fff; }
+  .igembed-frame.yt iframe { height:auto; aspect-ratio:16/9; }
   /* head-to-head: sel kamu unggul / ketinggalan + kotak verdict */
   td.cmp-win { color:var(--pine); font-weight:700; background:var(--pine-soft); }
   td.cmp-lose { color:var(--coral-dark); font-weight:700; background:var(--coral-soft); }
   .verdict { margin-top:10px; padding:12px 14px; border:1px solid var(--line); border-left:4px solid var(--pine); border-radius:10px; background:var(--bg-2); font-size:14px; line-height:1.6; }
+  /* kartu statistik engagement kompetitor */
+  .estat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; }
+  .estat { border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--card); }
+  .estat-v { font:700 20px var(--serif,Georgia,serif); color:var(--ink); }
+  .estat-l { font-size:12px; color:var(--ink-2); margin-top:2px; }
   /* panel cari kompetitor di IG */
   .igsearch { margin:14px 0 4px; padding:14px; border:1px dashed var(--line-2); border-radius:14px; background:var(--bg-2); }
   a.chip.golink { text-decoration:none; cursor:pointer; border-color:var(--pine-soft); color:var(--pine); }
@@ -345,10 +358,28 @@
   .hist-item .t small { display:block; font-weight:500; color:var(--ink-3); font-size:11.5px; margin-top:1px; }
   .result-close { border:none; box-shadow:none; background:transparent; color:var(--ink-3); font-size:18px; padding:2px 8px; border-radius:999px; }
   .result-close:hover { background:var(--red-soft); color:var(--red); transform:none; }
-  .hist-item .acts { display:flex; gap:6px; }
+  .hist-item .acts { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
   .hist-item .acts button { padding:6px 12px; font-size:12.5px; box-shadow:none; border:1.5px solid var(--line-2); }
+  .hist-item .acts .rev { color:var(--pine); border-color:var(--pine); }
+  .hist-item .acts .rev:hover { background:var(--pine-soft,#eef3ef); }
   .hist-item .acts .del { color:var(--red); border-color:var(--red); }
   .hist-item .acts .del:hover { background:var(--red-soft); }
+  @keyframes ceflash { 0%,100% { box-shadow:0 0 0 0 rgba(0,0,0,0); } 20% { box-shadow:0 0 0 3px var(--pine); } }
+  details.adv.flash { animation: ceflash 1.5s ease-out; border-radius:12px; }
+  .bench-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
+  .bench-row:first-of-type { border-top:none; }
+  .bench-emo { font-size:16px; flex:0 0 auto; }
+  .bench-label { font-weight:600; font-size:13.5px; flex:1 1 auto; min-width:0; }
+  .bench-nums { font-size:13px; flex:0 0 auto; white-space:nowrap; }
+  .bench-row .badge { flex:0 0 auto; }
+  .reco-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 0; border-top:1px solid var(--line); }
+  .reco-row:first-of-type { border-top:none; }
+  .reco-info { flex:1 1 120px; min-width:0; font-size:13.5px; font-weight:600; }
+  .reco-links { display:flex; gap:6px; flex-wrap:wrap; }
+  .reco-links .chip { font-size:12px; padding:4px 9px; }
+  .eng-who { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  .eng-who b { font-size:14.5px; }
+  .eng-who .chip { font-size:12px; padding:4px 9px; }
 
   /* meters (review) */
   .meter-row { display: grid; grid-template-columns: 158px 1fr 46px; gap: 12px; align-items: center; margin: 10px 0; }

@@ -96,6 +96,13 @@
     transition: border-color .15s, box-shadow .15s;
   }
   input:focus, textarea:focus { border-color: var(--pine); box-shadow: 0 0 0 4px rgba(28,91,67,.13); background: #fff; }
+  /* highlight field wajib yang belum diisi saat klik Lanjut */
+  .field-invalid input, .field-invalid textarea { border-color: var(--coral); background: rgba(224,122,95,.05); }
+  .field-invalid > label { color: var(--coral); }
+  .field-invalid .pills, .field-invalid .cat-grid { outline: 2px solid rgba(224,122,95,.5); outline-offset: 4px; border-radius: var(--r-md); }
+  .field-err { color: var(--coral); font-size: 12.5px; font-weight: 600; margin-top: 6px; }
+  /* checkbox/radio jangan kena width:100% & padding input teks */
+  input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; flex: 0 0 auto; padding: 0; margin: 0; border-radius: 4px; accent-color: var(--pine); cursor: pointer; }
   textarea { min-height: 96px; resize: vertical; line-height: 1.55; }
   label { display: block; font-weight: 700; font-size: 14.5px; margin: 18px 0 7px; }
   label:first-child { margin-top: 0; }
@@ -332,10 +339,16 @@
   .igembed-open:hover { text-decoration:underline; }
   .igembed-frame { background:var(--bg-2); }
   .igembed-frame iframe { width:100%; height:560px; display:block; border:0; background:#fff; }
+  .igembed-frame.yt iframe { height:auto; aspect-ratio:16/9; }
   /* head-to-head: sel kamu unggul / ketinggalan + kotak verdict */
   td.cmp-win { color:var(--pine); font-weight:700; background:var(--pine-soft); }
   td.cmp-lose { color:var(--coral-dark); font-weight:700; background:var(--coral-soft); }
   .verdict { margin-top:10px; padding:12px 14px; border:1px solid var(--line); border-left:4px solid var(--pine); border-radius:10px; background:var(--bg-2); font-size:14px; line-height:1.6; }
+  /* kartu statistik engagement kompetitor */
+  .estat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; }
+  .estat { border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--card); }
+  .estat-v { font:700 20px var(--serif,Georgia,serif); color:var(--ink); }
+  .estat-l { font-size:12px; color:var(--ink-2); margin-top:2px; }
   /* panel cari kompetitor di IG */
   .igsearch { margin:14px 0 4px; padding:14px; border:1px dashed var(--line-2); border-radius:14px; background:var(--bg-2); }
   a.chip.golink { text-decoration:none; cursor:pointer; border-color:var(--pine-soft); color:var(--pine); }
@@ -355,10 +368,28 @@
   .hist-item .t small { display:block; font-weight:500; color:var(--ink-3); font-size:11.5px; margin-top:1px; }
   .result-close { border:none; box-shadow:none; background:transparent; color:var(--ink-3); font-size:18px; padding:2px 8px; border-radius:999px; }
   .result-close:hover { background:var(--red-soft); color:var(--red); transform:none; }
-  .hist-item .acts { display:flex; gap:6px; }
+  .hist-item .acts { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
   .hist-item .acts button { padding:6px 12px; font-size:12.5px; box-shadow:none; border:1.5px solid var(--line-2); }
+  .hist-item .acts .rev { color:var(--pine); border-color:var(--pine); }
+  .hist-item .acts .rev:hover { background:var(--pine-soft,#eef3ef); }
   .hist-item .acts .del { color:var(--red); border-color:var(--red); }
   .hist-item .acts .del:hover { background:var(--red-soft); }
+  @keyframes ceflash { 0%,100% { box-shadow:0 0 0 0 rgba(0,0,0,0); } 20% { box-shadow:0 0 0 3px var(--pine); } }
+  details.adv.flash { animation: ceflash 1.5s ease-out; border-radius:12px; }
+  .bench-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
+  .bench-row:first-of-type { border-top:none; }
+  .bench-emo { font-size:16px; flex:0 0 auto; }
+  .bench-label { font-weight:600; font-size:13.5px; flex:1 1 auto; min-width:0; }
+  .bench-nums { font-size:13px; flex:0 0 auto; white-space:nowrap; }
+  .bench-row .badge { flex:0 0 auto; }
+  .reco-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 0; border-top:1px solid var(--line); }
+  .reco-row:first-of-type { border-top:none; }
+  .reco-info { flex:1 1 120px; min-width:0; font-size:13.5px; font-weight:600; }
+  .reco-links { display:flex; gap:6px; flex-wrap:wrap; }
+  .reco-links .chip { font-size:12px; padding:4px 9px; }
+  .eng-who { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  .eng-who b { font-size:14.5px; }
+  .eng-who .chip { font-size:12px; padding:4px 9px; }
 
   /* meters (review) */
   .meter-row { display: grid; grid-template-columns: 158px 1fr 46px; gap: 12px; align-items: center; margin: 10px 0; }
@@ -506,9 +537,28 @@
       <option value="best">Paling bagus — buat konten penting</option>
     </select>
     <div class="hint" id="modelHint">Model dipilih otomatis sesuai provider &amp; kunci. Bisa diganti manual di bawah.</div>
+    <label style="display:block; font-weight:700; font-size:14px; margin:16px 0 6px;">🧠 Pilih model (tinggal pilih, tanpa ngetik)</label>
+    <select id="inpModelPick">
+      <option value="">— Otomatis (sesuai kunci &amp; kecepatan) —</option>
+      <optgroup label="ChatGPT (OpenAI)">
+        <option value="gpt-4o">gpt-4o — serba bisa (disarankan)</option>
+        <option value="gpt-4o-mini">gpt-4o-mini — cepat &amp; hemat</option>
+        <option value="gpt-4.1">gpt-4.1 — teks panjang, akurat</option>
+        <option value="gpt-4.1-mini">gpt-4.1-mini — ringan</option>
+        <option value="o4-mini">o4-mini — nalar (reasoning) hemat</option>
+        <option value="o3">o3 — nalar (reasoning) kuat</option>
+      </optgroup>
+      <optgroup label="Claude (Anthropic)">
+        <option value="claude-opus-4-8">claude-opus-4-8 — paling pintar</option>
+        <option value="claude-sonnet-5">claude-sonnet-5 — seimbang</option>
+        <option value="claude-haiku-4-5-20251001">claude-haiku-4.5 — kilat</option>
+        <option value="claude-fable-5">claude-fable-5 — kreatif</option>
+      </optgroup>
+    </select>
+    <div class="hint">Pilih di sini = otomatis mengisi nama model di bawah. Pastikan <b>kunci AI</b>-nya cocok (kunci OpenAI buat model ChatGPT, kunci Claude buat model Claude).</div>
     <label style="display:block; font-weight:700; font-size:14px; margin:16px 0 6px;">🛠️ Nama model manual (opsional)</label>
     <input id="inpModel" type="text" placeholder="kosongkan = otomatis (mis. claude-sonnet-5)" autocomplete="off" />
-    <div class="hint">Isi kalau mau pakai model spesifik, mis. <b>claude-opus-4-8</b>, <b>claude-fable-5</b>, atau <b>gpt-4o</b>.</div>
+    <div class="hint">Terisi otomatis dari pilihan di atas. Boleh diedit kalau mau model lain, mis. <b>gpt-4o</b>.</div>
     <div class="divider"></div>
     <label style="display:block; font-weight:700; font-size:14px; margin:4px 0 6px;">🎨 Gambar AI (OpenAI) — opsional</label>
     <input id="inpImgKey" type="password" placeholder="sk-… OpenAI (buat generate GAMBAR asli)" autocomplete="off" />
@@ -519,6 +569,26 @@
       <option value="dall-e-3">dall-e-3</option>
     </select>
     <div class="hint">Prosesnya 2 tahap ala JSON: AI menyusun spesifikasi gambar (subjek, komposisi, palet, mood) → lalu dirender jadi gambar. Referensi visual brand-mu (kalau ada) dipakai sebagai acuan gaya.</div>
+    <div class="divider"></div>
+    <label style="display:block; font-weight:700; font-size:14px; margin:4px 0 6px;">📊 Backend Riset (IG/TikTok) — opsional</label>
+    <div class="row" style="gap:8px; align-items:stretch;">
+      <input id="inpRisetApi" type="text" placeholder="http://localhost:4000  (server ProdPilot yang jalan)" autocomplete="off" style="flex:1;" />
+      <button id="btnDetectApi" class="ghost" style="white-space:nowrap;" type="button">🔍 Deteksi server</button>
+    </div>
+    <div class="hint" id="detectApiHint">Kosong = kami isi default <code>http://localhost:4000</code>. Klik <b>Deteksi server</b> buat nyari server yang lagi jalan otomatis. Server aktif → tombol <b>Ambil otomatis</b> di kompetitor bakal tarik followers &amp; engagement langsung dari IG/TikTok publik.</div>
+    <div class="divider"></div>
+    <label style="display:block; font-weight:700; font-size:14px; margin:4px 0 6px;">🥊 Handle IG kompetitor — auto dari profil brand</label>
+    <div id="cmpAutoBox" class="hint">Buka salah satu brand dulu, lalu buka Setting ini — kami tampilkan saran @handle kompetitor asli yang cocok sama jasa/produkmu, tinggal klik isi otomatis.</div>
+    <div class="divider"></div>
+    <label style="display:block; font-weight:700; font-size:14px; margin:4px 0 6px;">🚀 Token cross-post (posting sekaligus) — opsional</label>
+    <div class="hint" style="margin-bottom:8px;">Buat auto-publish ke IG/FB/TikTok dari tab <b>🚀 Posting</b>. Disimpan di browser ini saja, dikirim ke backend-mu sendiri saat posting. Kosong = cuma bisa 🧪 Simulasi.</div>
+    <input id="inpMetaToken" type="password" placeholder="Meta Page Access Token (buat IG + Facebook)" autocomplete="off" style="margin-bottom:8px;" />
+    <div class="row" style="gap:8px;">
+      <input id="inpIgUserId" type="text" placeholder="IG User ID (akun bisnis)" autocomplete="off" style="flex:1;" />
+      <input id="inpFbPageId" type="text" placeholder="Facebook Page ID" autocomplete="off" style="flex:1;" />
+    </div>
+    <input id="inpTiktokToken" type="password" placeholder="TikTok Access Token (scope video.publish)" autocomplete="off" style="margin-top:8px;" />
+    <div class="hint">IG butuh akun Business/Creator tertaut Facebook Page + izin <code>instagram_content_publish</code>. TikTok butuh app yang lolos audit Direct Post. Media di-posting dari <b>URL publik</b>.</div>
     <div class="row" style="justify-content:flex-end; gap:10px; margin-top:22px;">
       <button id="btnCloseSettings" class="ghost">Batal</button>
       <button class="primary" id="btnSaveSettings">Simpan</button>
@@ -587,6 +657,14 @@ function pickN(rng, arr, n) {
   return a.slice(0, Math.min(n, a.length));
 }
 const cap1 = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s; // kapitalkan huruf pertama
+
+/* ── kompetitor: jumlah maksimal + baca/tulis terpusat ── */
+const MAX_COMP = 10; // jumlah maksimal kompetitor
+const COMP_KEYS = Array.from({ length: MAX_COMP }, (_, i) => 'comp' + (i + 1)); // comp1..comp10
+// baca daftar handle kompetitor: pakai array `competitors` kalau ada, else legacy comp1..comp6
+const compsOf = c => (Array.isArray(c.competitors) && c.competitors.length ? c.competitors : COMP_KEYS.map(k => c[k])).map(x => (x || '').trim()).filter(Boolean);
+// tulis daftar handle → array `competitors` + field legacy comp1..comp6 (biar sinkron ke form Profil)
+function setComps(c, hs) { const clean = (hs || []).map(x => (x || '').trim()); c.competitors = clean.filter(Boolean); COMP_KEYS.forEach((k, i) => { c[k] = clean[i] || ''; }); }
 
 /* storage brand */
 const loadClients = () => store.get('ce3_clients', []);
@@ -1166,7 +1244,9 @@ function genScript(c, daily, seedN) {
     learning = 'Konten awareness paling nempel lewat cerita, bukan daftar keunggulan. Struktur: masalah yang sama dengan audiens → kenapa kami peduli → bukti keseriusan. Orang follow brand yang punya "kenapa".';
   }
 
-  scenes = scaleDur(scenes, target).map((s, i) => ({ scene: i + 1, ...s })); // skala durasi ke target + nomori adegan
+  // beri "beat" naratif tiap adegan (biar alur cerita eksplisit & bisa dinilai reviewer)
+  const beatRole = (i, n) => i === 0 ? 'Hook' : i === n - 1 ? 'CTA' : (i === n - 2 && n >= 4 ? 'Bukti' : 'Isi');
+  scenes = scaleDur(scenes, target).map((s, i, arr) => ({ scene: i + 1, role: beatRole(i, arr.length), ...s })); // skala durasi + nomori + beat
   return {
     type: 'script', platform, duration_sec: target, frame: frameName,
     title: t ? cap1(t) : hooks[0].text,
@@ -1370,26 +1450,55 @@ function genStoryboard(c, daily, seedN) {
   };
 }
 
-// GEN: rencana konten 7 hari, campuran pillar 80/20 (5 memberi : 2 meminta)
+// ── PILAR KONTEN: daftar pilihan (onboarding) + generator ide per pilar ──
+// Label = kunci: nilai c.pillars dari onboarding langsung nyocok ke PILLAR_GEN.
+const PILLAR_LIST = ['Edukasi', 'Tips & Trik', 'Tutorial', 'Social Proof', 'Behind The Scenes', 'Hiburan', 'Komunitas', 'Storytelling', 'Inspirasi', 'Promosi'];
+const PILLAR_PROMO = 'Promosi'; // satu-satunya pilar "meminta" (buat jaga rasio 80/20)
+// default sehat kalau user belum pilih pilar (5 memberi : 2 meminta)
+const PILLAR_DEFAULT = ['Edukasi', 'Social Proof', 'Tips & Trik', 'Behind The Scenes', 'Hiburan', 'Komunitas', 'Promosi'];
+// tiap generator: (rng, f, S, k) → {format, hook, concept, cta}. k = kemunculan ke-berapa (biar variasi)
+const PILLAR_GEN = {
+  'Edukasi': (rng, f, S, k) => {
+    const m = pick(rng, f.bank.mistakes), my = pick(rng, f.bank.myths);
+    return (k % 2)
+      ? { format: 'Reels', hook: `"${my.m}" — mitos atau fakta?`, concept: `Bantah mitos: ${lower1(my.f)} Tutup dengan tanya "mitos apa lagi yang pernah ${S} denger?"`, cta: 'Share ke yang masih percaya' }
+      : { format: 'Reels', hook: `${pick(rng, [3, 5])} ${pick(rng, ['kesalahan', 'hal'])} soal ${lower1(pick(rng, f.bank.topics))}`, concept: `Angkat: "${m.t}" — ${lower1(m.d)} Format cepat, satu poin per beat.`, cta: 'Save biar nggak lupa' };
+  },
+  'Tips & Trik': (rng, f, S, k) => { const t = pick(rng, f.bank.tips); return { format: 'Carousel', hook: `${pick(rng, [3, 5, 7])} tips ${lower1(pick(rng, f.bank.topics))} yang jarang dibahas`, concept: `Bagikan tip praktis — "${t.t}": ${lower1(t.d)} Satu tip per slide, langsung bisa dipraktikkan.`, cta: 'Save & praktikkan' }; },
+  'Tutorial': (rng, f, S, k) => ({ format: 'Reels', hook: `Cara ${lower1(pick(rng, f.bank.topics))} yang bener dalam 30 detik`, concept: `Tutorial langkah-demi-langkah pakai ${lower1(f.product)}. Tunjukkan hasil sebelum–sesudah kalau bisa.`, cta: 'Save buat dicoba nanti' }),
+  'Social Proof': (rng, f, S, k) => ({ format: 'Carousel', hook: f.proof ? cap1(f.proof) + ' — ini ceritanya' : `Kata mereka yang udah nyoba ${lower1(f.product)}`, concept: 'Kumpulan testimoni/ulasan asli + cerita singkat di baliknya. Screenshot asli lebih dipercaya daripada desain rapi.', cta: 'Komen kalau mau info lengkap' }),
+  'Behind The Scenes': (rng, f, S, k) => ({ format: 'Story', hook: `Sehari di balik ${f.name}`, concept: 'BTS santai 3–5 story: proses, tim, momen lucu. Nggak perlu rapi — justru yang mentah yang bikin dekat.', cta: 'Poll: mau lihat bagian mana lagi?' }),
+  'Hiburan': (rng, f, S, k) => ({ format: 'Reels', hook: `POV: ${lower1(pick(rng, f.pains))}`, concept: 'Skit ringan 10–15 detik dari struggle audiens. Brand muncul sekilas aja di akhir.', cta: 'Tag temen yang begini' }),
+  'Komunitas': (rng, f, S, k) => ({ format: 'Story', hook: `Tanya dong: ${lower1(pick(rng, f.pains))} — ${S} gimana?`, concept: 'Question sticker. Besoknya, 3 jawaban terbaik dijadikan konten (minta izin dulu). Konten gratis + audiens merasa didengar.', cta: 'Kirim jawabanmu' }),
+  'Storytelling': (rng, f, S, k) => ({ format: 'Reels', hook: `Kenapa ${f.name} ada`, concept: `Cerita asal-usul brand: masalah yang bikin ${f.name} lahir → perjalanan singkat → misi sekarang. Jujur & personal, bukan iklan.`, cta: 'Follow buat lanjutan ceritanya' }),
+  'Inspirasi': (rng, f, S, k) => ({ format: 'Carousel', hook: `${cap1(pick(rng, f.bank.desires || ['versi terbaik kamu']))} — mulai dari langkah kecil`, concept: 'Konten aspiratif: gambarkan impian audiens + langkah kecil ke sana. Bikin mereka merasa "aku juga bisa".', cta: 'Simpan buat pengingat' }),
+  'Promosi': (rng, f, S, k) => ({ format: 'Carousel', hook: f.promo ? cap1(f.promo) : `${cap1(f.product)}: kenapa worth it`, concept: `Jualan jujur: keunggulan (${f.usp ? lower1(f.usp) : 'yang beneran dirasain pembeli'}) + harga transparan + cara order.`, cta: f.cta }),
+};
+// GEN: rencana konten 7 hari dari PILAR yang dipilih brand, tetap jaga rasio 80/20 (promo dibatasi)
 function genIdeas(c, daily, seedN) {
   const rng = mulberry(c.id + '|ideas|' + (daily.topic || '') + '|' + seedN);
   const f = factsOf(c);
   const S = sapa(f);
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-  const tip = pick(rng, f.bank.tips), myth = pick(rng, f.bank.myths), mist = pick(rng, f.bank.mistakes);
-  const plan = [
-    { pillar: 'Edukasi', format: 'Reels', hook: `${pick(rng, [3, 5])} ${pick(rng, ['kesalahan', 'hal'])} soal ${lower1(pick(rng, f.bank.topics))}`, concept: `Angkat: "${mist.t}" — ${lower1(mist.d)} Format cepat, satu poin per beat.`, cta: 'Save biar nggak lupa' },
-    { pillar: 'Social proof', format: 'Carousel', hook: f.proof ? cap1(f.proof) + ' — ini ceritanya' : `Kata mereka yang udah nyoba ${lower1(f.product)}`, concept: 'Kumpulan testimoni/ulasan asli + cerita singkat di baliknya. Screenshot asli lebih dipercaya daripada desain rapi.', cta: 'Komen kalau mau info lengkap' },
-    { pillar: 'Edukasi', format: 'Reels', hook: `"${myth.m}" — mitos atau fakta?`, concept: `Bantah mitos: ${lower1(myth.f)} Tutup dengan tanya "mitos apa lagi yang pernah ${S} denger?"`, cta: 'Share ke yang masih percaya' },
-    { pillar: 'Behind the scenes', format: 'Story', hook: `Sehari di balik ${f.name}`, concept: 'BTS santai 3–5 story: proses, tim, momen lucu. Nggak perlu rapi — justru yang mentah yang bikin dekat.', cta: 'Poll: mau lihat bagian mana lagi?' },
-    { pillar: 'Hiburan', format: 'Reels', hook: `POV: ${lower1(pick(rng, f.pains))}`, concept: 'Skit ringan 10–15 detik dari struggle audiens. Brand muncul sekilas aja di akhir.', cta: 'Tag temen yang begini' },
-    { pillar: 'Promosi', format: 'Carousel', hook: f.promo ? cap1(f.promo) : `${cap1(f.product)}: kenapa worth it`, concept: `Jualan jujur: keunggulan (${f.usp ? lower1(f.usp) : 'yang beneran dirasain pembeli'}) + harga transparan + cara order.`, cta: f.cta },
-    { pillar: 'Komunitas', format: 'Story', hook: `Tanya dong: ${lower1(pick(rng, f.pains))} — ${S} gimana?`, concept: 'Question sticker. Besoknya, 3 jawaban terbaik dijadikan konten (minta izin dulu). Konten gratis + audiens merasa didengar.', cta: 'Kirim jawabanmu' },
-  ];
+  // pilar brand (dari onboarding) → fallback ke default sehat kalau kosong
+  const chosen = (Array.isArray(c.pillars) && c.pillars.length) ? c.pillars.slice() : PILLAR_DEFAULT;
+  const giving = chosen.filter(p => p !== PILLAR_PROMO);
+  if (!giving.length) giving.push('Edukasi'); // jaga-jaga kalau user cuma pilih Promosi
+  const wantsPromo = chosen.includes(PILLAR_PROMO);
+  // susun 7 hari: pilar "memberi" diputar, promo maksimal 1–2 hari (jaga 80/20)
+  const order = [];
+  for (let d = 0; d < 7; d++) order.push(giving[d % giving.length]);
+  if (wantsPromo) { order[4] = PILLAR_PROMO; if (giving.length >= 3) order[6] = PILLAR_PROMO; }
+  const occ = {};
+  const plan = order.map(label => {
+    const gen = PILLAR_GEN[label] || PILLAR_GEN['Edukasi']; // pilar custom → pola edukasi, label tetap
+    const k = occ[label] = (occ[label] || 0); occ[label]++;
+    return { pillar: label, ...gen(rng, f, S, k) };
+  });
   return {
     type: 'ideas',
     ideas: plan.map((p, i) => ({ no: i + 1, day: days[i], ...p, hook: sanitize(cap1(p.hook), f), concept: sanitize(p.concept, f), cta: sanitize(cap1(p.cta), f) })),
-    learning_note: 'Rasio sehat 80/20: lima konten memberi (edukasi, hiburan, BTS, komunitas, bukti) untuk dua yang meminta (promosi + soft-sell). Akun yang tiap hari jualan pelan-pelan ditinggal — algoritma dan manusianya sama-sama capek.',
+    learning_note: 'Disusun dari pilar konten brand-mu (' + chosen.join(', ') + ') dengan rasio sehat 80/20: mayoritas memberi, sedikit yang meminta (promosi maks 1–2 hari). Akun yang tiap hari jualan pelan-pelan ditinggal — algoritma & manusianya sama-sama capek.',
   };
 }
 
@@ -1536,6 +1645,190 @@ function reviewReport(c, raw) {
   };
 }
 
+/* ═══ REVIEWER INTERNAL: nilai kualitas hasil generate pakai kriteria yang sama kayak review akun ═══
+ * Tiap hasil (script/carousel/caption/storyboard) di-cek: hook 3 detik, alur cerita, CTA, retensi,
+ * keterbacaan — lalu dikasih skor + perbaikan konkret. Deterministik, dihitung dari struktur output.
+ */
+function reviewGenerated(type, d, f) {
+  const checks = [];
+  let metrics = { hook: null, cta: null, tags: null }; // metrik mentah buat dibandingin sama kompetitor
+  const add = (label, ok, tip) => checks.push({ label, ok: !!ok, tip });
+  const ctaRe = new RegExp(CTA_RE.source, 'i');
+  if (type === 'script') {
+    const h = analyzePost(d.hooks && d.hooks[0] ? d.hooks[0].text : (d.title || ''));
+    const s1 = d.scenes[0] || {};
+    add('Hook 3 detik pertama kuat', h.hook >= 7 && (s1.duration_sec || 99) <= 4, 'Buka pakai pola kuat (angka/pertanyaan/masalah) dalam ≤3 detik — bukan salam/intro.');
+    const visuals = new Set(d.scenes.map(s => (s.visual || '').slice(0, 24)));
+    add('Ada pattern interrupt (ganti visual/angle)', d.scenes.length >= 3 && visuals.size >= Math.min(3, d.scenes.length), 'Ganti angle/visual tiap 5–8 detik biar retensi kejaga.');
+    add('Alur cerita lengkap (hook→isi→bukti→CTA)', new Set(d.scenes.map(s => s.role).filter(Boolean)).size >= 3, 'Pastikan ada pembuka, inti/konflik, bukti, dan penutup CTA.');
+    const ctaScenes = d.scenes.filter(s => ctaRe.test(s.voiceover || '') || ctaRe.test(s.onscreen_text || '')).length;
+    add('Tepat satu CTA yang jelas', !!d.cta && ctaScenes >= 1 && ctaScenes <= 2, 'Satu ajakan jelas di penutup; jangan tumpuk banyak CTA.');
+    add('Pacing & durasi sehat', d.scenes.every(s => (s.duration_sec || 0) <= 12) && d.duration_sec <= 60, 'Tiap beat ≤ ~10 detik; total ≤ 60 detik buat Reels/TikTok.');
+    metrics = { hook: h.hook, cta: ctaScenes >= 1, tags: null };
+  } else if (type === 'storyboard') {
+    const sbCta = ctaRe.test(d.production_notes || '') || (d.shots || []).some(s => ctaRe.test(s.onscreen_text || '') || ctaRe.test(s.voiceover || ''));
+    add('Cukup shot buat bangun cerita', (d.shots || []).length >= 4, 'Minimal 4–6 shot biar alurnya kebangun.');
+    add('Ada b-roll pendukung', (d.broll || []).length >= 2, 'Siapkan b-roll biar variasi visual & retensi kejaga.');
+    add('Alur naratif jelas', (d.shots || []).length >= 4, 'Susun: pembuka → konflik/proses → resolusi.');
+    add('Penutup mengarahkan aksi (CTA)', sbCta, 'Tutup dengan shot yang mengarahkan aksi/CTA.');
+    metrics = { hook: null, cta: sbCta, tags: null };
+  } else if (type === 'carousel') {
+    const cover = analyzePost(d.slides && d.slides[0] ? (d.slides[0].headline || '') : '');
+    const capA = analyzePost(d.caption || '');
+    add('Hook cover kuat', cover.hook >= 6, 'Slide cover harus bikin berhenti scroll — janji/angka/pertanyaan.');
+    add('Caption punya CTA', capA.hasCTA, 'Tutup caption dengan satu ajakan jelas.');
+    add('Slide cukup (cerita utuh)', (d.slides || []).length >= 5, 'Idealnya 6–8 slide: cover → isi → CTA.');
+    add('Hashtag pas (3–8, no mega-tag)', d.hashtags && d.hashtags.length >= 3 && d.hashtags.length <= 12, 'Pakai 3–8 hashtag niche; hindari mega-tag (#fyp #viral).');
+    metrics = { hook: cover.hook, cta: capA.hasCTA, tags: (d.hashtags || []).length };
+  } else if (type === 'caption') {
+    const cap = analyzePost(d.caption_long || d.caption_short || '');
+    add('Hook baris pertama kuat', cap.hook >= 7, 'Baris pertama = hook; mulai dari masalah/angka/pertanyaan.');
+    add('Ada CTA jelas', cap.hasCTA, 'Tutup dengan satu ajakan jelas.');
+    add('Gampang dibaca (ada jeda)', cap.hasBreaks || cap.words < 60, 'Kasih jeda baris; hindari caption tembok teks.');
+    add('Hashtag pas', (d.hashtags || []).length >= 3 && (d.hashtags || []).length <= 15, 'Pakai 3–8 hashtag relevan.');
+    metrics = { hook: cap.hook, cta: cap.hasCTA, tags: (d.hashtags || []).length };
+  } else return null;
+  const passed = checks.filter(c => c.ok).length;
+  return { type, score: r1(passed / checks.length * 10), passed, total: checks.length, checks, fixes: checks.filter(c => !c.ok), metrics };
+}
+// panel "Nilai reviewer" di hasil generate (skor + checklist ✓/✗ + perbaikan)
+function reviewPanel(rev) {
+  if (!rev) return null;
+  const good = rev.score >= 8;
+  const box = el('div', { class: 'card', style: 'margin-top:14px; background:var(--pine-soft,#eef3ef); border:1px solid var(--line-2);' });
+  box.append(el('div', { class: 'row between', style: 'align-items:center;' }, [
+    el('b', { textContent: '🎯 Nilai reviewer' }),
+    el('span', { class: 'badge ' + (good ? 'pine' : 'coral'), textContent: rev.score + '/10 · ' + rev.passed + '/' + rev.total + ' kriteria' }),
+  ]));
+  rev.checks.forEach(ch => box.append(el('div', { class: 'tiny', style: 'margin-top:6px; line-height:1.5; color:' + (ch.ok ? 'var(--pine,#2f6b4f)' : '#b2664a') + ';', textContent: (ch.ok ? '✓ ' : '✗ ') + ch.label + (ch.ok ? '' : ' — ' + ch.tip) })));
+  box.append(el('div', { class: 'tiny', style: 'margin-top:8px; opacity:.85;', textContent: rev.fixes.length ? 'Perbaiki ' + rev.fixes.length + ' hal di atas → skor naik. Klik 🎲 (versi lain) buat variasi yang mungkin lebih kuat.' : 'Mantap — lolos semua kriteria reviewer. Siap posting.' }));
+  return box;
+}
+
+/* ═══ BENCHMARK: bandingkan hasil generate dengan kompetitor (dari data banding tersimpan) ═══
+ * compBench() meringkas laporan banding jadi angka acuan (disimpan di ce3_riset_<id>.bench).
+ * benchVs() membandingkan metrik 1 konten dengan acuan itu → penjelasan "kamu vs kompetitor".
+ */
+const medianOf = arr => { const a = (arr || []).filter(v => v != null).slice().sort((x, y) => x - y); return a.length ? a[Math.floor(a.length / 2)] : 0; };
+function compBench(rep) {
+  const comps = (rep.competitors || []).filter(cp => cp.scores);
+  if (!comps.length) return null;
+  const S = comps.map(cp => cp.scores);
+  return {
+    n: comps.length, auto: !!rep.autoDetected, platform: rep.platform || 'instagram',
+    handles: comps.map(cp => String(cp.handle || '').replace(/^@+/, '')).filter(Boolean).slice(0, 6),
+    hook: r1(avg(S.map(s => s.hookScore))),
+    cta: avg(S.map(s => s.ctaCoverage)),
+    tags: medianOf(S.map(s => s.medianTags)),
+    promo: avg(S.map(s => s.promoShare)),
+    varScore: r1(avg(S.map(s => s.varScore))),
+    gaps: (rep.gaps || []).slice(0, 3),
+  };
+}
+// bandingkan metrik 1 konten (dari rev.metrics) dengan acuan kompetitor → baris {v, label, text}
+function benchVs(metrics, bench) {
+  if (!metrics || !bench) return [];
+  const out = [];
+  if (metrics.hook != null) {
+    const d = metrics.hook - bench.hook, v = Math.abs(d) <= 0.8 ? 'tie' : d > 0 ? 'win' : 'lose';
+    out.push({ v, label: 'Hook 3 detik', text: 'konten ini ' + r1(metrics.hook) + '/10 vs kompetitor rata-rata ' + bench.hook + '/10 — ' + (v === 'win' ? 'kamu unggul, pertahankan pola pembukanya.' : v === 'lose' ? 'masih kalah kuat; buka pakai angka/pertanyaan/masalah, bukan salam.' : 'setara — menangkan lewat sudut, bukti, atau CTA.') });
+  }
+  if (metrics.cta != null) {
+    const pct = Math.round(bench.cta * 100);
+    const v = metrics.cta ? (bench.cta < 0.8 ? 'win' : 'tie') : (bench.cta >= 0.4 ? 'lose' : 'tie');
+    out.push({ v, label: 'CTA (ajakan)', text: metrics.cta ? ('konten ini punya CTA jelas; cuma ' + pct + '% konten kompetitor pakai CTA — ' + (bench.cta < 0.8 ? 'ini keunggulanmu, jaga terus.' : 'sama-sama disiplin.')) : ('belum ada CTA, padahal ' + pct + '% konten kompetitor pakai — tambah 1 ajakan biar nggak kalah.') });
+  }
+  if (metrics.tags != null) {
+    const healthy = metrics.tags >= 3 && metrics.tags <= 8, theyHealthy = bench.tags >= 3 && bench.tags <= 8;
+    const v = healthy && !theyHealthy ? 'win' : healthy ? 'tie' : 'lose';
+    out.push({ v, label: 'Hashtag', text: 'konten ini ' + metrics.tags + ' tag vs kompetitor median ' + bench.tags + ' — ' + (healthy ? 'kamu di rentang sehat 3–8.' : 'sesuaikan ke 3–8 tag niche biar penemuan optimal.') });
+  }
+  return out;
+}
+const BENCH_EMO = { win: '🟢', tie: '🟡', lose: '🔴' };
+// panel "⚔️ Dibanding kompetitor" untuk 1 konten (di bawah panel Nilai reviewer)
+function benchItemPanel(metrics, bench) {
+  const lines = benchVs(metrics, bench);
+  if (!lines.length) return null;
+  const box = el('div', { class: 'card', style: 'margin-top:10px; background:var(--bg-2); border:1px dashed var(--line-2);' });
+  box.append(el('div', { class: 'tiny', style: 'font-weight:700;', textContent: '⚔️ Dibanding kompetitor' + (bench.auto ? ' (pola niche)' : ' (' + bench.n + ' akun: @' + bench.handles.slice(0, 3).join(', @') + (bench.handles.length > 3 ? '…' : '') + ')') }));
+  lines.forEach(l => box.append(el('div', { class: 'tiny', style: 'margin-top:6px; line-height:1.5;', html: BENCH_EMO[l.v] + ' <b>' + l.label + '</b> — ' + l.text })));
+  const win = lines.filter(l => l.v === 'win').length, lose = lines.filter(l => l.v === 'lose').length;
+  box.append(el('div', { class: 'tiny', style: 'margin-top:8px; opacity:.85;', textContent: lose === 0 && win > 0 ? 'Konten ini unggul di ' + win + ' hal — kemungkinan menonjol di feed niche ini.' : lose > win ? 'Masih ketinggalan — benahi yang 🔴 dulu biar nggak tenggelam.' : 'Bersaing ketat — cari 1 pembeda yang belum digarap kompetitor (lihat celah di tab Riset).' }));
+  return box;
+}
+// kartu ringkasan "Kamu vs kompetitor" (agregat semua konten dinilai)
+function benchSummaryCard(scored, bench) {
+  const pick = k => scored.map(x => x.rev.metrics && x.rev.metrics[k]).filter(v => v != null);
+  const hooks = pick('hook'), ctas = pick('cta'), tags = pick('tags');
+  const rows = [];
+  if (hooks.length) { const my = r1(avg(hooks)), v = Math.abs(my - bench.hook) <= 0.8 ? 'tie' : my > bench.hook ? 'win' : 'lose'; rows.push({ emo: '🪝', label: 'Hook 3 detik', mine: my + '/10', theirs: bench.hook + '/10', v }); }
+  if (ctas.length) { const myp = avg(ctas.map(b => b ? 1 : 0)), v = myp >= 0.8 && bench.cta < 0.8 ? 'win' : myp < 0.5 && bench.cta >= 0.5 ? 'lose' : 'tie'; rows.push({ emo: '📣', label: 'Pakai CTA', mine: Math.round(myp * 100) + '%', theirs: Math.round(bench.cta * 100) + '%', v }); }
+  if (tags.length) { const myt = medianOf(tags), healthy = myt >= 3 && myt <= 8, v = healthy && !(bench.tags >= 3 && bench.tags <= 8) ? 'win' : healthy ? 'tie' : 'lose'; rows.push({ emo: '#️⃣', label: 'Hashtag (median)', mine: String(myt), theirs: String(bench.tags), v }); }
+  if (!rows.length) return null;
+  const card = el('div', { class: 'card', style: 'margin-top:14px; border:1.5px solid var(--pine);' });
+  card.append(el('div', { class: 'result-head' }, [el('span', { class: 'e', textContent: '⚔️' }), el('h3', { textContent: 'Kamu vs kompetitor' })]));
+  card.append(el('p', { class: 'tiny', style: 'margin:0 0 10px;', textContent: bench.auto ? 'Acuan dari analisis pola niche-mu (belum tempel caption kompetitor asli). Tempel caption mereka di tab Riset buat acuan yang lebih tajam.' : 'Acuan dari ' + bench.n + ' kompetitor yang kamu banding di tab Riset (@' + bench.handles.slice(0, 3).join(', @') + (bench.handles.length > 3 ? '…' : '') + ').' }));
+  rows.forEach(r => card.append(el('div', { class: 'bench-row' }, [
+    el('span', { class: 'bench-emo', textContent: r.emo }),
+    el('span', { class: 'bench-label', textContent: r.label }),
+    el('span', { class: 'bench-nums', html: '<b>' + r.mine + '</b> <span style="opacity:.6;">vs ' + r.theirs + '</span>' }),
+    el('span', { class: 'badge ' + (r.v === 'win' ? 'pine' : r.v === 'lose' ? 'coral' : ''), textContent: r.v === 'win' ? 'Unggul' : r.v === 'lose' ? 'Di bawah' : 'Setara' }),
+  ])));
+  const wins = rows.filter(r => r.v === 'win').length, loses = rows.filter(r => r.v === 'lose').length;
+  card.append(el('div', { class: 'hint', style: 'margin-top:10px;', textContent: loses === 0 && wins > 0 ? '👍 Rata-rata kontenmu unggul di ' + wins + ' dari ' + rows.length + ' aspek dibanding kompetitor. Pertahankan.' : loses > wins ? '⚠️ Kontenmu masih kalah di ' + loses + ' aspek. Benahi yang "Di bawah" dulu — dampaknya paling besar.' : 'Bersaing ketat. Menangkan lewat celah yang belum digarap kompetitor (lihat 🎓 di tab Riset).' }));
+  if (bench.gaps && bench.gaps.length) card.append(el('div', { class: 'tiny', style: 'margin-top:8px;', html: '💡 Celah yang belum digarap kompetitor: <b>' + bench.gaps.map(g => String(g).replace(/ — .*/, '')).join('</b>, <b>') + '</b> — ambil sudut ini biar beda.' }));
+  return card;
+}
+
+/* ═══ MELATIH ONBOARDING: data perbandingan kompetitor → saran pertajam profil brand ═══
+ * Kelemahan & celah kompetitor diterjemahkan jadi rekomendasi PILAR konten + catatan strategi,
+ * lalu bisa diterapkan langsung ke profil (yang menyetir semua hasil generate).
+ */
+function profileTraining(c, rep) {
+  const comps = (rep.competitors || []).filter(cp => cp.scores);
+  if (!comps.length) return null;
+  const n = comps.length, half = Math.ceil(n / 2);
+  const heavyPromo = comps.filter(cp => cp.scores.promoShare > 0.5).length;
+  const weakHook = comps.filter(cp => cp.scores.hookScore < 6).length;
+  const lowVar = comps.filter(cp => cp.scores.varScore < 6).length;
+  const lowCta = comps.filter(cp => cp.scores.ctaCoverage < 0.5).length;
+  const rec = new Set(), notes = [];
+  if (heavyPromo >= half) { ['Edukasi', 'Hiburan', 'Behind The Scenes'].forEach(p => rec.add(p)); notes.push(heavyPromo + ' dari ' + n + ' kompetitor kebanyakan jualan — rebut audiensnya lewat konten MEMBERI (edukasi, hiburan, BTS).'); }
+  if (weakHook >= half) { rec.add('Storytelling'); notes.push(weakHook + ' dari ' + n + ' buka konten datar — menang di 3 detik pertama: hook kuat + storytelling.'); }
+  if (lowVar >= half) { ['Tips & Trik', 'Komunitas'].forEach(p => rec.add(p)); notes.push('Variasi konten mereka tipis — tampil beda dengan pilar yang lebih kaya (tips, komunitas).'); }
+  if (lowCta >= half) notes.push('Mereka sering lupa CTA — kamu unggul cuma dengan disiplin satu ajakan (CTA) tiap post.');
+  (rep.gaps || []).slice(0, 2).forEach(g => notes.push('Celah kosong: ' + String(g).replace(/ — .*/, '') + ' — jadikan sudut kontenmu.'));
+  if (!rec.size && !notes.length) return null;
+  if (!rec.size) ['Edukasi', 'Social Proof'].forEach(p => rec.add(p));
+  const cur = new Set(Array.isArray(c.pillars) && c.pillars.length ? c.pillars : PILLAR_DEFAULT);
+  return { recommended: [...rec], missing: [...rec].filter(p => !cur.has(p)), notes: notes.slice(0, 5) };
+}
+// panel "Pertajam profil dari kompetitor" — insight + tombol terapkan ke pilar profil
+function renderProfileTraining(c, rep) {
+  const t = profileTraining(c, rep);
+  if (!t || (!t.notes.length && !t.missing.length)) return null;
+  const card = el('div', { class: 'card', style: 'margin-top:16px; border:1.5px solid var(--pine);' });
+  card.append(el('div', { class: 'result-head' }, [el('span', { class: 'e', textContent: '🎓' }), el('h3', { textContent: 'Pertajam profil dari data kompetitor' })]));
+  card.append(el('p', { class: 'tiny', style: 'margin:0 0 8px;', textContent: 'Insight ini "melatih" profil brand-mu (yang menyetir semua hasil generate). Terapkan yang relevan → hasil berikutnya makin tajam.' }));
+  const ul = el('ul', { class: 'clean idea' }); t.notes.forEach(nt => ul.append(el('li', { textContent: nt }))); card.append(ul);
+  if (t.missing.length) {
+    card.append(el('div', { class: 'tiny', style: 'margin-top:6px;', html: 'Pilar disarankan yang belum ada di profilmu: <b>' + t.missing.join(', ') + '</b>' }));
+    const btn = el('button', { class: 'primary', style: 'margin-top:8px;', textContent: '✅ Tambah ' + t.missing.length + ' pilar ke profil' });
+    btn.onclick = () => {
+      const cur = (Array.isArray(c.pillars) && c.pillars.length ? c.pillars.slice() : PILLAR_DEFAULT.slice());
+      t.missing.forEach(p => { if (!cur.includes(p)) cur.push(p); });
+      c.pillars = cur; saveClient(c);
+      btn.disabled = true; btn.textContent = '✓ Diterapkan — pilar profil diperbarui';
+      toast('Profil dipertajam: +' + t.missing.length + ' pilar ✓', 'ok');
+    };
+    card.append(btn);
+  } else {
+    card.append(el('div', { class: 'hint', style: 'margin-top:6px;', textContent: 'Pilar kontenmu sudah menutup celah ini — fokus eksekusi.' }));
+  }
+  return card;
+}
+
 // pola konten yang sering ditinggalkan kompetitor → jadi peluang "celah"
 const GAP_PLAYS = [
   { label: 'Balas komentar dijadikan konten', re: /(balas|jawab|reply).{0,12}komen/i, idea: 'Tiap Jumat, ambil 1 komentar/pertanyaan menarik dan jawab lewat video — audiens merasa didengar, kamu dapat ide konten gratis.' },
@@ -1652,6 +1945,45 @@ const HANDLE_POOL = [
   // marketplace / jualan online umum
   { h: 'tokopedia', d: 'market', kw: ['marketplace', 'online', 'belanja', 'ecommerce', 'jual', 'toko'] },
   { h: 'shopee_id', d: 'market', kw: ['marketplace', 'online', 'belanja', 'ecommerce', 'jual', 'toko'] },
+  // ── tambahan biar tiap niche bisa ngasih sampai 6 saran ──
+  { h: 'scarlett_whitening', d: 'beauty', kw: ['skincare', 'kecantikan', 'beauty', 'whitening', 'kulit', 'lokal'] },
+  { h: 'eminacosmetics', d: 'beauty', kw: ['kosmetik', 'makeup', 'kecantikan', 'beauty', 'skincare', 'remaja'] },
+  { h: 'kopijanjijiwa', d: 'fnb', kw: ['kopi', 'minuman', 'cafe', 'coffee', 'fnb', 'ngopi'] },
+  { h: 'mixueindonesia', d: 'fnb', kw: ['minuman', 'es krim', 'dessert', 'fnb', 'cafe', 'boba'] },
+  { h: 'esteh.indonesia', d: 'fnb', kw: ['minuman', 'teh', 'es teh', 'fnb', 'jus', 'thai tea'] },
+  { h: '3secondofficial', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'clothing', 'kaos', 'outfit', 'distro'] },
+  { h: 'cottonink', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'busana', 'wanita', 'outfit'] },
+  { h: 'thisisapparel', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'clothing', 'kaos', 'outfit', 'streetwear'] },
+  { h: 'zenius', d: 'edu', kw: ['belajar', 'edukasi', 'utbk', 'pendidikan', 'les', 'bimbel', 'kelas'] },
+  { h: 'quipperindonesia', d: 'edu', kw: ['belajar', 'edukasi', 'pendidikan', 'les', 'bimbel', 'kelas', 'sekolah'] },
+  { h: 'informa_id', d: 'home', kw: ['interior', 'furnitur', 'rumah', 'perabot', 'dekorasi', 'mebel'] },
+  { h: 'ikea_id', d: 'home', kw: ['furnitur', 'rumah', 'interior', 'perabot', 'dekorasi', 'desain'] },
+  { h: 'homedecor.id', d: 'home', kw: ['interior', 'dekorasi', 'rumah', 'desain', 'renovasi'] },
+  { h: 'alodokter', d: 'health', kw: ['kesehatan', 'dokter', 'medis', 'konsultasi', 'sehat', 'klinik'] },
+  { h: 'gooddoctorid', d: 'health', kw: ['kesehatan', 'dokter', 'medis', 'konsultasi', 'sehat', 'obat'] },
+  { h: 'jntexpressid', d: 'logistik', kw: ['logistik', 'ekspedisi', 'kirim', 'pengiriman', 'kurir', 'paket'] },
+  { h: 'posindonesia.ig', d: 'logistik', kw: ['logistik', 'ekspedisi', 'kirim', 'pengiriman', 'kurir', 'paket', 'pos'] },
+  { h: 'jeniusconnect', d: 'finance', kw: ['keuangan', 'perbankan', 'dompet', 'fintech', 'finansial', 'nabung', 'kartu'] },
+  { h: 'gopayindonesia', d: 'finance', kw: ['keuangan', 'pembayaran', 'dompet', 'fintech', 'finansial', 'transaksi'] },
+  { h: 'niagahoster', d: 'tech', kw: ['hosting', 'website', 'digital', 'teknologi', 'it', 'server', 'web', 'domain', 'cloud'] },
+  { h: 'jagoanhosting', d: 'tech', kw: ['hosting', 'website', 'digital', 'teknologi', 'it', 'server', 'web', 'domain'] },
+  { h: 'sirclo', d: 'tech', kw: ['software', 'saas', 'ecommerce', 'teknologi', 'digital', 'aplikasi', 'sistem', 'perusahaan'] },
+  { h: 'bliblidotcom', d: 'market', kw: ['marketplace', 'online', 'belanja', 'ecommerce', 'jual', 'toko'] },
+  { h: 'lazada_id', d: 'market', kw: ['marketplace', 'online', 'belanja', 'ecommerce', 'jual', 'toko'] },
+  { h: 'bukalapak', d: 'market', kw: ['marketplace', 'online', 'belanja', 'ecommerce', 'jual', 'toko'] },
+  // ── tambahan lagi biar niche utama bisa ngasih sampai ~10 saran ──
+  { h: 'makeoverid', d: 'beauty', kw: ['kosmetik', 'makeup', 'kecantikan', 'beauty', 'skincare'] },
+  { h: 'azarine.cosmetic', d: 'beauty', kw: ['skincare', 'kecantikan', 'beauty', 'sunscreen', 'kulit', 'lokal'] },
+  { h: 'hanasui.official', d: 'beauty', kw: ['kosmetik', 'makeup', 'kecantikan', 'beauty', 'skincare', 'lokal'] },
+  { h: 'sensatiabotanicals', d: 'beauty', kw: ['skincare', 'kecantikan', 'beauty', 'natural', 'kulit', 'organik'] },
+  { h: 'kfcindonesia', d: 'fnb', kw: ['ayam', 'makanan', 'resto', 'fnb', 'kuliner', 'fast food'] },
+  { h: 'mcdonaldsid', d: 'fnb', kw: ['makanan', 'resto', 'fnb', 'kuliner', 'burger', 'fast food'] },
+  { h: 'chatimeindonesia', d: 'fnb', kw: ['minuman', 'teh', 'boba', 'fnb', 'cafe', 'bubble tea'] },
+  { h: 'richeesefactory', d: 'fnb', kw: ['ayam', 'makanan', 'resto', 'fnb', 'kuliner', 'keju'] },
+  { h: 'berrybenka', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'busana', 'wanita', 'outfit'] },
+  { h: 'eigeradventure', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'outdoor', 'tas', 'outfit'] },
+  { h: 'matahari', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'busana', 'outfit', 'clothing'] },
+  { h: 'zaloraid', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'busana', 'outfit', 'clothing'] },
 ];
 // fallback per kategori (kalau teks jasa terlalu tipis buat dicocokkan)
 const CATEGORY_FALLBACK = {
@@ -1670,10 +2002,29 @@ function suggestCompetitors(c, extra) {
     .filter(x => x.s > 0).sort((a, b) => b.s - a.s);
   // kunci ke domain pemenang → cuma akun se-niche, buang match lintas-domain (mis. fnb nyelip di hasil renovasi)
   const topDomain = scored.length ? scored[0].d : null;
-  const top = scored.filter(x => x.d === topDomain).slice(0, 3).map(x => x.h);
+  const top = scored.filter(x => x.d === topDomain).slice(0, MAX_COMP).map(x => x.h);
   if (top.length >= 2) return top; // cukup relevan → pakai hasil cocokan ke jasanya
   // kurang cocok → lengkapi dari fallback kategori (kalau ada); service/other sengaja kosong → arahkan ke pencarian
-  return [...new Set([...top, ...(CATEGORY_FALLBACK[c.category] || [])])].slice(0, 3);
+  return [...new Set([...top, ...(CATEGORY_FALLBACK[c.category] || [])])].slice(0, MAX_COMP);
+}
+// handle IG → nama brand buat ditampilkan & dipakai jadi kata kunci pencarian lintas platform
+function prettyBrand(handle) {
+  let s = String(handle || '').replace(/^@+/, '').toLowerCase();
+  s = s.replace(/[._]+/g, ' ').replace(/official|indonesia|\bid\b|\big\b/g, ' ').replace(/\s+/g, ' ').trim();
+  if (s.length < 2) s = String(handle || '').replace(/^@+/, '');
+  return s.replace(/\b\w/g, ch => ch.toUpperCase());
+}
+// link cek 1 kompetitor LINTAS PLATFORM. IG = profil asli (handle terverifikasi dari pool);
+// TikTok/YouTube/Web = pencarian pakai nama brand (jujur: handle antar platform bisa beda, nggak dikarang).
+function crossPlatformLinks(handle) {
+  const clean = String(handle || '').replace(/^@+/, '').replace(/\s+/g, '').trim();
+  const b = prettyBrand(clean);
+  return [
+    { plat: 'ig', label: '📸 IG', title: 'Buka profil Instagram asli', url: 'https://www.instagram.com/' + encodeURIComponent(clean) + '/' },
+    { plat: 'tt', label: '🎵 TikTok', title: 'Cari di TikTok (handle bisa beda dari IG)', url: 'https://www.tiktok.com/search?q=' + encodeURIComponent(b) },
+    { plat: 'yt', label: '▶️ YouTube', title: 'Cari channel di YouTube', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(b) },
+    { plat: 'web', label: '🌐 Web', title: 'Cari website resmi', url: 'https://www.google.com/search?q=' + encodeURIComponent(b + ' website resmi') },
+  ];
 }
 // Deteksi OTOMATIS: rakit 3 arketipe POLA konten yang lazim di niche brand
 // (jualan terus / estetik / edukatif). Caption tiap pola disintesis deterministik dari
@@ -1816,6 +2167,48 @@ async function callAI(system, user) {
     : (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
   if (!text) throw new Error('balasan AI kosong');
   return text;
+}
+
+/* ── BACKEND RISET (opsional): ambil data publik IG/TikTok via server ProdPilot (apps/api) ── */
+const risetApi = () => (store.get('ce3_risetapi', '') || '').trim().replace(/\/+$/, ''); // URL backend
+const hasRisetApi = () => !!risetApi();
+// tarik statistik kompetitor dari backend: GET /ig/:handle atau /tiktok/:handle
+async function fetchCompetitorStats(handle, platform) {
+  const base = risetApi();
+  if (!base) throw new Error('Set dulu Backend Riset di ⚙️ (URL server apps/api).');
+  const h = String(handle || '').replace(/^@+/, '').trim();
+  if (!h) throw new Error('Isi handle kompetitornya dulu.');
+  const root = /\/api\/v\d/.test(base) ? base : base + '/api/v1'; // prefix apps/api = /api/v1
+  const path = platform === 'tiktok' ? '/tiktok/' : platform === 'youtube' ? '/youtube/' : '/ig/';
+  const res = await fetch(root + path + encodeURIComponent(h));
+  if (!res.ok) throw new Error('Backend ' + res.status + ': ' + (await res.text().catch(() => '')).slice(0, 120));
+  return res.json();
+}
+
+/* ── CROSS-POST: publish 1 konten ke IG + FB + TikTok sekaligus (via backend) ── */
+// kredensial akun bisnis (disimpan di browser ini saja) — dikirim per-request ke backend user
+const pubCreds = () => store.get('ce3_pubcreds', { metaToken: '', igUserId: '', fbPageId: '', tiktokToken: '' });
+const savePubCreds = v => store.set('ce3_pubcreds', v);
+// kirim cross-post ke backend → balikin { okCount, total, results[] }
+async function crossPost(payload) {
+  const base = risetApi();
+  if (!base) throw new Error('Set dulu Backend Riset di ⚙️ (URL server apps/api).');
+  const root = /\/api\/v\d/.test(base) ? base : base + '/api/v1';
+  const res = await fetch(root + '/publish/all', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+  if (!res.ok) throw new Error('Backend ' + res.status + ': ' + (await res.text().catch(() => '')).slice(0, 140));
+  return res.json();
+}
+// ambil caption siap-posting dari 1 item riwayat (regen deterministik → caption + hashtag)
+function captionFromHist(c, h) {
+  try {
+    const d = TYPES[h.type].gen(c, h.daily, h.seed);
+    if (h.type === 'carousel') return sanitize((d.caption || '') + '\n\n' + (d.hashtags || []).join(' '), factsOf(c));
+    if (h.type === 'caption') return sanitize((d.caption_long || d.caption_short || '') + '\n\n' + (d.hashtags || []).join(' '), factsOf(c));
+    if (h.type === 'script') return sanitize((d.hooks && d.hooks[0] ? d.hooks[0].text + '\n\n' : '') + (d.cta || ''), factsOf(c));
+    if (h.type === 'storyboard') return sanitize((d.concept || '') + '\n\n' + (d.production_notes || ''), factsOf(c));
+    if (h.type === 'ideas') return sanitize((d.ideas && d.ideas[0] ? d.ideas[0].hook + '\n\n' + d.ideas[0].concept : ''), factsOf(c));
+    return '';
+  } catch (e) { return ''; }
 }
 
 /* ── GAMBAR AI (OpenAI Images) — pendekatan JSON: spec gambar → render jadi gambar ──
@@ -2697,6 +3090,11 @@ const WIZ_STEPS = [
       { id: 'cta', label: 'Ajakan di akhir konten (CTA)', type: 'pills-custom', options: CTAS, req: true },
       { id: 'promo', label: 'Promo yang lagi jalan (opsional)', type: 'text', ph: 'contoh: Glow Bundle 149rb s/d Minggu', enter: true },
     ] },
+  { id: 'pilar', emoji: '🧱', title: 'Pilar konten kamu?', sub: 'Tema yang bakal jadi tulang punggung feed-mu. Ini yang menentukan campuran "Ide Seminggu".',
+    fields: [
+      { id: 'pillars', label: 'Pilih pilar konten (boleh beberapa)', type: 'pills-multi', options: PILLAR_LIST, default: PILLAR_DEFAULT, req: true,
+        hint: 'Rasio sehat 80/20: mayoritas memberi (Edukasi, Tips, Hiburan, BTS, Komunitas, bukti) — sedikit Promosi. Rencana 7 harimu dirakit dari pilihan ini.' },
+    ] },
   { id: 'aman', emoji: '🛡️', title: 'Biar kontenmu aman', sub: 'Kami udah isikan aturan umum bidangmu — cek & sesuaikan aja.', skippable: true,
     fields: [
       { id: 'forbiddenClaims', label: 'Klaim yang dilarang', type: 'text', ph: 'contoh: menyembuhkan, putih permanen' },
@@ -2705,9 +3103,7 @@ const WIZ_STEPS = [
   { id: 'saingan', emoji: '🔭', title: 'Terakhir: akun & saingan', sub: 'Buat fitur review & bandingkan kompetitor. Boleh dilewati.', skippable: true,
     fields: [
       { id: 'social', label: 'Akun IG brand-mu', type: 'text', ph: '@brandku' },
-      { id: 'comp1', label: 'Kompetitor 1', type: 'text', ph: '@saingan_utama' },
-      { id: 'comp2', label: 'Kompetitor 2', type: 'text', ph: '@saingan_lain' },
-      { id: 'comp3', label: 'Kompetitor 3', type: 'text', ph: '@satu_lagi', enter: true },
+      ...COMP_KEYS.map((k, i) => ({ id: k, label: 'Kompetitor ' + (i + 1), type: 'text', ph: '@saingan_' + (i + 1), ...(i === MAX_COMP - 1 ? { enter: true } : {}) })),
     ] },
 ];
 let wiz = null; // state wizard aktif (draft brand + step)
@@ -2717,25 +3113,58 @@ function startWizard(client, stepIdx = 0) {
   renderWizard();
 }
 // render satu layar wizard (progress + judul + field + navigasi)
+// Alat bantu di step "saingan": rekomendasi kompetitor otomatis + tombol cari di Instagram.
+function wizCompetitorTools() {
+  const box = el('div', { style: 'margin-bottom:16px; padding-bottom:14px; border-bottom:1px dashed var(--line);' });
+  const s = suggestCompetitors(wiz.draft); // akun asli dicocokkan ke jasa/produk brand
+  box.append(el('div', { class: 'hint', style: 'margin:0 0 8px;', html: s.length
+    ? '✨ Kami cocokkan <b>' + s.length + ' akun asli</b> ke produk/jasa brand-mu. Klik <b>Rekomendasikan</b> buat isi otomatis kolom di bawah, atau <b>Cari kompetitor</b> buat cari sendiri di Instagram.'
+    : '🔎 Belum ketemu akun yang pas otomatis buat niche ini. Pakai <b>Cari kompetitor</b> buat cari di Instagram, lalu salin @handle-nya ke kolom di bawah.' }));
+  const row = el('div', { class: 'row', style: 'gap:8px; flex-wrap:wrap;' });
+  if (s.length) row.append(el('button', { class: 'primary', type: 'button', textContent: '✨ Rekomendasikan (' + s.length + ')', onclick: () => {
+    setComps(wiz.draft, s); toast(s.length + ' kompetitor terisi otomatis ✓', 'ok'); renderWizard();
+  } }));
+  row.append(el('button', { type: 'button', textContent: (wiz.showCompSearch ? '✕ Tutup pencarian' : '🔎 Cari kompetitor'), onclick: () => { wiz.showCompSearch = !wiz.showCompSearch; renderWizard(); } }));
+  if (compsOf(wiz.draft).length) row.append(el('button', { class: 'ghost', type: 'button', textContent: '🗑️ Kosongkan', onclick: () => { setComps(wiz.draft, []); toast('Kolom kompetitor dikosongkan', 'ok'); renderWizard(); } }));
+  box.append(row);
+  if (wiz.showCompSearch) { const p = renderIgSearchPanel(wiz.draft); p.style.marginTop = '12px'; box.append(p); }
+  return box;
+}
+// simpan draft onboarding (brand baru saja) → bisa dilanjut kalau tab ke-refresh
+function saveWizDraft() { if (wiz && wiz.isNew && wiz.draft && wiz.draft.name) store.set('ce3_wizdraft', { draft: wiz.draft, step: wiz.step }); }
+function clearWizDraft() { store.del('ce3_wizdraft'); }
+// lanjutkan onboarding dari draft tersimpan
+function resumeWizard() {
+  const d = store.get('ce3_wizdraft', null);
+  if (!d || !d.draft) return renderHome();
+  wiz = { draft: d.draft, step: Math.min(d.step || 0, WIZ_STEPS.length - 1), isNew: true };
+  renderWizard();
+}
 function renderWizard() {
   const steps = WIZ_STEPS;
   const step = steps[wiz.step];
   const app = $('#app'); app.innerHTML = '';
   const box = el('div', { class: 'wiz view' });
   box.append(el('div', { class: 'wiz-top' }, [
-    el('button', { class: 'ghost', textContent: '✕', title: 'Keluar', onclick: () => {
-      if (wiz.isNew && wiz.draft.name && !confirm('Keluar? Isian belum tersimpan.')) return;
+    el('button', { class: 'ghost', textContent: '✕', title: 'Keluar (isian tersimpan sebagai draft)', onclick: () => {
+      // isian brand baru otomatis tersimpan sbg draft → keluar tanpa takut hilang
+      if (wiz.isNew && wiz.draft.name) { saveWizDraft(); toast('Disimpan sebagai draft — lanjutkan kapan aja dari Home ✓', 'ok'); }
       wiz = null; renderHome();
     } }),
-    el('div', { class: 'wiz-progress' }, el('i', { style: 'width:' + Math.round((wiz.step) / steps.length * 100) + '%;' })),
+    el('div', { class: 'wiz-progress' }, el('i', { style: 'width:' + Math.round((wiz.step + 1) / steps.length * 100) + '%;' })),
     el('span', { class: 'tiny', textContent: (wiz.step + 1) + '/' + steps.length }),
   ]));
   box.append(el('div', { class: 'emoji', textContent: step.emoji }));
   box.append(el('h2', { textContent: step.title }));
   box.append(el('div', { class: 'sub', textContent: step.sub }));
   const form = el('div', { class: 'card' });
+  if (step.id === 'saingan') form.append(wizCompetitorTools()); // ✨ rekomendasi + 🔎 cari kompetitor
   step.fields.forEach(f => form.append(wizField(f)));
   box.append(form);
+  // interaksi apa pun → hapus tanda "wajib belum diisi" + autosave draft
+  const onInteract = e => { const w = e.target.closest && e.target.closest('[data-field]'); if (w) { w.classList.remove('field-invalid'); const er = w.querySelector('.field-err'); if (er) er.remove(); } saveWizDraft(); };
+  form.addEventListener('input', onInteract);
+  form.addEventListener('click', onInteract);
   const last = wiz.step === steps.length - 1;
   const nav = el('div', { class: 'wiz-nav' });
   if (wiz.step > 0) nav.append(el('button', { textContent: '← Balik', onclick: () => { wiz.step--; renderWizard(); } }));
@@ -2745,17 +3174,31 @@ function renderWizard() {
   box.append(nav);
   app.append(box);
   window.scrollTo({ top: 0 });
-  const firstInput = form.querySelector('input, textarea');
-  if (firstInput && wiz.step === 0) firstInput.focus();
+  saveWizDraft();
+  // autofokus field pertama kalau tipenya teks (biar bisa langsung ngetik) — bukan di layar pilih kategori/pill
+  const firstType = step.fields[0] && step.fields[0].type;
+  if (firstType === 'text' || firstType === 'textarea') { const fi = form.querySelector('input[type="text"], textarea'); if (fi) fi.focus(); }
 }
 // validasi field wajib lalu maju ke step berikutnya (prefill aturan aman saat pilih kategori)
 function wizNext() {
   const step = WIZ_STEPS[wiz.step];
+  document.querySelectorAll('.wiz .field-invalid').forEach(w => w.classList.remove('field-invalid'));
   for (const f of step.fields) {
     const v = wiz.draft[f.id];
     const empty = Array.isArray(v) ? v.length === 0 : !(v && String(v).trim());
     if (f.req && empty) {
-      toast('Isi dulu ya: ' + (f.label || step.title.replace(/\?$/, ''))); return;
+      // tandai field-nya langsung (bukan cuma toast) → fokus + scroll + pesan inline
+      const wrap = document.querySelector('.wiz [data-field="' + f.id + '"]');
+      const nice = (f.label || step.title.replace(/[?？]$/, '')).replace(/\s*\(.*?\)\s*/g, '');
+      if (wrap) {
+        wrap.classList.add('field-invalid');
+        if (!wrap.querySelector('.field-err')) wrap.append(el('div', { class: 'field-err', textContent: '⚠ Wajib diisi ya' }));
+        const foc = wrap.querySelector('input[type="text"], textarea, .pill, button');
+        if (foc && foc.focus) foc.focus();
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      toast('Isi dulu: ' + nice, 'err');
+      return;
     }
   }
   // prefill aturan aman ketika kategori baru dipilih
@@ -2770,6 +3213,7 @@ function wizNext() {
 // render satu field wizard sesuai tipenya (text/textarea/pills/cats/pdf/dst)
 function wizField(f) {
   const wrap = el('div');
+  if (f.id) wrap.dataset.field = f.id; // buat targeting validasi "wajib belum diisi"
   if (f.label) {
     const lbl = el('label', {}, [f.label]);
     if (f.req) lbl.append(el('span', { class: 'req', textContent: ' *' }));
@@ -2809,8 +3253,9 @@ function wizField(f) {
     });
     wrap.append(grid);
   } else if (f.type === 'pills-multi') {
-    // checkbox-style: boleh pilih beberapa (dipakai untuk Nada bicara)
-    const cur = Array.isArray(val) ? val.slice() : (val ? [val] : []);
+    // checkbox-style: boleh pilih beberapa (dipakai untuk Nada bicara & Pilar konten)
+    // kalau belum pernah diisi & field punya `default` → pakai default (pre-selected)
+    const cur = Array.isArray(val) ? val.slice() : (val ? [val] : (f.default ? f.default.slice() : []));
     wiz.draft[f.id] = cur;
     const pills = el('div', { class: 'pills' });
     f.options.forEach(o => {
@@ -2827,7 +3272,7 @@ function wizField(f) {
       pills.append(p);
     });
     wrap.append(pills);
-    wrap.append(el('div', { class: 'hint', textContent: 'Pilih 1–3 yang paling nggambarin brand-mu. Tone pertama jadi acuan utama.' }));
+    wrap.append(el('div', { class: 'hint', textContent: f.hint || 'Pilih 1–3 yang paling nggambarin brand-mu. Tone pertama jadi acuan utama.' }));
   } else if (f.type === 'pills' || f.type === 'pills-custom') {
     const pills = el('div', { class: 'pills' });
     let custom = null;
@@ -2876,8 +3321,11 @@ function wizField(f) {
 // simpan brand hasil wizard (baru → layar selesai, edit → balik ke profil)
 function finishWizard() {
   const d = wiz.draft;
-  d.competitors = [d.comp1, d.comp2, d.comp3].map(x => (x || '').trim()).filter(Boolean);
+  // rapikan: buang spasi berlebih di semua isian teks
+  for (const k in d) { if (typeof d[k] === 'string') d[k] = d[k].trim(); }
+  d.competitors = COMP_KEYS.map(k => d[k]).map(x => (x || '').trim()).filter(Boolean);
   saveClient(d);
+  clearWizDraft(); // draft selesai → hapus
   const id = d.id, isNew = wiz.isNew;
   wiz = null;
   if (isNew) renderDone(d);
@@ -2909,6 +3357,21 @@ function renderHome() {
   const app = $('#app'); app.innerHTML = '';
   const clients = loadClients();
   const v = el('div', { class: 'view' });
+  // banner lanjutkan onboarding kalau ada draft brand baru yang belum selesai
+  const wd = store.get('ce3_wizdraft', null);
+  if (wd && wd.draft && wd.draft.name) {
+    const dn = wd.draft.name, stepN = Math.min((wd.step || 0) + 1, WIZ_STEPS.length);
+    v.append(el('div', { class: 'card', style: 'display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:space-between; border:1.5px solid var(--pine); background:var(--pine-soft, #eef3ef); margin-bottom:18px;' }, [
+      el('div', {}, [
+        el('b', { textContent: '⏳ Setup "' + dn + '" belum selesai' }),
+        el('div', { class: 'tiny', style: 'margin-top:2px;', textContent: 'Berhenti di langkah ' + stepN + '/' + WIZ_STEPS.length + '. Lanjutin biar brand-mu siap dipakai.' }),
+      ]),
+      el('div', { class: 'row', style: 'gap:8px;' }, [
+        el('button', { class: 'primary', textContent: 'Lanjutkan →', onclick: resumeWizard }),
+        el('button', { class: 'ghost', textContent: '🗑️ Buang', onclick: () => { if (confirm('Buang draft "' + dn + '"?')) { clearWizDraft(); renderHome(); } } }),
+      ]),
+    ]));
+  }
   if (!clients.length) {
     v.append(el('div', { class: 'hero' }, [
       el('span', { class: 'kicker', textContent: '⚡ Gratis · tanpa daftar · langsung jadi' }),
@@ -2996,7 +3459,7 @@ function openBrand(id, tab) {
     ]),
   ]));
   const tabs = el('div', { class: 'tabs' });
-  [['bikin', '✨ Bikin Konten'], ['riset', '🔍 Riset & Review'], ['profil', '👤 Profil Brand']].forEach(([id2, label]) => {
+  [['bikin', '✨ Bikin Konten'], ['reviewkonten', '🎯 Review Konten'], ['riset', '🔍 Riset & Review'], ['posting', '🚀 Posting'], ['profil', '👤 Profil Brand']].forEach(([id2, label]) => {
     tabs.append(el('button', { class: 'tab' + (currentTab === id2 ? ' on' : ''), textContent: label, onclick: () => openBrand(currentId, id2) }));
   });
   v.append(tabs);
@@ -3004,11 +3467,105 @@ function openBrand(id, tab) {
   v.append(body);
   app.append(v);
   if (currentTab === 'bikin') renderBikin(body, c);
+  else if (currentTab === 'reviewkonten') renderReviewKonten(body, c);
   else if (currentTab === 'riset') renderRiset(body, c);
+  else if (currentTab === 'posting') renderPosting(body, c);
   else renderProfil(body, c);
   window.scrollTo({ top: 0 });
 }
 const stepLabel = (n, t) => el('div', { class: 'step-label' }, [el('span', { class: 'n', textContent: n }), t]); // label langkah bernomor
+
+/* ── TAB: REVIEW KONTEN — nilai semua hasil generate (dari riwayat) pakai reviewer ── */
+let reviewFocusId = null; // id item riwayat yg mau dibuka otomatis saat masuk tab Review
+// dari mana pun (mis. riwayat Bikin Konten) → loncat ke tab Review; focusId opsional (fokus 1 item)
+function openReview(c, focusId) { reviewFocusId = focusId || null; openBrand(c.id, 'reviewkonten'); }
+// buka hasil lengkap 1 item riwayat di tab Bikin Konten (aman: tunggu #results ada)
+function openHistResult(c, h) {
+  openBrand(c.id, 'bikin');
+  setTimeout(() => {
+    const r = $('#results'); if (!r) return;
+    try { r.prepend(renderResult(h.type, TYPES[h.type].gen(c, h.daily, h.seed), c, h.daily, h.seed)); window.scrollTo({ top: r.offsetTop - 80, behavior: 'smooth' }); } catch (e) { toast('Gagal buka hasil', 'err'); }
+  }, 60);
+}
+function renderReviewKonten(body, c) {
+  const f = factsOf(c);
+  const hist = store.get('ce3_hist_' + c.id, []);
+  const head = el('div', { class: 'card' });
+  head.append(el('div', { class: 'result-head' }, [el('span', { class: 'e', textContent: '🎯' }), el('h3', { textContent: 'Review konten hasil generate' })]));
+  head.append(el('p', { class: 'muted', style: 'margin:0; font-size:14px;', html: 'Semua konten yang udah kamu bikin, dinilai reviewer (hook 3 detik, alur cerita, CTA, keterbacaan). Skor rendah? Buka hasilnya → klik <b>🎲 versi lain</b> sampai lolos.' }));
+  body.append(head);
+  if (!hist.length) {
+    body.append(el('div', { class: 'card', style: 'margin-top:14px; text-align:center; padding:32px 20px;' }, [
+      el('div', { style: 'font-size:42px;', textContent: '🗒️' }),
+      el('b', { style: 'display:block; margin-top:8px;', textContent: 'Belum ada konten buat direview' }),
+      el('div', { class: 'hint', style: 'margin-top:6px;', textContent: 'Bikin dulu di tab ✨ Bikin Konten — hasilnya otomatis muncul di sini buat dinilai.' }),
+      el('button', { class: 'primary', style: 'margin-top:14px;', textContent: '✨ Bikin konten pertama', onclick: () => openBrand(c.id, 'bikin') }),
+    ]));
+    return;
+  }
+  // regen tiap item + nilai reviewer
+  const items = hist.map(h => { let rev = null; try { rev = reviewGenerated(h.type, TYPES[h.type].gen(c, h.daily, h.seed), f); } catch (e) {} return { h, rev }; });
+  const scored = items.filter(x => x.rev);
+  const bench = (store.get('ce3_riset_' + c.id, {}) || {}).bench || null; // acuan kompetitor dari tab Riset
+  const stat = (label, val) => el('div', { class: 'estat' }, [el('div', { class: 'estat-v', textContent: val }), el('div', { class: 'estat-l', textContent: label })]);
+  if (scored.length) {
+    const avgScore = r1(avg(scored.map(x => x.rev.score)));
+    const failCount = {};
+    scored.forEach(x => x.rev.fixes.forEach(fx => { failCount[fx.label] = (failCount[fx.label] || 0) + 1; }));
+    const weakest = Object.entries(failCount).sort((a, b) => b[1] - a[1])[0];
+    const sum = el('div', { class: 'card', style: 'margin-top:14px; background:var(--pine-soft,#eef3ef);' });
+    sum.append(el('div', { class: 'estat-row' }, [
+      stat('🗂️ Total dinilai', String(scored.length)),
+      stat('⭐ Rata-rata skor', avgScore + '/10'),
+      stat('🔴 Perlu dibenahi', String(scored.filter(x => x.rev.score < 8).length)),
+    ]));
+    if (weakest) sum.append(el('div', { class: 'hint', style: 'margin-top:8px;', html: 'Kelemahan paling sering: <b>' + weakest[0] + '</b> (' + weakest[1] + ' konten). Benahi ini dulu buat lompatan skor terbesar.' }));
+    body.append(sum);
+  }
+  // ── perbandingan kompetitor: butuh data banding (dari tab Riset) dulu
+  if (scored.length) {
+    if (bench) { const bc = benchSummaryCard(scored, bench); if (bc) body.append(bc); }
+    else {
+      const nb = el('div', { class: 'card', style: 'margin-top:14px; border:1.5px dashed var(--pine);' });
+      nb.append(el('div', { class: 'tiny', style: 'font-weight:700;', textContent: '⚔️ Mau tahu konten ini vs kompetitor?' }));
+      nb.append(el('div', { class: 'hint', style: 'margin-top:4px;', textContent: 'Jalankan "🥊 Bandingkan dengan kompetitor" di tab Riset dulu. Setelah itu, tiap review di sini otomatis dikasih penjelasan "kamu vs kompetitor" — hook, CTA, hashtag, plus celah yang belum mereka garap.' }));
+      nb.append(el('button', { class: 'primary', style: 'margin-top:10px;', textContent: '🔍 Ke tab Riset & bandingkan', onclick: () => openBrand(c.id, 'riset') }));
+      body.append(nb);
+    }
+  }
+  // daftar konten + skor (expand → detail reviewer + buka hasil)
+  const list = el('div', { style: 'margin-top:14px;' });
+  items.forEach(x => {
+    const t = TYPES[x.h.type] || {};
+    const box = el('details', { class: 'adv', style: 'margin-top:8px;' });
+    box.dataset.hid = x.h.id;
+    const badge = x.rev ? el('span', { class: 'badge ' + (x.rev.score >= 8 ? 'pine' : 'coral'), textContent: x.rev.score + '/10' }) : el('span', { class: 'badge', textContent: '—' });
+    box.append(el('summary', { style: 'display:flex; align-items:center; gap:8px;' }, [
+      el('span', { class: 'e', textContent: t.e || '📄' }),
+      el('span', { style: 'flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;' }, [el('b', { textContent: x.h.title || t.label || x.h.type }), el('small', { style: 'display:block; opacity:.7;', textContent: t.label || x.h.type })]),
+      badge,
+    ]));
+    const inner = el('div', { style: 'padding-top:10px;' });
+    if (x.rev) inner.append(reviewPanel(x.rev));
+    else inner.append(el('div', { class: 'hint', textContent: 'Jenis "' + (t.label || x.h.type) + '" nggak dinilai per-item (ini rencana mingguan).' }));
+    if (x.rev && bench) { const bp = benchItemPanel(x.rev.metrics, bench); if (bp) inner.append(bp); } // ⚔️ kamu vs kompetitor
+    inner.append(el('button', { style: 'margin-top:10px;', textContent: '↗️ Buka hasil lengkap', onclick: () => openHistResult(c, x.h) }));
+    box.append(inner);
+    list.append(box);
+  });
+  body.append(list);
+  // fokus ke 1 item bila dipanggil dari riwayat Bikin Konten (buka + scroll + highlight)
+  if (reviewFocusId) {
+    const target = reviewFocusId; reviewFocusId = null;
+    setTimeout(() => {
+      const d = list.querySelector('details[data-hid="' + target + '"]');
+      if (!d) return;
+      d.open = true; d.classList.add('flash');
+      d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => d.classList.remove('flash'), 1600);
+    }, 70);
+  }
+}
 
 /* ── TAB: BIKIN KONTEN ── */
 function renderBikin(body, c) {
@@ -3156,8 +3713,11 @@ function renderHist(container, c) {
   const hist = store.get('ce3_hist_' + c.id, []);
   if (!hist.length) return;
   container.append(el('div', { class: 'row between' }, [
-    el('div', { class: 'tiny', style: 'font-weight:700;', textContent: '🕐 Riwayat hasil (' + hist.length + ') — buka lagi atau hapus' }),
-    el('button', { class: 'ghost', style: 'font-size:12.5px; padding:6px 10px;', textContent: '🗑️ Hapus semua', onclick: () => { if (!confirm('Hapus semua riwayat ' + c.name + '?')) return; clearHist(c); renderHist(container, c); toast('Riwayat dikosongkan'); } }),
+    el('div', { class: 'tiny', style: 'font-weight:700;', textContent: '🕐 Riwayat hasil (' + hist.length + ') — buka lagi, review, atau hapus' }),
+    el('div', { style: 'display:flex; gap:8px; flex-wrap:wrap;' }, [
+      el('button', { class: 'ghost', style: 'font-size:12.5px; padding:6px 10px; color:var(--pine); border-color:var(--pine);', textContent: '🎯 Review semua', title: 'Nilai semua hasil di tab Review Konten', onclick: () => openReview(c) }),
+      el('button', { class: 'ghost', style: 'font-size:12.5px; padding:6px 10px;', textContent: '🗑️ Hapus semua', onclick: () => { if (!confirm('Hapus semua riwayat ' + c.name + '?')) return; clearHist(c); renderHist(container, c); toast('Riwayat dikosongkan'); } }),
+    ]),
   ]));
   const list = el('div', { class: 'hist-list' });
   hist.forEach(h => {
@@ -3169,6 +3729,7 @@ function renderHist(container, c) {
         el('small', { textContent: (t.label || h.type) + (h.daily && h.daily.platform ? ' · ' + h.daily.platform : '') + (h.daily && h.daily.hook ? ' · hook: ' + h.daily.hook : '') }),
       ]),
       el('div', { class: 'acts' }, [
+        el('button', { class: 'rev', textContent: '🎯 Review', title: 'Nilai konten ini di tab Review', onclick: () => openReview(c, h.id) }),
         el('button', { textContent: '↗️ Buka', onclick: () => {
           const data = TYPES[h.type].gen(c, h.daily, h.seed);
           $('#results').prepend(renderResult(h.type, data, c, h.daily, h.seed));
@@ -3325,9 +3886,13 @@ function renderScript(d, c, daily) {
   card.append(el('b', { textContent: 'Adegan (tinggal ikutin pas shoot):' }));
   const tl = el('div', { class: 'timeline' });
   let t0 = 0;
+  const BEAT_EMO = { Hook: '🪝', Isi: '📌', Bukti: '✅', CTA: '📣' };
   d.scenes.forEach(s => {
     tl.append(el('div', { class: 'beat' }, [
-      el('div', { class: 't', textContent: t0 + '–' + (t0 + s.duration_sec) + 's' }),
+      el('div', { class: 't' }, [
+        el('div', { textContent: t0 + '–' + (t0 + s.duration_sec) + 's' }),
+        s.role ? el('span', { class: 'badge ' + (s.role === 'CTA' ? 'coral' : 'pine'), style: 'margin-top:5px; font-size:10px;', textContent: (BEAT_EMO[s.role] || '') + ' ' + s.role }) : null,
+      ]),
       el('div', {}, [
         el('div', { class: 'vis', html: '<b>🎥 Visual:</b> ' + s.visual }),
         el('div', { class: 'vo', textContent: '🗣️ ' + s.voiceover }),
@@ -3342,6 +3907,7 @@ function renderScript(d, c, daily) {
     el('span', { class: 'chip', textContent: '🎵 ' + d.sound_suggestion.split('—')[0].trim() }),
     el('span', { class: 'chip', textContent: '🛡️ ' + d.compliance_notes.split(':')[0] }),
   ]));
+  { const rv = reviewPanel(reviewGenerated('script', d, factsOf(c))); if (rv) card.append(rv); }
   card.append(learnBox(d.learning_note));
   { const ig = igExtras('script', d, c, daily); if (ig) card.append(ig); }
   { const rr = userRefStrip(c); if (rr) card.append(rr); }
@@ -3406,6 +3972,7 @@ function renderCarousel(d, c, daily) {
     [...d.hashtags.map(h => el('span', { class: 'chip', textContent: h })), el('span', { class: 'chip copy', textContent: '📋 salin hashtag', onclick: () => copyText(d.hashtags.join(' '), 'Hashtag') })]));
   textWrap.append(learnBox(d.learning_note));
   card.append(el('details', { class: 'adv', style: 'margin-top:18px;' }, [el('summary', { textContent: '📝 Teks & caption tiap slide' }), textWrap]));
+  { const rv = reviewPanel(reviewGenerated('carousel', d, factsOf(c))); if (rv) card.append(rv); }
   card.append(actionsBar('carousel', d, c, daily));
   return card;
 }
@@ -3430,6 +3997,7 @@ function renderCaption(d, c, daily) {
   card.append(ul);
   card.append(el('div', { class: 'row', style: 'margin-top:12px;' },
     [...d.hashtags.map(h => el('span', { class: 'chip', textContent: h })), el('span', { class: 'chip copy', textContent: '📋 salin hashtag', onclick: () => copyText(d.hashtags.join(' '), 'Hashtag') })]));
+  { const rv = reviewPanel(reviewGenerated('caption', d, factsOf(c))); if (rv) card.append(rv); }
   card.append(learnBox(d.learning_note));
   { const ig = igExtras('caption', d, c, daily); if (ig) card.append(ig); }
   { const rr = userRefStrip(c); if (rr) card.append(rr); }
@@ -3454,6 +4022,7 @@ function renderStoryboard(d, c, daily) {
   card.append(el('b', { style: 'display:block; margin-top:16px;', textContent: 'Stok b-roll (rekam ekstra ini, kepakai terus):' }));
   card.append(el('div', { class: 'row', style: 'margin-top:8px;' }, d.broll.map(b => el('span', { class: 'chip', textContent: '🎞️ ' + b }))));
   card.append(el('div', { class: 'copybox', style: 'margin-top:14px;', textContent: '📝 ' + d.production_notes }));
+  { const rv = reviewPanel(reviewGenerated('storyboard', d, factsOf(c))); if (rv) card.append(rv); }
   card.append(learnBox(d.learning_note));
   // storyboard tidak pakai generate image apa pun (mockup/gambar AI) — cukup tabel shot + b-roll
   { const rr = userRefStrip(c); if (rr) card.append(rr); }
@@ -3480,6 +4049,281 @@ function renderIdeas(d, c, daily) {
   card.append(learnBox(d.learning_note));
   card.append(actionsBar('ideas', d, c, daily));
   return card;
+}
+
+// format angka ringkas ala IG: 1.2rb, 34rb, 1,2jt
+function fmtCount(n) { n = +n || 0; return n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.', ',').replace(',0', '') + 'jt' : n >= 1000 ? (n / 1000).toFixed(n >= 1e4 ? 0 : 1).replace('.', ',').replace(',0', '') + 'rb' : String(n); }
+// ENGAGEMENT KOMPETITOR (isi manual dari angka publik IG mereka) → total view, ER, konten viral
+// followers = jumlah follower; raw = tiap baris "like, komen, view" (view opsional)
+function engagementFrom(folStr, raw) {
+  const followers = parseInt(String(folStr || '').replace(/[^\d]/g, '')) || 0;
+  const posts = String(raw || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const nums = l.split(/[,;\s]+/).map(x => parseInt(String(x).replace(/[^\d]/g, '')) || 0);
+    return { likes: nums[0] || 0, comments: nums[1] || 0, views: nums[2] || 0 };
+  }).filter(p => p.likes || p.comments || p.views);
+  const eng = posts.map(p => p.likes + p.comments);
+  const totalViews = posts.reduce((a, p) => a + p.views, 0);
+  const totalLikes = posts.reduce((a, p) => a + p.likes, 0);
+  const totalEng = eng.reduce((a, x) => a + x, 0);
+  const avgEng = posts.length ? totalEng / posts.length : 0;
+  const erAvg = followers ? avgEng / followers * 100 : 0; // engagement rate rata-rata (%)
+  const sorted = [...eng].sort((a, b) => a - b);
+  const median = sorted.length ? sorted[Math.floor((sorted.length - 1) / 2)] : 0;
+  const maxEng = eng.length ? Math.max(...eng) : 0;
+  // viral = engagement ≥ 2× median akun itu sendiri (outlier) — patokan relatif per akun
+  const rows = posts.map((p, i) => ({ i: i + 1, likes: p.likes, comments: p.comments, views: p.views, eng: eng[i], er: followers ? eng[i] / followers * 100 : 0, viral: median > 0 && eng[i] >= median * 2, best: eng[i] === maxEng && maxEng > 0 }));
+  return { n: posts.length, followers, totalViews, totalLikes, avgEng, erAvg, median, rows, viralCount: rows.filter(r => r.viral).length };
+}
+// render hasil engagement: kartu statistik + tabel per post + tanda viral/best
+// KENAPA sebuah post IG viral + apa yang bisa ditiru — disimpulkan dari SINYAL ANGKA (bukan caption)
+function viralWhyIG(r, rep) {
+  const mult = rep.median ? (r.eng / rep.median).toFixed(1) : null;
+  const why = [], learn = [];
+  const clr = r.likes ? r.comments / r.likes : 0; // rasio komen : like
+  const avgClr = rep.totalLikes ? (rep.rows.reduce((a, x) => a + x.comments, 0) / rep.totalLikes) : 0;
+  if (r.comments && clr >= Math.max(0.03, avgClr * 1.4)) {
+    why.push('komentarnya jauh di atas normal (' + Math.round(clr * 100) + '% dari like) — kontennya mancing percakapan');
+    learn.push('Tiru pemicunya: buka dengan pertanyaan/opini yang bikin orang WAJIB komen.');
+  }
+  if (r.views && r.eng && r.views / Math.max(1, r.eng) >= 25) {
+    why.push('views jauh di atas interaksi → gampang di-share (relatable / berguna buat disimpan)');
+    learn.push('Angkat lagi sudut yang shareable: super relatable atau berguna buat di-save/kirim ke teman.');
+  }
+  if (!why.length) {
+    why.push('like jauh di atas rata-rata akun → pesan & visual pembukanya nge-hit');
+    learn.push('Pertahankan gaya hook/visual pembuka ini; bikin beberapa varian topik yang mirip.');
+  }
+  return { head: (mult ? mult + '× median akun — ' : '') + why.join('; '), learn: learn.join(' ') };
+}
+// KENAPA video YouTube viral + pelajaran — dari JUDUL + rasio views
+function viralWhyYT(p, median) {
+  const mult = median ? (p.views / median).toFixed(1) : null;
+  const t = p.title || '', why = [], learn = [];
+  if (/\d/.test(t)) { why.push('judul pakai angka spesifik (lebih clickable)'); learn.push('Pakai angka konkret di judul & hook.'); }
+  if (/(challenge|tantangan|24 ?jam|24 ?hours|\bvs\b|nyoba|eksperimen|\btest\b|survive|stranded|terjebak|\bhari\b)/i.test(t)) { why.push('format tantangan/eksperimen → rasa penasaran tinggi'); learn.push('Bikin premis dengan "taruhan" yang jelas & bikin penasaran.'); }
+  if (/(gratis|juta|miliar|rp ?\d|hadiah|giveaway|termahal|terbesar|terlama|\$)/i.test(t)) { why.push('angka/stakes besar bikin orang pengen nonton'); learn.push('Naikkan "taruhan" yang kelihatan jelas di thumbnail & judul.'); }
+  if (!why.length) why.push('views jauh di atas rata-rata channel — hook & thumbnail-nya kuat');
+  return { head: (mult ? mult + '× rata-rata channel — ' : '') + why.join('; '), learn: learn.join(' ') || 'Bedah 3 detik pertama & thumbnail-nya — di situ kuncinya.' };
+}
+function renderEngagementResult(rep, handle) {
+  const wrap = el('div', { style: 'margin-top:12px;' });
+  const hClean = String(handle || '').replace(/^@+/, '').trim();
+  if (hClean) wrap.append(el('div', { class: 'eng-who' }, [
+    el('b', { textContent: '📸 @' + hClean }),
+    el('a', { class: 'chip golink', href: 'https://www.instagram.com/' + encodeURIComponent(hClean) + '/', target: '_blank', rel: 'noopener noreferrer', title: 'Buka profil IG-nya buat pastikan akun & angkanya benar', textContent: '↗ cek profil IG' }),
+  ]));
+  if (!rep.n) { wrap.append(el('div', { class: 'hint', textContent: 'Isi minimal 1 baris data postingan dulu (like, komen, view).' })); return wrap; }
+  const stat = (label, val) => el('div', { class: 'estat' }, [el('div', { class: 'estat-v', textContent: val }), el('div', { class: 'estat-l', textContent: label })]);
+  wrap.append(el('div', { class: 'estat-row' }, [
+    stat('👁️ Total views', rep.totalViews ? fmtCount(rep.totalViews) : '—'),
+    stat('❤️ Total likes', fmtCount(rep.totalLikes)),
+    stat('📈 Engagement rate', rep.erAvg ? rep.erAvg.toFixed(2) + '%' : '—'),
+    stat('🔥 Konten viral', String(rep.viralCount)),
+  ]));
+  if (!rep.followers) wrap.append(el('div', { class: 'hint', style: 'margin:6px 0;', textContent: 'Isi jumlah followers biar engagement rate-nya kehitung.' }));
+  const tbl = el('table', { class: 't' });
+  tbl.append(el('thead', {}, el('tr', {}, ['#', '❤️ Like', '💬 Komen', '👁️ View', 'ER', 'Status'].map(h => el('th', { textContent: h })))));
+  const tb = el('tbody');
+  rep.rows.forEach(r => tb.append(el('tr', {}, [
+    el('td', { textContent: r.i }),
+    el('td', { textContent: fmtCount(r.likes) }),
+    el('td', { textContent: fmtCount(r.comments) }),
+    el('td', { textContent: r.views ? fmtCount(r.views) : '—' }),
+    el('td', { textContent: rep.followers ? r.er.toFixed(2) + '%' : '—' }),
+    el('td', { class: r.viral ? 'cmp-win' : '', textContent: r.viral ? '🔥 Viral' : (r.best ? '⭐ Terbaik' : '–') }),
+  ])));
+  tbl.append(tb);
+  wrap.append(el('div', { class: 'tscroll' }, tbl));
+  const erNote = rep.erAvg ? (rep.erAvg >= 3 ? 'ER ' + rep.erAvg.toFixed(2) + '% tergolong tinggi (patokan sehat 1–3%). Audiensnya aktif.' : rep.erAvg >= 1 ? 'ER ' + rep.erAvg.toFixed(2) + '% sehat (patokan 1–3%).' : 'ER ' + rep.erAvg.toFixed(2) + '% di bawah 1% — jangkauan besar tapi interaksi tipis, ada celah buatmu.') : '';
+  const virals = rep.rows.filter(r => r.viral);
+  const vbox = el('div', { class: 'verdict' });
+  if (virals.length) {
+    vbox.append(el('div', {}, el('b', { textContent: '🔥 Kenapa ' + virals.length + ' konten ini viral & apa yang bisa ditiru' })));
+    virals.forEach(r => {
+      const ins = viralWhyIG(r, rep);
+      vbox.append(el('div', { style: 'margin-top:7px;' }, [el('b', { textContent: 'Post #' + r.i + ' — ' }), document.createTextNode(ins.head)]));
+      vbox.append(el('div', { class: 'tiny', style: 'margin-top:2px;', textContent: '💡 Pelajaran: ' + ins.learn }));
+    });
+    vbox.append(el('div', { class: 'tiny', style: 'margin-top:8px; opacity:.8;', textContent: 'Alasan disimpulkan dari pola angka (like/komen/views) vs median akun — buka postingannya buat konfirmasi sudut & hook-nya.' }));
+  } else {
+    vbox.append(el('div', {}, [el('b', { textContent: 'Belum ada konten viral' }), document.createTextNode(' — belum ada yang engagement-nya ≥ 2× median akun. Konsisten dulu; outlier-nya bakal kelihatan seiring waktu.')]));
+  }
+  if (erNote) vbox.append(el('div', { class: 'tiny', style: 'margin-top:6px;', textContent: erNote }));
+  wrap.append(vbox);
+  return wrap;
+}
+// kartu agregat TikTok (per-video tak tersedia dari scrape publik → tampilkan agregat + estimasi)
+function renderTiktokAggregate(d) {
+  const wrap = el('div', { style: 'margin-top:12px;' });
+  const u = String(d.username || '').replace(/^@+/, '').trim();
+  if (u) wrap.append(el('div', { class: 'eng-who' }, [
+    el('b', { textContent: '🎵 @' + u }),
+    el('a', { class: 'chip golink', href: 'https://www.tiktok.com/@' + encodeURIComponent(u), target: '_blank', rel: 'noopener noreferrer', title: 'Buka profil TikTok-nya buat pastikan akun & angkanya benar', textContent: '↗ cek profil TikTok' }),
+  ]));
+  const stat = (label, val) => el('div', { class: 'estat' }, [el('div', { class: 'estat-v', textContent: val }), el('div', { class: 'estat-l', textContent: label })]);
+  wrap.append(el('div', { class: 'estat-row' }, [
+    stat('👥 Followers', d.followers ? fmtCount(d.followers) : '—'),
+    stat('❤️ Total likes', d.totalLikes ? fmtCount(d.totalLikes) : '—'),
+    stat('🎬 Jumlah video', d.videoCount ? fmtCount(d.videoCount) : '—'),
+    stat('📈 ER (estimasi)', d.engagementPct != null ? d.engagementPct + '%' : '—'),
+  ]));
+  wrap.append(el('div', { class: 'hint', style: 'margin-top:8px;', textContent: (d.note || '') + ' Buat deteksi konten viral per-video, isi angka tiap video manual di bawah.' }));
+  return wrap;
+}
+// kartu hasil YouTube: subscriber + total/avg views + tabel video (views per video; viral = ≥2× median)
+function renderYoutubeResult(d) {
+  const wrap = el('div', { style: 'margin-top:12px;' });
+  const u = String(d.username || '').replace(/^@+/, '').trim();
+  if (u || d.title) wrap.append(el('div', { class: 'eng-who' }, [
+    el('b', { textContent: '▶️ ' + (d.title ? d.title + ' ' : '') + (u ? '@' + u : '') }),
+    u ? el('a', { class: 'chip golink', href: 'https://www.youtube.com/@' + encodeURIComponent(u), target: '_blank', rel: 'noopener noreferrer', title: 'Buka channel-nya buat pastikan akun & angkanya benar', textContent: '↗ cek channel' }) : null,
+  ]));
+  const stat = (label, val) => el('div', { class: 'estat' }, [el('div', { class: 'estat-v', textContent: val }), el('div', { class: 'estat-l', textContent: label })]);
+  const posts = (d.posts || []).filter(p => p.views != null);
+  const views = posts.map(p => p.views);
+  const sorted = [...views].sort((a, b) => a - b);
+  const median = sorted.length ? sorted[Math.floor((sorted.length - 1) / 2)] : 0;
+  const maxV = views.length ? Math.max(...views) : 0;
+  const viralCount = views.filter(v => median > 0 && v >= median * 2).length;
+  wrap.append(el('div', { class: 'estat-row' }, [
+    stat('👥 Subscriber', d.followers ? fmtCount(d.followers) : '—'),
+    stat('👁️ Total views', d.totalViews ? fmtCount(d.totalViews) : '—'),
+    stat('📊 Rata-rata views', d.avgViews ? fmtCount(d.avgViews) : '—'),
+    stat('🔥 Video viral', String(viralCount)),
+  ]));
+  if (posts.length) {
+    const tbl = el('table', { class: 't' });
+    tbl.append(el('thead', {}, el('tr', {}, ['#', 'Judul', '👁️ Views', 'Status'].map(h => el('th', { textContent: h })))));
+    const tb = el('tbody');
+    posts.forEach((p, i) => {
+      const viral = median > 0 && p.views >= median * 2, best = p.views === maxV && maxV > 0;
+      tb.append(el('tr', {}, [
+        el('td', { textContent: i + 1 }),
+        el('td', {}, p.url ? el('a', { class: 'iglink', href: p.url, target: '_blank', rel: 'noopener', textContent: (p.title || 'video').slice(0, 54) }) : (p.title || 'video').slice(0, 54)),
+        el('td', { textContent: fmtCount(p.views) }),
+        el('td', { class: viral ? 'cmp-win' : '', textContent: viral ? '🔥 Viral' : (best ? '⭐ Terbaik' : '–') }),
+      ]));
+    });
+    tbl.append(tb);
+    wrap.append(el('div', { class: 'tscroll' }, tbl));
+  }
+  // kenapa video-video ini viral + apa yang bisa dipelajari (dari judul + rasio views)
+  const virals = posts.filter(p => median > 0 && p.views >= median * 2);
+  if (virals.length) {
+    const vbox = el('div', { class: 'verdict' });
+    vbox.append(el('div', {}, el('b', { textContent: '🔥 Kenapa ' + virals.length + ' video ini viral & apa yang bisa ditiru' })));
+    virals.forEach(p => {
+      const ins = viralWhyYT(p, median);
+      vbox.append(el('div', { style: 'margin-top:7px;' }, [el('b', { textContent: '“' + (p.title || 'video').slice(0, 46) + '” — ' }), document.createTextNode(ins.head)]));
+      vbox.append(el('div', { class: 'tiny', style: 'margin-top:2px;', textContent: '💡 Pelajaran: ' + ins.learn }));
+    });
+    vbox.append(el('div', { class: 'tiny', style: 'margin-top:8px; opacity:.8;', textContent: 'Alasan disimpulkan dari judul & rasio views vs median channel — tonton videonya buat konfirmasi hook & thumbnail-nya.' }));
+    wrap.append(vbox);
+  }
+  wrap.append(el('div', { class: 'hint', style: 'margin-top:8px;', textContent: (d.note || '') + ' Viral = views ≥ 2× median channel.' }));
+  return wrap;
+}
+/* ── TAB: POSTING (CROSS-POST) ── */
+// Kirim 1 konten ke IG + FB + TikTok sekaligus lewat backend (API resmi Meta/TikTok).
+function renderPosting(body, c) {
+  const card = el('div', { class: 'card result-card' });
+  card.append(el('div', { class: 'result-head' }, [
+    el('span', { class: 'e', textContent: '🚀' }),
+    el('h3', { textContent: 'Posting sekaligus (cross-post)' }),
+  ]));
+  card.append(el('p', { class: 'muted', style: 'margin:0 0 12px; font-size:14px;', html: 'Kirim <b>satu konten</b> ke <b>Instagram + Facebook + TikTok</b> sekali klik. Auto-publish beneran lewat API resmi — butuh <b>Backend Riset</b> (⚙️) jalan + token akun bisnis diisi. Belum ada token? Pakai <b>🧪 Simulasi</b> buat lihat alurnya.' }));
+
+  // status backend + kredensial
+  const cr = pubCreds();
+  const credOk = { instagram: !!(cr.metaToken && cr.igUserId), facebook: !!(cr.metaToken && cr.fbPageId), tiktok: !!cr.tiktokToken };
+  if (!hasRisetApi()) card.append(el('div', { class: 'hint', style: 'margin-bottom:10px;', html: '⚠️ Backend belum diset. Buka <b>⚙️ → Backend Riset</b> (klik 🔍 Deteksi server). Tanpa backend, cuma bisa 🧪 Simulasi.' }));
+
+  // ── sumber konten: dari riwayat (regen caption) + caption editable ──
+  card.append(el('label', { textContent: '1. Pilih konten dari riwayat (opsional)' }));
+  const hist = store.get('ce3_hist_' + c.id, []);
+  const sel = el('select');
+  sel.append(el('option', { value: '', textContent: hist.length ? '— pilih hasil buatanmu —' : '(belum ada riwayat, tulis caption manual)' }));
+  hist.forEach(h => sel.append(el('option', { value: h.id, textContent: (TYPES[h.type] ? TYPES[h.type].e + ' ' : '') + (h.title || (TYPES[h.type] && TYPES[h.type].label) || h.type) })));
+  card.append(sel);
+
+  card.append(el('label', { style: 'margin-top:12px;', textContent: '2. Caption' }));
+  const cap = el('textarea', { style: 'min-height:130px;', placeholder: 'Tulis caption di sini, atau pilih dari riwayat di atas biar terisi otomatis…' });
+  card.append(cap);
+  const capHint = el('div', { class: 'tiny', style: 'margin-top:4px;' });
+  const updCapHint = () => { capHint.textContent = cap.value.length + ' karakter' + (cap.value.length > 2200 ? ' — IG maksimal 2.200, bakal dipotong.' : ''); };
+  cap.oninput = updCapHint; updCapHint();
+  card.append(capHint);
+  sel.onchange = () => { const h = hist.find(x => x.id === sel.value); if (h) { cap.value = captionFromHist(c, h) || cap.value; updCapHint(); toast('Caption diambil dari riwayat ✓', 'ok'); } };
+
+  // ── media URL + tipe ──
+  card.append(el('label', { style: 'margin-top:12px;', textContent: '3. URL media (wajib) — harus link publik' }));
+  const media = el('input', { type: 'text', placeholder: 'https://…/gambar.jpg atau https://…/video.mp4' });
+  card.append(media);
+  card.append(el('div', { class: 'hint', html: 'API Meta & TikTok <b>menarik media dari URL publik</b>, bukan upload file. Taruh gambar/video di hosting yang bisa diakses (mis. hasil gambar AI yang sudah kamu unggah, Cloudinary, S3, dsb). <b>TikTok cuma menerima video (.mp4)</b>.' }));
+  let mediaType = 'video';
+  const typeRow = el('div', { class: 'pills', style: 'margin-top:8px;' });
+  [['video', '🎬 Video (Reels/TikTok)'], ['image', '🖼️ Gambar (feed IG/FB)']].forEach(([v, label]) => {
+    const b = el('button', { class: 'pill' + (mediaType === v ? ' on' : ''), textContent: label });
+    b.onclick = e => { e.preventDefault(); mediaType = v; typeRow.querySelectorAll('.pill').forEach(x => x.classList.remove('on')); b.classList.add('on'); };
+    typeRow.append(b);
+  });
+  card.append(typeRow);
+
+  // ── pilih platform ──
+  card.append(el('label', { style: 'margin-top:14px;', textContent: '4. Kirim ke platform' }));
+  const picked = { instagram: credOk.instagram, facebook: credOk.facebook, tiktok: credOk.tiktok };
+  const platRow = el('div', { style: 'margin-top:6px;' });
+  [['instagram', '📸 Instagram', 'metaToken + IG User ID'], ['facebook', '📘 Facebook Page', 'metaToken + Page ID'], ['tiktok', '🎵 TikTok', 'TikTok token']].forEach(([k, label, need]) => {
+    const row = el('label', { class: 'checkrow', style: 'display:flex; align-items:center; gap:10px; margin:8px 0; cursor:pointer; flex-wrap:wrap;' });
+    const cb = el('input', { type: 'checkbox', style: 'width:18px; height:18px; flex:0 0 auto; margin:0; accent-color:var(--pine,#4a7c59);' }); cb.checked = picked[k];
+    cb.onchange = () => { picked[k] = cb.checked; };
+    row.append(cb, el('span', { style: 'font-weight:600;', textContent: label }),
+      el('span', { class: 'tiny', style: 'font-weight:400; color:' + (credOk[k] ? 'var(--pine,#4a7c59)' : '#b2664a') + ';', textContent: credOk[k] ? '✓ token siap' : '⚠ butuh ' + need + ' (⚙️)' }));
+    platRow.append(row);
+  });
+  card.append(platRow);
+
+  // ── tombol aksi ──
+  const out = el('div');
+  async function doPublish(dryRun) {
+    const platforms = Object.keys(picked).filter(k => picked[k]);
+    if (!platforms.length) return toast('Pilih minimal 1 platform', 'err');
+    if (!cap.value.trim()) return toast('Caption masih kosong', 'err');
+    if (!media.value.trim()) return toast('URL media wajib diisi', 'err');
+    if (!dryRun && !hasRisetApi()) return toast('Backend belum diset (⚙️). Pakai 🧪 Simulasi dulu.', 'err');
+    const payload = { platforms, caption: cap.value.trim(), mediaUrl: media.value.trim(), mediaType, creds: pubCreds(), dryRun };
+    out.innerHTML = ''; out.append(el('div', { class: 'hint', textContent: (dryRun ? '🧪 Simulasi…' : '🚀 Mengirim…') }));
+    try {
+      const r = await crossPost(payload);
+      out.innerHTML = ''; out.append(renderPublishResult(r));
+      toast(dryRun ? 'Simulasi selesai — request valid ✓' : (r.okCount + '/' + r.total + ' platform terkirim'), r.okCount === r.total ? 'ok' : 'err');
+    } catch (e) { out.innerHTML = ''; out.append(el('div', { class: 'hint', style: 'color:#b26;', textContent: '❌ ' + String(e.message || e) })); toast('Gagal: ' + String(e.message || e).slice(0, 60), 'err'); }
+  }
+  card.append(el('div', { class: 'row', style: 'margin-top:16px; gap:10px; flex-wrap:wrap;' }, [
+    el('button', { class: 'primary', textContent: '🚀 Publish ke semua', onclick: () => doPublish(false) }),
+    el('button', { textContent: '🧪 Simulasi (dry-run)', onclick: () => doPublish(true) }),
+    el('button', { class: 'ghost', textContent: '⚙️ Isi token akun', onclick: openSettings }),
+  ]));
+  card.append(out);
+  body.append(card);
+}
+// kartu hasil cross-post: status per platform (✓ terkirim / ✗ gagal / 🧪 simulasi)
+function renderPublishResult(r) {
+  const wrap = el('div', { class: 'card result-card', style: 'margin-top:14px;' });
+  wrap.append(el('div', { class: 'result-head' }, [
+    el('span', { class: 'e', textContent: r.dryRun ? '🧪' : '📮' }),
+    el('h3', { textContent: r.dryRun ? 'Hasil simulasi (belum benar-benar diposting)' : 'Hasil posting: ' + r.okCount + '/' + r.total + ' berhasil' }),
+  ]));
+  const NAMES = { instagram: '📸 Instagram', facebook: '📘 Facebook', tiktok: '🎵 TikTok' };
+  (r.results || []).forEach(res => {
+    const row = el('div', { style: 'margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--card2,#f7f3ec);' });
+    row.append(el('div', { style: 'font-weight:700;', html: (res.ok ? (res.dryRun ? '🧪 ' : '✅ ') : '❌ ') + (NAMES[res.platform] || res.platform) }));
+    if (res.ok && res.url) row.append(el('div', { class: 'tiny', style: 'margin-top:3px;' }, el('a', { class: 'iglink', href: res.url, target: '_blank', rel: 'noopener', textContent: res.url })));
+    if (res.ok && res.dryRun) row.append(el('div', { class: 'tiny', style: 'margin-top:3px; color:var(--muted,#777);', textContent: 'Request valid — tinggal isi token asli & klik Publish beneran.' }));
+    if (!res.ok) row.append(el('div', { class: 'tiny', style: 'margin-top:3px; color:#b26;', textContent: res.error || 'gagal' }));
+    wrap.append(row);
+  });
+  return wrap;
 }
 
 /* ── TAB: RISET & REVIEW ── */
@@ -3539,24 +4383,57 @@ function renderRiset(body, c) {
     el('span', { class: 'e', textContent: '🥊' }),
     el('h3', { textContent: 'Bandingkan dengan kompetitor' }),
   ]));
-  cmpCard.append(el('p', { class: 'muted', style: 'margin:0 0 12px; font-size:14px;', html: 'Isi <b>@handle kompetitor aslimu</b> → kami tampilkan <b>preview feed asli langsung dari Instagram</b> + analisis pola. Belum tahu mau bandingin siapa? Klik <b>Analisis pola otomatis</b> buat lihat pola konten umum di niche-mu (bukan akun asli).' }));
-  cmpCard.append(el('div', { class: 'hint', style: 'margin-bottom:2px;', html: 'Preview IG butuh <b>internet</b> & handle asli. Tempel caption mereka (opsional) buat skor lebih presisi.' }));
+  cmpCard.append(el('p', { class: 'muted', style: 'margin:0 0 12px; font-size:14px;', html: 'Pilih <b>platform</b> di bawah, isi <b>@handle kompetitor aslimu</b> → kami tampilkan <b>preview asli</b> (feed IG / video YouTube / profil TikTok) + angka engagement + analisis pola. Belum tahu mau bandingin siapa? Klik <b>Analisis pola otomatis</b>.' }));
+  cmpCard.append(el('div', { class: 'hint', style: 'margin-bottom:10px;', html: 'Preview & angka butuh <b>internet</b> + handle asli. Engagement TikTok/YouTube ditarik otomatis dari <b>Backend Riset</b> (⚙️) atau isi manual.' }));
+  // ── PILIH PLATFORM: IG / TikTok / YouTube (satu switch buat seluruh perbandingan) ──
+  saved.cmpPlatform = saved.cmpPlatform || 'instagram';
+  const CMP_PLAT = { instagram: { icon: '📸', name: 'Instagram' }, tiktok: { icon: '🎵', name: 'TikTok' }, youtube: { icon: '▶️', name: 'YouTube' } };
+  const platSel = el('div', { class: 'pills', style: 'margin:0 0 6px;' });
+  function applyCmpPlatform(pl) {
+    saved.cmpPlatform = pl;
+    saved.comps.forEach(cp => { cp.eng = cp.eng || {}; cp.eng.platform = pl; }); // samain platform semua kompetitor
+    persist();
+    platSel.querySelectorAll('.pill').forEach(x => x.classList.toggle('on', x.dataset.pl === pl));
+    if (btnCompare) btnCompare.textContent = CMP_PLAT[pl].icon + ' Bandingkan + preview ' + CMP_PLAT[pl].name;
+    drawComps();
+  }
+  ['instagram', 'tiktok', 'youtube'].forEach(pl => {
+    const b = el('button', { class: 'pill' + (saved.cmpPlatform === pl ? ' on' : ''), textContent: CMP_PLAT[pl].icon + ' ' + CMP_PLAT[pl].name });
+    b.dataset.pl = pl; b.onclick = e => { e.preventDefault(); applyCmpPlatform(pl); };
+    platSel.append(b);
+  });
+  cmpCard.append(el('label', { style: 'margin:0 0 4px;', textContent: 'Platform kompetitor' }));
+  cmpCard.append(platSel);
   // container yang bisa di-refresh
   const searchWrap = el('div');
   const noteWrap = el('div');
   cmpCard.append(searchWrap);
   cmpCard.append(noteWrap);
-  // ── CONNECT: kompetitor di Riset ↔ kolom Kompetitor di Profil Brand (comp1/2/3) ──
-  const profileComps = () => (Array.isArray(c.competitors) && c.competitors.length ? c.competitors : [c.comp1, c.comp2, c.comp3]).map(x => (x || '').trim()).filter(Boolean);
-  // tulis handle Riset → balik ke Profil Brand (comp1/2/3 + competitors) biar selalu sinkron
-  const syncToProfile = () => { const hs = saved.comps.map(x => (x.handle || '').trim()); c.comp1 = hs[0] || ''; c.comp2 = hs[1] || ''; c.comp3 = hs[2] || ''; c.competitors = hs.filter(Boolean); saveClient(c); };
+  // ── CONNECT: kompetitor di Riset ↔ kolom Kompetitor di Profil Brand (comp1..comp6) ──
+  const profileComps = () => compsOf(c);
+  // tulis handle Riset → balik ke Profil Brand (competitors + comp1..comp6) biar selalu sinkron
+  const syncToProfile = () => { setComps(c, saved.comps.map(x => x.handle || '')); saveClient(c); };
+  // tambah 1 handle rekomendasi ke slot kompetitor (isi slot kosong dulu; anti-dobel; maks MAX_COMP)
+  const addCompetitor = (handle, silent) => {
+    const clean = String(handle || '').replace(/^@+/, '').trim();
+    if (!clean) return false;
+    saved.comps = saved.comps || [];
+    if (saved.comps.some(x => (x.handle || '').replace(/^@+/, '').trim().toLowerCase() === clean.toLowerCase())) return false; // sudah ada
+    const empty = saved.comps.find(x => !(x.handle || '').trim());
+    if (empty) empty.handle = clean;
+    else if (saved.comps.length < MAX_COMP) saved.comps.push({ handle: clean, raw: '' });
+    else { if (!silent) toast('Slot kompetitor penuh (maks ' + MAX_COMP + ')', 'err'); return false; }
+    syncToProfile(); persist();
+    if (!silent) toast('+@' + clean + ' masuk kompetitor ✓', 'ok');
+    return true;
+  };
   // isi otomatis handle saran (akun asli, dicocokkan ke jasa/produk brand) — lalu tulis ke Profil
-  const fillSuggested = () => { const s = suggestCompetitors(c); saved.comps = (s.length ? s : ['']).slice(0, 3).map(h => ({ handle: h, raw: '' })); saved.suggestedApplied = true; syncToProfile(); persist(); return s; };
+  const fillSuggested = () => { const s = suggestCompetitors(c); saved.comps = (s.length ? s : ['']).slice(0, MAX_COMP).map(h => ({ handle: h, raw: '' })); saved.suggestedApplied = true; syncToProfile(); persist(); return s; };
   // inisialisasi: PROFIL = sumber kebenaran handle (pertahankan caption utk handle sama). Kosong → auto-suggest (yang nulis balik ke profil)
   const prof = profileComps();
   if (prof.length) {
     const prev = {}; (saved.comps || []).forEach(x => { if (x.handle) prev[x.handle.replace(/^@/, '').toLowerCase()] = x.raw || ''; });
-    saved.comps = prof.slice(0, 3).map(h => ({ handle: h, raw: prev[h.replace(/^@/, '').toLowerCase()] || '' }));
+    saved.comps = prof.slice(0, MAX_COMP).map(h => ({ handle: h, raw: prev[h.replace(/^@/, '').toLowerCase()] || '' }));
     saved.suggestedApplied = true; persist();
   } else if (!Array.isArray(saved.comps) || !saved.comps.length || (!saved.suggestedApplied && !saved.comps.some(x => (x.handle || '').replace(/^@/, '').trim()))) {
     fillSuggested();
@@ -3571,8 +4448,58 @@ function renderRiset(body, c) {
   }
   refreshSearchNote();
   // dipanggil tombol "Isi ulang saran": isi ulang saran + pencarian
-  function regen() { fillSuggested(); drawComps(); refreshSearchNote(); toast('Saran kompetitor diisi ✓', 'ok'); }
+  function regen() { fillSuggested(); drawComps(); if (typeof drawRecos === 'function') drawRecos(); refreshSearchNote(); toast('Saran kompetitor diisi ✓', 'ok'); }
   const compsWrap = el('div');
+  // box engagement per kompetitor: input followers + data per-post → hitung total view/viral/ER
+  function compEngagementBox(cp) {
+    cp.eng = cp.eng || { followers: '', data: '', platform: saved.cmpPlatform || 'instagram' };
+    if (!cp.eng.platform) cp.eng.platform = saved.cmpPlatform || 'instagram';
+    const box = el('details', { class: 'adv', style: 'margin-top:8px;' });
+    box.append(el('summary', { textContent: '📊 Total view · konten viral · engagement' }));
+    const inner = el('div', { style: 'padding-top:10px;' });
+    const out = el('div');
+    // pilih platform IG / TikTok / YouTube
+    const PLAT_LABEL = { instagram: '📸 Instagram', tiktok: '🎵 TikTok', youtube: '▶️ YouTube' };
+    const platRow = el('div', { class: 'pills', style: 'margin-bottom:8px;' });
+    ['instagram', 'tiktok', 'youtube'].forEach(pl => {
+      const bb = el('button', { class: 'pill' + (cp.eng.platform === pl ? ' on' : ''), textContent: PLAT_LABEL[pl] });
+      bb.onclick = e => { e.preventDefault(); cp.eng.platform = pl; persist(); platRow.querySelectorAll('.pill').forEach(x => x.classList.remove('on')); bb.classList.add('on'); };
+      platRow.append(bb);
+    });
+    inner.append(platRow);
+    // penegasan: kotak ini punya KOMPETITOR, bukan akun user
+    inner.append(el('div', { class: 'tiny', style: 'margin-bottom:8px; color:var(--pine);', html: '📌 Angka di kotak ini dari akun <b>kompetitor</b> ini (handle di atas) — <b>bukan akunmu</b>. Tiap kompetitor punya kotak sendiri, jadi yang keluar satu per kompetitor.' }));
+    // baris tombol otomatis (kalau backend diset) + petunjuk
+    inner.append(el('div', { class: 'tiny', style: 'margin-bottom:8px;', html: hasRisetApi()
+      ? 'Klik <b>Ambil otomatis</b> → tarik followers & engagement langsung dari akun publik mereka. Atau isi manual di bawah.'
+      : 'Buka akun mereka, lihat angka publiknya, isi di sini. Views buat Reels/TikTok; foto biasa kosongin. (Aktifkan <b>Ambil otomatis</b> dengan set Backend Riset di ⚙️.)' }));
+    const fol = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'Jumlah followers (mis. 47900)', value: cp.eng.followers || '', style: 'margin-bottom:8px;' });
+    fol.oninput = () => { cp.eng.followers = fol.value; persist(); };
+    const ta = el('textarea', { style: 'min-height:96px;', placeholder: 'Satu baris per postingan: like, komen, view\nContoh:\n1200, 45, 30000\n980, 30, 15000\n5400, 210, 120000', value: cp.eng.data || '' });
+    ta.oninput = () => { cp.eng.data = ta.value; persist(); };
+    const compute = () => { out.innerHTML = ''; out.append(renderEngagementResult(engagementFrom(cp.eng.followers, cp.eng.data), (cp.handle || 'akun').replace(/^@?/, '@'))); };
+    const btn = el('button', { class: 'primary', style: 'margin-top:8px;', textContent: '📊 Hitung engagement', onclick: compute });
+    // tarik otomatis dari backend (IG per-post; TikTok agregat)
+    const auto = el('button', { style: 'margin-top:8px;', textContent: '🔗 Ambil otomatis', onclick: async () => {
+      auto.disabled = true; const t0 = auto.textContent; auto.textContent = '⏳ ambil…';
+      try {
+        const plat = cp.eng.platform || 'instagram';
+        const d = await fetchCompetitorStats(cp.handle, plat);
+        cp.eng.followers = String(d.followers || ''); fol.value = cp.eng.followers;
+        if (plat === 'tiktok') { persist(); out.innerHTML = ''; out.append(renderTiktokAggregate(d)); }
+        else if (plat === 'youtube') { persist(); out.innerHTML = ''; out.append(renderYoutubeResult(d)); }
+        else {
+          cp.eng.data = (d.posts || []).map(p => (p.likes || 0) + ',' + (p.comments || 0) + ',' + (p.views || 0)).join('\n');
+          ta.value = cp.eng.data; persist(); compute();
+        }
+        toast('Data ' + plat + ' terambil ✓', 'ok');
+      } catch (e) { toast('Gagal ambil: ' + String(e.message || e).slice(0, 70), 'err'); }
+      auto.disabled = false; auto.textContent = t0;
+    } });
+    inner.append(fol, ta, el('div', { class: 'row', style: 'gap:8px;' }, [btn, auto]), out);
+    box.append(inner);
+    return box;
+  }
   // gambar ulang daftar input kompetitor (handle + textarea caption)
   function drawComps() {
     compsWrap.innerHTML = '';
@@ -3581,34 +4508,125 @@ function renderRiset(body, c) {
       box.append(el('label', { textContent: 'Kompetitor ' + (i + 1) }));
       const h = el('input', { type: 'text', placeholder: '@handle_kompetitor_asli (buat preview IG)', value: cp.handle || '', style: 'margin-bottom:8px;' });
       h.oninput = () => { cp.handle = h.value; persist(); syncToProfile(); }; // sinkron ke Profil Brand
-      const ta = el('textarea', { style: 'min-height:110px;', placeholder: 'Tempel caption mereka di sini…\n---\ncaption berikutnya…', value: cp.raw || '' });
-      ta.oninput = () => { cp.raw = ta.value; persist(); };
-      box.append(h); box.append(ta);
+      box.append(h);
+      box.append(compEngagementBox(cp)); // 📊 total view / viral / engagement (auto dari backend / isi manual)
       compsWrap.append(box);
     });
   }
+  // ── panel rekomendasi kompetitor LINTAS PLATFORM (IG/TikTok/YouTube/web) ──
+  const recoWrap = el('div');
+  function drawRecos() {
+    recoWrap.innerHTML = '';
+    const picks = suggestCompetitors(c).slice(0, 4); // 4 akun asli, dicocokkan ke niche brand
+    if (!picks.length) return; // niche jasa/lainnya → pool kosong; user pakai chip pencarian IG di atas
+    const present = new Set((saved.comps || []).map(x => (x.handle || '').replace(/^@+/, '').trim().toLowerCase()).filter(Boolean));
+    const card = el('div', { class: 'card', style: 'margin:12px 0; border:1.5px solid var(--pine); background:var(--pine-soft,#eef3ef);' });
+    card.append(el('div', { class: 'row between', style: 'align-items:center; gap:8px; flex-wrap:wrap;' }, [
+      el('b', { textContent: '✨ Rekomendasi kompetitor (lintas platform)' }),
+      el('button', { class: 'primary', type: 'button', style: 'font-size:12.5px; padding:6px 10px;', textContent: '✨ Pakai 4-nya', onclick: () => {
+        let n = 0; picks.forEach(h => { if (addCompetitor(h, true)) n++; });
+        drawComps(); drawRecos();
+        toast(n ? '+' + n + ' kompetitor rekomendasi masuk ✓' : 'Semua rekomendasi sudah dipakai', n ? 'ok' : 'err');
+      } }),
+    ]));
+    card.append(el('div', { class: 'tiny', style: 'margin:4px 0 10px;', html: 'Akun IG-nya asli & cocok niche-mu. Klik ikon platform buat intip mereka di <b>IG · TikTok · YouTube · web</b> — pilih yang paling aktif, <b>Pakai</b> buat masukin ke slot bawah, lalu Bandingkan.' }));
+    picks.forEach(h => {
+      const clean = h.replace(/^@+/, '');
+      const used = present.has(clean.toLowerCase());
+      const row = el('div', { class: 'reco-row' });
+      row.append(el('div', { class: 'reco-info' }, [el('b', { textContent: prettyBrand(clean) }), el('small', { style: 'display:block; opacity:.7;', textContent: '@' + clean })]));
+      const links = el('div', { class: 'reco-links' });
+      crossPlatformLinks(clean).forEach(l => links.append(el('a', { class: 'chip golink', href: l.url, target: '_blank', rel: 'noopener noreferrer', title: l.title, textContent: l.label })));
+      row.append(links);
+      row.append(el('button', { type: 'button', class: used ? 'ghost' : '', style: 'font-size:12.5px; padding:6px 10px; flex:0 0 auto;', disabled: used, textContent: used ? '✓ Dipakai' : '➕ Pakai', onclick: () => { if (addCompetitor(clean)) { drawComps(); drawRecos(); } } }));
+      card.append(row);
+    });
+    recoWrap.append(card);
+  }
+  drawRecos();
+  cmpCard.append(recoWrap);
   drawComps();
   cmpCard.append(compsWrap);
   const cmpOut = el('div');
-  // jalankan perbandingan: pakai caption yang ditempel; kalau kosong → auto-deteksi kompetitor
-  const runCompare = forceAuto => {
+  // ambil angka real semua kompetitor dari backend sekaligus (kalau Backend Riset diset).
+  // isi cp.eng otomatis → balikin ringkasan engagement per handle biar bisa ditampilkan.
+  async function autoFetchAll() {
+    if (!hasRisetApi()) return [];
+    const targets = saved.comps.filter(cp => (cp.handle || '').replace(/^@+/, '').trim());
+    if (!targets.length) return [];
+    const results = await Promise.all(targets.map(async cp => {
+      const plat = cp.eng?.platform || 'instagram';
+      try {
+        const d = await fetchCompetitorStats(cp.handle, plat);
+        cp.eng = cp.eng || {}; cp.eng.platform = plat;
+        cp.eng.followers = String(d.followers || '');
+        if (plat === 'tiktok' || plat === 'youtube') { cp.eng.agg = d; return { handle: cp.handle, plat, d }; }
+        cp.eng.data = (d.posts || []).map(p => (p.likes || 0) + ',' + (p.comments || 0) + ',' + (p.views || 0)).join('\n');
+        cp.eng.agg = null;
+        return { handle: cp.handle, plat, d };
+      } catch (e) { return { handle: cp.handle, plat, err: String(e.message || e).slice(0, 80) }; }
+    }));
+    persist(); drawComps(); // refresh box engagement dengan angka yang baru ditarik
+    return results;
+  }
+  // ringkasan "📊 Data engagement real" hasil auto-fetch → kartu per kompetitor
+  function renderAutoEngagement(results) {
+    const ok = results.filter(r => r && !r.err);
+    if (!ok.length) return null;
+    const wrap = el('div', { class: 'card result-card', style: 'margin-bottom:14px;' });
+    wrap.append(el('div', { class: 'result-head' }, [
+      el('span', { class: 'e', textContent: '📊' }),
+      el('h3', { textContent: 'Data engagement real (langsung dari akun publik)' }),
+    ]));
+    const PICON = { tiktok: '🎵 ', youtube: '▶️ ', instagram: '📸 ' };
+    ok.forEach(r => {
+      const handle = (r.handle || 'akun').replace(/^@?/, '@');
+      wrap.append(el('div', { class: 'sub', style: 'margin-top:10px; font-weight:700;', textContent: (PICON[r.plat] || '📸 ') + handle }));
+      wrap.append(r.plat === 'tiktok'
+        ? renderTiktokAggregate(r.d)
+        : r.plat === 'youtube'
+          ? renderYoutubeResult(r.d)
+          : renderEngagementResult(engagementFrom(r.d.followers, (r.d.posts || []).map(p => (p.likes || 0) + ',' + (p.comments || 0) + ',' + (p.views || 0)).join('\n')), handle));
+    });
+    const errs = results.filter(r => r && r.err);
+    if (errs.length) wrap.append(el('div', { class: 'hint', style: 'margin-top:10px;', html: '⚠️ Gagal ambil: ' + errs.map(r => (r.handle || '') + ' (' + r.err + ')').join(', ') + '. Sisanya bisa diisi manual di box tiap kompetitor.' }));
+    return wrap;
+  }
+  // jalankan perbandingan: pakai caption yang ditempel; kalau kosong → auto-deteksi kompetitor.
+  // saat forceAuto=false & Backend Riset aktif → sekalian tarik angka real semua kompetitor.
+  const runCompare = async forceAuto => {
+    let autoEng = null; const fetched = {};
+    if (!forceAuto && hasRisetApi()) {
+      btnCompare.disabled = true; const t0 = btnCompare.textContent; btnCompare.textContent = '⏳ ambil data real…';
+      try {
+        const results = await autoFetchAll();
+        autoEng = renderAutoEngagement(results);
+        results.forEach(r => { if (r && !r.err && r.d) fetched[(r.handle || '').replace(/^@+/, '').trim().toLowerCase()] = r.d; });
+      } catch (e) { toast('Sebagian data gagal ditarik', 'err'); }
+      btnCompare.disabled = false; btnCompare.textContent = t0;
+    }
     const pasted = saved.comps.filter(cp => cp.raw && parsePosts(cp.raw).length >= 2)
       .map(cp => ({ handle: (cp.handle || '@kompetitor').trim(), raw: cp.raw }));
-    // handle asli yang user isi → buat preview embed IG asli
+    // handle asli yang user isi → buat preview embed asli (IG feed / YouTube video / TikTok profil)
     const realHandles = saved.comps.map(cp => (cp.handle || '').trim()).filter(Boolean);
     const auto = forceAuto || !pasted.length;
     const comps = auto ? detectCompetitors(c) : pasted;
     const rep = compareReport(c, saved.myPosts || '', comps, auto, realHandles);
+    rep.platform = saved.cmpPlatform || 'instagram'; // platform buat preview embed
+    rep.fetched = fetched; // data backend per handle (buat embed video YouTube / stats TikTok)
+    saved.bench = compBench(rep); persist(); // simpan acuan → dipakai tab Review Konten buat "kamu vs kompetitor"
     cmpOut.innerHTML = '';
+    if (autoEng) cmpOut.append(autoEng); // angka real di atas analisis pola
     cmpOut.append(renderCompare(rep, c));
     cmpOut.scrollIntoView({ behavior: 'smooth', block: 'start' });
     toast(auto ? 'Pola niche dianalisis ✓' : 'Perbandingan siap ✓', 'ok');
   };
+  const btnCompare = el('button', { class: 'primary', textContent: (CMP_PLAT[saved.cmpPlatform] || CMP_PLAT.instagram).icon + ' Bandingkan + preview ' + (CMP_PLAT[saved.cmpPlatform] || CMP_PLAT.instagram).name, onclick: () => runCompare(false) });
   cmpCard.append(el('div', { class: 'row', style: 'margin-top:14px; flex-wrap:wrap;' }, [
-    el('button', { class: 'primary', textContent: '📸 Bandingkan + preview IG', onclick: () => runCompare(false) }),
+    btnCompare,
     el('button', { textContent: '🔍 Analisis pola otomatis', onclick: () => runCompare(true) }),
     el('button', { textContent: '✨ Isi ulang saran', onclick: () => regen() }),
-    saved.comps.length < 3 ? el('button', { textContent: '＋ Tambah kompetitor', onclick: () => { saved.comps.push({ handle: '', raw: '' }); persist(); drawComps(); } }) : null,
+    saved.comps.length < MAX_COMP ? el('button', { textContent: '＋ Tambah kompetitor', onclick: () => { saved.comps.push({ handle: '', raw: '' }); persist(); drawComps(); } }) : null,
   ]));
   body.append(cmpCard);
   body.append(cmpOut);
@@ -3726,6 +4744,60 @@ function igEmbedCard(handle) {
   wrap.append(el('div', { class: 'tiny', style: 'padding:8px 12px 10px; opacity:.75;', textContent: 'Preview asli dari Instagram (butuh internet). Kalau kosong, handle-nya mungkin keliru, private, atau IG minta login.' }));
   return wrap;
 }
+// preview VIDEO TERBARU channel YouTube (embed resmi youtube.com/embed/<videoId>) — videoId dari Backend Riset
+function ytEmbedCard(handle, data) {
+  const clean = String(handle).replace(/^@+/, '').trim();
+  const chUrl = 'https://www.youtube.com/@' + encodeURIComponent(clean);
+  const wrap = el('div', { class: 'igembed' });
+  wrap.append(el('div', { class: 'igembed-head' }, [
+    el('a', { class: 'iglink', href: chUrl, target: '_blank', rel: 'noopener noreferrer', style: 'font-size:15px;', textContent: '@' + clean }),
+    el('a', { class: 'igembed-open', href: chUrl, target: '_blank', rel: 'noopener noreferrer', textContent: 'Buka channel ↗' }),
+  ]));
+  const vid = data && Array.isArray(data.posts) && data.posts.find(p => p.shortcode);
+  if (vid) {
+    const fr = el('iframe', { src: 'https://www.youtube.com/embed/' + encodeURIComponent(vid.shortcode), loading: 'lazy', title: 'YouTube @' + clean, frameborder: '0' });
+    fr.setAttribute('allow', 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    fr.setAttribute('allowfullscreen', '');
+    wrap.append(el('div', { class: 'igembed-frame yt' }, fr));
+    wrap.append(el('div', { class: 'tiny', style: 'padding:8px 12px 10px; opacity:.75;', textContent: 'Video terbaru' + (data.followers ? ' · ' + fmtCount(data.followers) + ' subscriber' : '') + (vid.title ? ' — ' + String(vid.title).slice(0, 50) : '') }));
+  } else {
+    wrap.append(el('div', { class: 'hint', style: 'margin:10px 12px;', html: 'Aktifkan <b>Backend Riset</b> (⚙️) lalu Bandingkan lagi → video terbaru channel tampil di sini. Sementara, <a class="iglink" href="' + chUrl + '" target="_blank" rel="noopener">buka channel ↗</a>.' }));
+  }
+  return wrap;
+}
+// muat script embed resmi TikTok (re-inject supaya blockquote yang baru ikut diproses)
+function loadTiktokEmbed() {
+  const old = document.getElementById('ttembedjs'); if (old) old.remove();
+  document.body.append(el('script', { id: 'ttembedjs', src: 'https://www.tiktok.com/embed.js', async: true }));
+}
+// preview PROFIL TikTok (embed resmi "creator") + stats agregat sebagai fallback yang selalu berguna
+function ttEmbedCard(handle, data) {
+  const clean = String(handle).replace(/^@+/, '').trim();
+  const ttUrl = 'https://www.tiktok.com/@' + encodeURIComponent(clean);
+  const wrap = el('div', { class: 'igembed' });
+  wrap.append(el('div', { class: 'igembed-head' }, [
+    el('a', { class: 'iglink', href: ttUrl, target: '_blank', rel: 'noopener noreferrer', style: 'font-size:15px;', textContent: '@' + clean }),
+    el('a', { class: 'igembed-open', href: ttUrl, target: '_blank', rel: 'noopener noreferrer', textContent: 'Buka di TikTok ↗' }),
+  ]));
+  // stats agregat (kalau backend udah narik) — selalu berguna walau embed gagal muat
+  if (data && (data.followers || data.totalLikes || data.videoCount)) {
+    wrap.append(el('div', { class: 'tiny', style: 'padding:8px 12px; font-weight:600;', textContent: [data.followers ? fmtCount(data.followers) + ' followers' : '', data.totalLikes ? fmtCount(data.totalLikes) + ' likes' : '', data.videoCount ? fmtCount(data.videoCount) + ' video' : ''].filter(Boolean).join(' · ') }));
+  }
+  // embed resmi creator TikTok
+  const bq = el('blockquote', { class: 'tiktok-embed', cite: ttUrl, style: 'max-width:100%; min-width:280px; margin:0;' });
+  bq.setAttribute('data-unique-id', clean); bq.setAttribute('data-embed-type', 'creator');
+  bq.append(el('section', {}, el('a', { href: ttUrl, target: '_blank', rel: 'noopener noreferrer', textContent: '@' + clean })));
+  wrap.append(el('div', { style: 'padding:4px 12px;' }, bq));
+  loadTiktokEmbed();
+  wrap.append(el('div', { class: 'tiny', style: 'padding:2px 12px 10px; opacity:.7;', textContent: 'Preview profil TikTok (butuh internet). Kalau nggak muncul, klik "Buka di TikTok".' }));
+  return wrap;
+}
+// preview kompetitor sesuai platform terpilih
+function previewCard(handle, platform, data) {
+  if (platform === 'youtube') return ytEmbedCard(handle, data);
+  if (platform === 'tiktok') return ttEmbedCard(handle, data);
+  return igEmbedCard(handle);
+}
 // CARI KOMPETITOR: link cari resmi Instagram (hashtag niche + kata kunci) dari profil brand.
 // Bukan scraping — buka pencarian IG sendiri di tab baru (kamu login) → intip akun nyata → salin handle-nya.
 function igSearchLinks(c, extra) {
@@ -3803,7 +4875,7 @@ function renderCompare(d, c) {
   card.append(el('div', { class: 'verdict' }, [
     wins.length ? el('div', {}, [el('b', { textContent: '🏆 Kamu unggul: ' }), document.createTextNode(wins.join(', '))]) : null,
     losses.length ? el('div', {}, [el('b', { textContent: '🎯 Perlu dikejar: ' }), document.createTextNode(losses.join(', '))]) : null,
-    el('div', { class: 'tiny', style: 'margin-top:4px;', textContent: '▲/▼ = kolom kamu dibanding ' + vs + '.' + (d.competitors.some(cp => cp.archetype) ? ' Kompetitor di sini = POLA niche, bukan akun asli — tempel caption asli mereka buat angka nyata.' : '') }),
+    el('div', { class: 'tiny', style: 'margin-top:4px;', textContent: '▲/▼ = kolom kamu dibanding ' + vs + '.' + (d.competitors.some(cp => cp.archetype) ? ' Kompetitor di sini = POLA niche, bukan akun asli — isi @handle asli mereka buat preview & angka nyata.' : '') }),
   ].filter(Boolean)));
   if (d.mineAuto) card.append(el('div', { class: 'hint', style: 'margin-top:8px;', textContent: 'Kolom "kamu" diisi otomatis dari contoh konten ProdPilot untuk brand-mu (jadi patokan target). Mau pakai data akun aslimu? Tempel caption-mu di kotak "Caption akunmu" di Review Akun, terus bandingkan lagi.' }));
   d.competitors.forEach((cp) => {
@@ -3813,22 +4885,24 @@ function renderCompare(d, c) {
       ? el('b', { style: 'font-size:16px;', textContent: cp.handle })
       : igHandleLink(cp.handle, 'font-size:16px;');
     card.append(el('div', { class: 'row between' }, [head, el('span', { class: 'chip', textContent: cp.n + ' post · skor ' + cp.overall })]));
-    if (!cp.archetype) card.append(igEmbedCard(cp.handle)); // preview IG ASLI untuk handle beneran
+    if (!cp.archetype) card.append(previewCard(cp.handle, d.platform || 'instagram', (d.fetched || {})[String(cp.handle).replace(/^@+/, '').trim().toLowerCase()])); // preview asli sesuai platform
     card.append(el('div', { class: 'tiny', style: 'margin-top:10px;', textContent: 'Pola hook mereka: ' + cp.hook_patterns.join(' · ') }));
     const ul1 = el('ul', { class: 'clean good' }); cp.tiru_adaptasi.forEach(t => ul1.append(el('li', { textContent: 'Tiru-adaptasi: ' + t }))); card.append(ul1);
     const ul2 = el('ul', { class: 'clean bad' }); cp.kelemahan.forEach(t => ul2.append(el('li', { textContent: t }))); card.append(ul2);
   });
-  // ── PREVIEW IG ASLI dari handle yang kamu masukin (embed resmi Instagram) ──
+  // ── PREVIEW ASLI dari handle yang kamu masukin (embed resmi sesuai platform) ──
+  const plat = d.platform || 'instagram';
+  const PLABEL = { instagram: { i: '📸', n: 'Instagram', what: 'Profil & feed asli langsung dari Instagram' }, tiktok: { i: '🎵', n: 'TikTok', what: 'Profil & video terbaru langsung dari TikTok' }, youtube: { i: '▶️', n: 'YouTube', what: 'Video terbaru channel langsung dari YouTube' } }[plat];
   card.append(el('div', { class: 'divider' }));
-  card.append(el('b', { style: 'display:block;', textContent: '📸 Preview Instagram kompetitor (asli)' }));
+  card.append(el('b', { style: 'display:block;', textContent: PLABEL.i + ' Preview ' + PLABEL.n + ' kompetitor (asli)' }));
   if (d.realHandles && d.realHandles.length) {
-    card.append(el('div', { class: 'tiny', style: 'margin:4px 0 10px;', textContent: 'Profil & feed asli langsung dari Instagram — bukan gambar buatan.' }));
+    card.append(el('div', { class: 'tiny', style: 'margin:4px 0 10px;', textContent: PLABEL.what + ' — bukan gambar buatan.' }));
     const grid = el('div', { class: 'igembed-grid' });
-    d.realHandles.forEach(h => grid.append(igEmbedCard(h)));
+    d.realHandles.forEach(h => grid.append(previewCard(h, plat, (d.fetched || {})[String(h).replace(/^@+/, '').trim().toLowerCase()])));
     card.append(grid);
   } else {
-    card.append(el('div', { class: 'hint', style: 'margin-top:4px; margin-bottom:12px;', html: 'Belum ada handle. Cari kompetitor aslimu lewat pencarian Instagram di bawah → salin @handle-nya → tempel di kolom kompetitor → bandingkan lagi. Feed aslinya bakal tampil di sini.' }));
-    card.append(renderIgSearchPanel(c));
+    card.append(el('div', { class: 'hint', style: 'margin-top:4px; margin-bottom:12px;', html: 'Belum ada handle. Isi @handle kompetitor ' + PLABEL.n + ' aslimu di kolom kompetitor → bandingkan lagi. Preview aslinya bakal tampil di sini.' }));
+    if (plat === 'instagram') card.append(renderIgSearchPanel(c));
   }
   if (d.gaps.length) {
     card.append(el('b', { style: 'display:block; margin-top:18px;', textContent: '🕳️ Celah yang belum digarap siapa pun:' }));
@@ -3843,6 +4917,7 @@ function renderCompare(d, c) {
   card.append(hb);
   card.append(el('b', { style: 'display:block; margin-top:18px;', textContent: '🎯 5 langkah buat menang:' }));
   const ai = el('ul', { class: 'clean num' }); d.action_ideas.forEach(a => ai.append(el('li', { textContent: a }))); card.append(ai);
+  { const pt = renderProfileTraining(c, d); if (pt) card.append(pt); }
   card.append(learnBox(d.learning_note));
   return card;
 }
@@ -3864,10 +4939,11 @@ function renderProfil(body, c) {
     ['🎯 Pembeli', ['buyer', 'painpoint', 'desire'], 'pembeli'],
     ['🗣️ Gaya bicara', ['tone', 'sapaan', 'emoji', 'signature', 'forbidden', 'brandGuide'], 'gaya'],
     ['📣 Tujuan & promo', ['goal', 'cta', 'promo'], 'tujuan'],
+    ['🧱 Pilar konten', ['pillars'], 'pilar'],
     ['🛡️ Aturan aman', ['forbiddenClaims', 'certifications'], 'aman'],
-    ['🔭 Sosmed & saingan', ['social', 'comp1', 'comp2', 'comp3'], 'saingan'],
+    ['🔭 Sosmed & saingan', ['social', ...COMP_KEYS], 'saingan'],
   ];
-  const LABELS = { products: 'Andalan', price: 'Harga', usp: 'Pembeda', proof: 'Bukti', buyer: 'Pembeli', painpoint: 'Masalah mereka', desire: 'Impian mereka', tone: 'Nada', sapaan: 'Sapaan', emoji: 'Emoji', signature: 'Frasa khas', forbidden: 'Kata terlarang', brandGuide: 'Brand guideline', goal: 'Tujuan', cta: 'CTA', promo: 'Promo', forbiddenClaims: 'Klaim dilarang', certifications: 'Sertifikasi', social: 'IG', comp1: 'Kompetitor 1', comp2: 'Kompetitor 2', comp3: 'Kompetitor 3' };
+  const LABELS = { products: 'Andalan', price: 'Harga', usp: 'Pembeda', proof: 'Bukti', buyer: 'Pembeli', painpoint: 'Masalah mereka', desire: 'Impian mereka', tone: 'Nada', sapaan: 'Sapaan', emoji: 'Emoji', signature: 'Frasa khas', forbidden: 'Kata terlarang', brandGuide: 'Brand guideline', goal: 'Tujuan', cta: 'CTA', promo: 'Promo', pillars: 'Pilar konten', forbiddenClaims: 'Klaim dilarang', certifications: 'Sertifikasi', social: 'IG', ...Object.fromEntries(COMP_KEYS.map((k, i) => [k, 'Kompetitor ' + (i + 1)])) };
   const fmtVal = k => k === 'brandGuide' ? ('📄 ' + (c.brandGuideName || 'PDF') + ' (' + String(c.brandGuide).length + ' karakter)') : (Array.isArray(c[k]) ? c[k].join(' · ') : String(c[k]));
   groups.forEach(([title, keys, stepId]) => {
     const filled = keys.filter(k => c[k] && String(c[k]).trim());
@@ -3911,14 +4987,75 @@ function refreshModeBadge() {
   }
 }
 // buka dialog setelan AI (isi field dari storage)
+const DEFAULT_RISET_API = 'http://localhost:4000'; // default backend apps/api
+// kandidat URL server yang dicoba saat "Deteksi server"
+const RISET_API_CANDIDATES = ['http://localhost:4000', 'http://127.0.0.1:4000', 'http://localhost:3001', 'http://localhost:4055', 'http://localhost:8080'];
+// cek satu URL: server hidup kalau fetch-nya nyampai (respons apa pun, termasuk 404) sebelum timeout
+async function probeRisetServer(base, ms) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms || 1500);
+  try { await fetch(base.replace(/\/+$/, '') + '/api/v1', { signal: ctl.signal, mode: 'cors' }); return true; }
+  catch (e) { return e && e.name === 'AbortError' ? false : false; } // connection refused / abort → mati
+  finally { clearTimeout(t); }
+}
+// coba semua kandidat berurutan, balikin URL pertama yang hidup ('' kalau tak ada)
+async function detectRisetServer() {
+  for (const base of RISET_API_CANDIDATES) { if (await probeRisetServer(base, 1400)) return base; }
+  return '';
+}
+// isi dropdown model sesuai nilai tersimpan; ubah dropdown → tulis ke input manual
+function syncModelPick() {
+  const pick = $('#inpModelPick'), inp = $('#inpModel'); if (!pick || !inp) return;
+  const has = [...pick.options].some(o => o.value === inp.value);
+  pick.value = has ? inp.value : '';
+  pick.onchange = () => { if (pick.value) inp.value = pick.value; };
+}
+// tampilkan saran handle kompetitor dari brand yang lagi dibuka + tombol isi otomatis ke profilnya
+function renderSettingsCompetitors() {
+  const box = $('#cmpAutoBox'); if (!box) return;
+  const c = (typeof currentId !== 'undefined' && currentId) ? getClient(currentId) : null;
+  box.innerHTML = '';
+  if (!c) { box.className = 'hint'; box.textContent = 'Buka salah satu brand dulu, lalu buka Setting ini — kami tampilkan saran @handle kompetitor asli yang cocok sama jasa/produkmu, tinggal klik isi otomatis.'; return; }
+  box.className = '';
+  const cur = compsOf(c);
+  const sug = suggestCompetitors(c).slice(0, MAX_COMP);
+  box.append(el('div', { class: 'tiny', style: 'margin-bottom:6px;', html: 'Brand aktif: <b>' + (c.name || '?') + '</b>' }));
+  box.append(el('div', { class: 'tiny', style: 'margin-bottom:6px;', html: cur.length ? 'Sekarang: ' + cur.map(h => h.replace(/^@?/, '@')).join(', ') : '<i>Belum ada kompetitor terisi.</i>' }));
+  if (sug.length) {
+    box.append(el('div', { class: 'pills', style: 'margin-bottom:8px;' }, sug.map(h => el('span', { class: 'pill on', textContent: h.replace(/^@?/, '@') }))));
+    box.append(el('button', { class: 'primary', type: 'button', textContent: '✨ Isi otomatis dari profil brand', onclick: () => {
+      setComps(c, sug);
+      saveClient(c); renderSettingsCompetitors(); toast('Handle kompetitor terisi otomatis ✓', 'ok');
+    } }));
+  } else {
+    box.append(el('div', { class: 'hint', textContent: 'Belum ada akun yang pas otomatis buat niche ini. Isi manual @handle-nya di tab Riset brand.' }));
+  }
+}
 function openSettings() {
   $('#inpKey').value = aiKey();
   $('#inpSpeed').value = aiSpeed();
   $('#inpModel').value = aiModelManual();
   $('#inpImgKey').value = (store.get('ce3_imgkey', '') || '');
   $('#inpImgModel').value = imgModel();
+  // backend: pakai nilai tersimpan, kosong → prefill default biar tinggal simpan
+  $('#inpRisetApi').value = (store.get('ce3_risetapi', '') || '') || DEFAULT_RISET_API;
+  // token cross-post
+  const pc = pubCreds();
+  $('#inpMetaToken').value = pc.metaToken || '';
+  $('#inpIgUserId').value = pc.igUserId || '';
+  $('#inpFbPageId').value = pc.fbPageId || '';
+  $('#inpTiktokToken').value = pc.tiktokToken || '';
+  syncModelPick();
+  renderSettingsCompetitors();
   const dlg = $('#dlgSettings'); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
 }
+// tombol deteksi server backend otomatis (elemen sudah ada di markup dialog)
+$('#btnDetectApi').onclick = async () => {
+  const b = $('#btnDetectApi'); b.disabled = true; const t0 = b.textContent; b.textContent = '⏳ mencari…';
+  const found = await detectRisetServer();
+  if (found) { $('#inpRisetApi').value = found; toast('Server ketemu: ' + found + ' ✓', 'ok'); }
+  else toast('Server nggak ketemu. Jalankan: npm run dev -w @prodpilot/api', 'err');
+  b.disabled = false; b.textContent = t0;
+};
 // tutup dialog setelan
 function closeSettings() { const dlg = $('#dlgSettings'); if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
 $('#btnSettings').onclick = openSettings;
@@ -3929,6 +5066,13 @@ $('#btnSaveSettings').onclick = () => {
   store.set('ce3_model', $('#inpModel').value.trim());
   store.set('ce3_imgkey', $('#inpImgKey').value.trim());
   store.set('ce3_imgmodel', $('#inpImgModel').value);
+  store.set('ce3_risetapi', $('#inpRisetApi').value.trim().replace(/\/+$/, ''));
+  savePubCreds({
+    metaToken: $('#inpMetaToken').value.trim(),
+    igUserId: $('#inpIgUserId').value.trim(),
+    fbPageId: $('#inpFbPageId').value.trim(),
+    tiktokToken: $('#inpTiktokToken').value.trim(),
+  });
   refreshModeBadge();
   closeSettings();
   const bits = [hasAI() ? '🤖 AI teks: ' + aiResolvedModel() : '⚡ teks lokal'];

@@ -10,6 +10,7 @@ import { InsightsModule } from './insights/insights.module';
 import { JobsModule } from './jobs/jobs.module';
 import { OrgModule } from './org/org.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { PublishModule } from './publish/publish.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module';
     JobsModule,
     GenerateModule,
     InsightsModule,
+    PublishModule,
   ],
   controllers: [HealthController],
 })

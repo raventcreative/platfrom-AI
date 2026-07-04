@@ -1,4 +1,5 @@
 import { Controller, Get, HttpException, Param } from '@nestjs/common';
+import { engagementStats } from './engagement';
 import { computeStats, scrapeIgProfile } from './ig-scraper';
 
 /**
@@ -9,12 +10,17 @@ import { computeStats, scrapeIgProfile } from './ig-scraper';
  */
 @Controller('ig')
 export class IgController {
-  // GET /ig/:handle — profil + statistik + post terbaru (data publik).
+  // GET /ig/:handle — profil + statistik + engagement (total view/likes, ER, konten viral).
   @Get(':handle')
   async profile(@Param('handle') handle: string) {
     try {
       const p = await scrapeIgProfile(handle);
-      return { ...p, stats: computeStats(p) };
+      return {
+        ...p,
+        platform: 'instagram',
+        stats: computeStats(p),
+        engagement: engagementStats(p.followers ?? 0, p.posts),
+      };
     } catch (e) {
       // 502: sumber eksternal gagal (rate-limit, akun privat/tak ada, dst).
       throw new HttpException(String((e as Error).message ?? e), 502);
