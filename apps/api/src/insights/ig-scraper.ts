@@ -6,6 +6,8 @@
  * supaya UI bisa menampilkan fallback yang ramah.
  */
 
+import { parseHumanCount } from './youtube-scraper';
+
 export type IgScrapedPost = {
   shortcode: string;
   type: 'carousel' | 'video' | 'image';
@@ -25,37 +27,76 @@ export type IgScrapedProfile = {
   postCount: number | null;
   isPrivate: boolean;
   posts: IgScrapedPost[];
+  note?: string; // catatan (mis. dari fallback / akun privat)
+  partial?: boolean; // true = cuma agregat (followers), angka per-post tak terbaca
 };
 
-export async function scrapeIgProfile(handle: string): Promise<IgScrapedProfile> {
-  const username = handle.replace(/^@/, '').trim().toLowerCase();
-  if (!username) throw new Error('Handle IG kosong.');
+/** Bersihkan input jadi username IG bersih: buang URL, @, query, slash, spasi. */
+export function cleanIgHandle(handle: string): string {
+  let s = String(handle || '').trim();
+  s = s.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+  s = s.replace(/^instagram\.com\//i, '');
+  s = s.replace(/[?#].*$/, ''); // buang query/hash
+  s = s.replace(/^@+/, '').replace(/\/+$/, '');
+  s = s.split('/')[0]; // ambil segmen pertama (buang /reels, /tagged, dst)
+  return s.trim().toLowerCase();
+}
 
+/** Ambil followers/following/postCount dari og:description IG (fallback logged-out, jalan utk akun privat). */
+export function parseIgOgDescription(
+  html: string,
+): { followers: number | null; following: number | null; postCount: number | null } | null {
+  const m =
+    html.match(/property=["']og:description["'][^>]*content=["']([^"']+)["']/i) ||
+    html.match(/content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
+  if (!m) return null;
+  const txt = m[1];
+  const grab = (re: RegExp): number | null => {
+    const x = txt.match(re);
+    return x ? parseHumanCount(x[1]) : null;
+  };
+  const followers = grab(/([\d.,]+\s*[kmb]?)\s*(?:followers|pengikut)/i);
+  const following = grab(/([\d.,]+\s*[kmb]?)\s*(?:following|mengikuti|diikuti)/i);
+  const postCount = grab(/([\d.,]+\s*[kmb]?)\s*(?:posts|kiriman|postingan)/i);
+  if (followers == null && following == null && postCount == null) return null;
+  return { followers, following, postCount };
+}
+
+// STRATEGI 1: endpoint web_profile_info — data lengkap (followers + per-post likes/komen/views).
+async function scrapeIgViaApi(username: string): Promise<IgScrapedProfile> {
   const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      headers: {
-        'x-ig-app-id': '936619743392459', // app-id web publik IG
-        'user-agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
-        accept: '*/*',
-        'accept-language': 'en-US,en;q=0.9',
-        'x-requested-with': 'XMLHttpRequest',
-        'sec-fetch-site': 'same-origin',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-dest': 'empty',
-        referer: `https://www.instagram.com/${username}/`,
-        origin: 'https://www.instagram.com',
-      },
-    });
-  } catch (e) {
-    throw new Error(`Gagal menghubungi Instagram: ${String(e).slice(0, 120)}`);
+  const headers = {
+    'x-ig-app-id': '936619743392459', // app-id web publik IG
+    'user-agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+    accept: '*/*',
+    'accept-language': 'en-US,en;q=0.9',
+    'x-requested-with': 'XMLHttpRequest',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-dest': 'empty',
+    referer: `https://www.instagram.com/${username}/`,
+    origin: 'https://www.instagram.com',
+  };
+  // IG sering rate-limit sesaat → coba maks 2x dengan jeda, retry HANYA untuk status transient (429/5xx).
+  let res: Response | undefined;
+  let lastErr = '';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 1200));
+    try {
+      res = await fetch(url, { headers });
+    } catch (e) {
+      lastErr = `Gagal menghubungi Instagram: ${String(e).slice(0, 100)}`;
+      continue; // error jaringan → retry
+    }
+    if (res.status === 404) throw new Error(`Akun @${username} tidak ditemukan.`);
+    if (res.ok) break;
+    lastErr = `Instagram membalas ${res.status}`;
+    if (![429, 500, 502, 503, 504].includes(res.status)) break; // 401/403 = blok tegas → stop
   }
-  if (res.status === 404) throw new Error(`Akun @${username} tidak ditemukan.`);
-  if (!res.ok) {
+  if (!res || !res.ok) {
     throw new Error(
-      `Instagram membalas ${res.status} — kemungkinan rate-limit/diblok sementara. Coba lagi 1-2 menit.`,
+      `${lastErr || 'Instagram tidak merespons'} — kemungkinan rate-limit/diblok sementara oleh Instagram (umum untuk scrape dari server). Coba lagi 1-2 menit, atau isi angka manual.`,
     );
   }
 
@@ -98,6 +139,79 @@ export async function scrapeIgProfile(handle: string): Promise<IgScrapedProfile>
     isPrivate: Boolean(u.is_private),
     posts,
   };
+}
+
+// STRATEGI 2 (fallback): baca HTML profil → og:description. Hanya AGREGAT (followers/following/
+// jumlah post), tanpa per-post — tapi jalan walau API diblok & untuk akun privat. UA "facebookexternalhit"
+// bikin IG menyajikan meta tag preview dengan bersih.
+async function scrapeIgViaHtml(username: string): Promise<IgScrapedProfile> {
+  const url = `https://www.instagram.com/${encodeURIComponent(username)}/`;
+  let res: Response | undefined;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 1000));
+    try {
+      res = await fetch(url, {
+        headers: {
+          'user-agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+          'accept-language': 'en-US,en;q=0.9',
+        },
+      });
+    } catch {
+      continue;
+    }
+    if (res.ok) break;
+  }
+  if (!res || !res.ok) throw new Error(`halaman IG membalas ${res ? res.status : 'timeout'}`);
+  const html = await res.text();
+  const og = parseIgOgDescription(html);
+  if (!og || og.followers == null) throw new Error('data profil tak ada di halaman (login wall).');
+  return {
+    username,
+    fullName: '',
+    biography: '',
+    followers: og.followers,
+    following: og.following,
+    postCount: og.postCount,
+    isPrivate: false,
+    posts: [],
+    partial: true,
+    note: 'Angka per-post IG lagi nggak bisa ditarik otomatis (API diblok / akun privat). Followers udah keisi — isi like/komen/view manual buat hitung ER & konten viral.',
+  };
+}
+
+// Orchestrator: coba API dulu (lengkap), gagal → fallback HTML (agregat). Dua-duanya gagal → error jelas.
+export async function scrapeIgProfile(handle: string): Promise<IgScrapedProfile> {
+  const username = cleanIgHandle(handle);
+  if (!username) throw new Error('Handle IG kosong.');
+  try {
+    const full = await scrapeIgViaApi(username);
+    // API sukses tapi post kosong (akun privat / IG sembunyiin) → lengkapi followers dari HTML kalau perlu
+    if (!full.posts.length) {
+      full.partial = true;
+      if (full.followers == null) {
+        try {
+          const alt = await scrapeIgViaHtml(username);
+          full.followers = full.followers ?? alt.followers;
+          full.following = full.following ?? alt.following;
+          full.postCount = full.postCount ?? alt.postCount;
+        } catch {
+          /* biarkan; tetap balikin data API seadanya */
+        }
+      }
+      full.note =
+        full.note ||
+        'Angka per-post IG nggak kebaca (akun privat / dibatasi). Followers ada — isi like/komen/view manual buat ER & konten viral.';
+    }
+    return full;
+  } catch (apiErr) {
+    try {
+      return await scrapeIgViaHtml(username); // fallback: minimal followers kebaca
+    } catch {
+      throw new Error(
+        `${String((apiErr as Error).message || apiErr)} — kemungkinan rate-limit/diblok Instagram atau akun privat. Coba lagi 1-2 menit, cek ejaan @handle, atau isi angka manual.`,
+      );
+    }
+  }
 }
 
 /** Statistik deterministik dari post terbaru — dihitung di kode, bukan oleh AI. */

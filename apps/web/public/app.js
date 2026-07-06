@@ -4,17 +4,196 @@ const $ = s => document.querySelector(s); // selektor pendek
 // pembuat elemen DOM ringkas: set props/atribut/event + sisipkan anak
 const el = (tag, props = {}, kids = []) => {
   const n = document.createElement(tag);
+  let pendingEmojiText = null; // teks textContent yang mungkin diawali emoji → dicek jadi ikon
+  let pendingHtmlSweep = false; // html chrome → sapu emoji di tengah teks jadi ikon
   for (const [k, v] of Object.entries(props)) {
     if (v == null) continue;
     if (k === 'class') n.className = v;
-    else if (k === 'html') n.innerHTML = v;
+    else if (k === 'html') { n.innerHTML = v; pendingHtmlSweep = true; }
+    else if (k === 'textContent' && typeof v === 'string' && typeof EMOJI_TEST !== 'undefined' && EMOJI_TEST.test(v)) { n.textContent = v; pendingEmojiText = v; }
     else if (k.startsWith('on')) n[k] = v;
     else if (k in n) { try { n[k] = v; } catch (e) { n.setAttribute(k, v); } }
     else n.setAttribute(k, v);
   }
+  // emoji di textContent → ikon garis (leading & mid). Kelas 'e' = ikon besar (pakai leadingEmojiToIcon).
+  if (pendingEmojiText != null && tag !== 'textarea' && tag !== 'input' && tag !== 'option') {
+    if (n.className === 'e' && typeof leadingEmojiToIcon === 'function') leadingEmojiToIcon(n, pendingEmojiText, 'e');
+    else if (typeof iconifyStatic === 'function' && !RAW_EMOJI_CLASS.has(n.className || '')) iconifyStatic(n);
+  }
+  // sapu emoji di dalam string html UI (hint dsb) → ikon; kecuali kelas konten mentah
+  else if (pendingHtmlSweep && typeof iconifyStatic === 'function' && !RAW_EMOJI_CLASS.has(n.className || ''))
+    iconifyStatic(n);
   for (const c of (Array.isArray(kids) ? kids : [kids])) if (c != null) n.append(c);
   return n;
 };
+
+/* ═══════════ SISTEM IKON GARIS (SVG) ═══════════
+   Ganti emoji di UI dengan ikon garis konsisten (stroke currentColor, gaya Lucide).
+   Emoji cuma dipertahankan di dalam konten yang di-generate (caption sosmed). */
+const ICONS = {
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
+  chart: '<path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6" rx="1"/><rect x="12.5" y="7" width="3" height="10" rx="1"/><rect x="18" y="13" width="3" height="4" rx="1"/>',
+  trending: '<path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/>',
+  sparkles: '<path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8Z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1A2 2 0 1 1 7 3.6l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/>',
+  camera: '<path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4Z"/><circle cx="12" cy="13" r="3.2"/>',
+  flame: '<path d="M12 3s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 1-3 .5 1.5 1.5 2 1.5 2S8.5 7 12 3Z"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/>',
+  flask: '<path d="M9 3h6"/><path d="M10 3v6L5 19a1.5 1.5 0 0 0 1.3 2.3h11.4A1.5 1.5 0 0 0 19 19l-5-10V3"/><path d="M7.5 15h9"/>',
+  music: '<circle cx="6" cy="18" r="2.6"/><circle cx="17" cy="16" r="2.6"/><path d="M8.6 18V6l11-2v12"/>',
+  palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1 .8-1.8 1.8-1.8H16a5 5 0 0 0 5-5c0-3.9-4-6.7-9-6.7Z"/><circle cx="7.5" cy="12" r="1"/><circle cx="10" cy="8" r="1"/><circle cx="15" cy="8" r="1"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  trash: '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/><path d="M10 11v6M14 11v6"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  megaphone: '<path d="M3 11v2a1 1 0 0 0 1 1h2l7 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M17 8a4 4 0 0 1 0 8"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.6"/><path d="m21 15-5-5L5 21"/>',
+  clipboard: '<rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  zap: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
+  rocket: '<path d="M5 15c-1 1-1.5 4-1.5 4S6 18.5 7 17.5m5.5-9.5a9 9 0 0 1 7-3s.5 5-3 7l-4 3H8l3-4Z"/><circle cx="15" cy="9" r="1.3"/>',
+  bulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/>',
+  dice: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/>',
+  hook: '<path d="M12 3v9a4 4 0 0 1-8 0"/><circle cx="12" cy="3" r="1.4"/>',
+  swords: '<path d="M14 3h6v6"/><path d="M20 3 9 14"/><path d="m5 21 4-4"/><path d="M4 3h4l9 9-4 4L4 7Z"/>',
+  pin: '<path d="M12 21s6-5.3 6-10a6 6 0 0 0-12 0c0 4.7 6 10 6 10Z"/><circle cx="12" cy="11" r="2.2"/>',
+  film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M16 4v16M3 9h5M16 9h5M3 15h5M16 15h5"/>',
+  stethoscope: '<path d="M5 3v5a4 4 0 0 0 8 0V3"/><path d="M9 16v1a4 4 0 0 0 8 0v-2"/><circle cx="18" cy="12" r="2.4"/>',
+  bot: '<rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M12 4v4M9 13h.01M15 13h.01"/><circle cx="12" cy="4" r="1.3"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  arrowDown: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  pen: '<path d="M12 19l7-7a2.1 2.1 0 0 0-3-3l-7 7-1 4 4-1Z"/><path d="M15 6l3 3"/>',
+  shield: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6Z"/><path d="m9 12 2 2 4-4"/>',
+  speech: '<path d="M21 12a8 8 0 0 1-11.4 7.2L4 20l1-4.8A8 8 0 1 1 21 12Z"/>',
+  calendar: '<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/>',
+  video: '<rect x="2.5" y="6" width="13" height="12" rx="2"/><path d="m16 10 5.5-3v10L16 14Z"/>',
+  carousel: '<rect x="8" y="5" width="8" height="14" rx="1.5"/><path d="M5.5 7.5v9M2.5 9.5v5M18.5 7.5v9M21.5 9.5v5"/>',
+  grad: '<path d="M2 9l10-4 10 4-10 4Z"/><path d="M6 11v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/>',
+  star: '<path d="m12 3 2.7 5.9 6.3.7-4.7 4.3 1.3 6.2L12 17.8 6.1 20.4l1.3-6.2L2.7 9.6l6.3-.7Z"/>',
+  heart: '<path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10Z"/>',
+  play: '<path d="M7 4v16l13-8Z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  download: '<path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
+  link: '<path d="M9 15l6-6"/><path d="M11 6.5 13 5a4 4 0 0 1 6 6l-1.5 1.5"/><path d="M13 17.5 11 19a4 4 0 0 1-6-6l1.5-1.5"/>',
+  message: '<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8l-4 4V6a1 1 0 0 1 1-1Z"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6M17.5 20a5.5 5.5 0 0 0-2.5-4.6"/>',
+  trophy: '<path d="M7 4h10v4a5 5 0 0 1-10 0Z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 13v4M9 21h6M10 17h4"/>',
+  gap: '<circle cx="12" cy="12" r="8.5" stroke-dasharray="3 3"/>',
+  telescope: '<path d="m4 14 12-4 1.5 4-12 4Z"/><path d="m14.5 8.5 3-4 3 1.5-2 4Z"/><path d="M8 16v4M8 20l-2 1M8 20l2 1"/>',
+  bottle: '<path d="M10 2h4v3l1 2v13a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V7l1-2Z"/><path d="M9 12h6"/>',
+  bowl: '<path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M12 3c2 0 3 1.5 3 3M9 6c0-1.5 1-3 3-3"/>',
+  shirt: '<path d="M8 3 4 6l2 3 2-1.5V21h8V7.5L18 9l2-3-4-3-2 2h-4Z"/>',
+  tool: '<path d="M14.5 6a3.5 3.5 0 0 0-4.7 4.3L4 16.1V20h3.9l5.8-5.8A3.5 3.5 0 0 0 18 9.5l-2.4 2.4-2.5-2.5L15.5 7Z"/>',
+  book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22.5Z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>',
+  box: '<path d="m3 8 9-5 9 5v8l-9 5-9-5Z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  layers: '<path d="m12 3 9 5-9 5-9-5Z"/><path d="m3 13 9 5 9-5"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5Z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  home: '<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  lock: '<rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  wand: '<path d="m4 20 12-12"/><path d="M15 5.5 18.5 9M6 3v3M4.5 4.5h3M18 14v3M16.5 15.5h3"/>',
+  tag: '<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-8 8Z"/><circle cx="7.5" cy="7.5" r="1.3"/>',
+  gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8v13"/><path d="M12 8S10.5 3 8 4.5 9.5 8 12 8Zm0 0s1.5-5 4-3.5S14.5 8 12 8Z"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.2-8.2M17 6l2 2M14 9l2 2"/>',
+  brain: '<path d="M9.5 4a2.5 2.5 0 0 0-2.5 2.5A2.5 2.5 0 0 0 5 9a2.5 2.5 0 0 0 1 5v1.5a2.5 2.5 0 0 0 3.5 2.3V4Z"/><path d="M14.5 4A2.5 2.5 0 0 1 17 6.5 2.5 2.5 0 0 1 19 9a2.5 2.5 0 0 1-1 5v1.5a2.5 2.5 0 0 1-3.5 2.3V4Z"/>',
+  ban: '<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
+  hash: '<path d="M9 4 7 20M17 4l-2 16M5 9h15M4 15h15"/>',
+  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
+  user: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.5 2.5 0 0 1 4.8.8c0 1.7-2.3 2-2.3 3.5"/><path d="M12 17h.01"/>',
+  money: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9v.01M18 15v.01"/>',
+  rainbow: '<path d="M4 17a8 8 0 0 1 16 0"/><path d="M7 17a5 5 0 0 1 10 0"/><path d="M10 17a2 2 0 0 1 4 0"/>',
+  masks: '<path d="M4 5h7v6a3.5 3.5 0 0 1-7 0Z"/><path d="M13 8h7v3a3.5 3.5 0 0 1-7 0"/>',
+  bag: '<path d="M6 8h12l-1 12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+};
+// bungkus path jadi <svg>. size opsional (px); default ikut font (em).
+function svgIcon(name, size) {
+  const p = ICONS[name]; if (!p) return '';
+  const dim = size ? ('width="' + size + '" height="' + size + '"') : '';
+  // stroke 1.75 = kesan garis halus/mewah (refined), bukan tebal generik. CSS bisa override per-konteks.
+  return '<svg class="lu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ' + dim + '>' + p + '</svg>';
+}
+// elemen ikon siap-pakai (buat disisipin manual). return <span class="ico">
+function icon(name, size) { const s = el('span', { class: 'ico' }); s.innerHTML = svgIcon(name, size); return s; }
+// peta emoji → nama ikon. Yang tak ada di sini dibiarkan (mis. emoji di dalam caption hasil).
+const EMOJI_ICON = {
+  '🎯': 'target', '📊': 'chart', '📈': 'trending', '✨': 'sparkles', '⚙️': 'settings', '⚙': 'settings',
+  '📸': 'camera', '🔥': 'flame', '📄': 'file', '🧪': 'flask', '🎵': 'music', '🎨': 'palette',
+  '✅': 'checkCircle', '⚠️': 'alert', '⚠': 'alert', '🗑️': 'trash', '🗑': 'trash', '🔍': 'search', '🔎': 'search',
+  '📣': 'megaphone', '🖼️': 'image', '🖼': 'image', '📋': 'clipboard', '❌': 'x', '✕': 'x', '✖️': 'x',
+  '⚡': 'zap', '🚀': 'rocket', '💡': 'bulb', '🎲': 'dice', '🪝': 'hook', '🥊': 'swords', '⚔️': 'swords', '⚔': 'swords',
+  '📌': 'pin', '🎬': 'film', '🩺': 'stethoscope', '🤖': 'bot', '📝': 'edit', '👇': 'arrowDown',
+  '👁️': 'eye', '👁': 'eye', '✍️': 'pen', '✍': 'pen', '🛡️': 'shield', '🛡': 'shield', '🗣️': 'speech', '🗣': 'speech',
+  '🗓️': 'calendar', '🗓': 'calendar', '📅': 'calendar', '🔴': 'flame', '🎥': 'video', '🎠': 'carousel', '🎓': 'grad',
+  '⭐': 'star', '🌟': 'star', '❤️': 'heart', '❤': 'heart', '▶️': 'play', '▶': 'play', '➕': 'plus', '⬇️': 'download', '⬇': 'download',
+  '🔗': 'link', '💬': 'message', '👥': 'users', '🏆': 'trophy', '🕳️': 'gap', '🕳': 'gap', '🔭': 'telescope',
+  '🧴': 'bottle', '🍜': 'bowl', '👗': 'shirt', '🛠️': 'tool', '🛠': 'tool', '📚': 'book', '📦': 'box',
+  '🧱': 'layers', '🧭': 'compass', '⏱️': 'clock', '⏱': 'clock', '🕒': 'clock', '📂': 'folder', '📁': 'folder',
+  '🏠': 'home', '🔒': 'lock', '🔐': 'lock', '🏷️': 'tag', '🏷': 'tag',
+  '🎁': 'gift', '🔑': 'key', '🧠': 'brain', '🚫': 'ban', '🔢': 'hash', '🧪': 'flask',
+  '⏳': 'clock', '⌛': 'clock', '🔃': 'settings', '🔄': 'settings', '🌐': 'compass', '💻': 'file', '📱': 'file',
+  '🔓': 'lock', '👤': 'user', '🙋': 'user', '🙋‍♀️': 'user', '🙋‍♂️': 'user', '❓': 'help', '❔': 'help',
+  '😣': 'alert', '😤': 'flame', '😮': 'help', '😱': 'alert', '🤔': 'help', '🤫': 'eye', '🎭': 'masks',
+  '💸': 'money', '💰': 'money', '🫶': 'heart', '💚': 'heart', '💛': 'heart', '💙': 'heart', '🧡': 'heart', '💜': 'heart', '🤍': 'heart',
+  '🌈': 'rainbow', '🎉': 'sparkles', '🎊': 'sparkles', '👀': 'eye', '👑': 'star', '💎': 'star', '🥇': 'trophy',
+  '✏️': 'edit', '✏': 'edit', '📖': 'book', '📅': 'calendar', '🔥': 'flame', '🖊️': 'pen', '🖋️': 'pen', '🧵': 'layers',
+  '📢': 'megaphone', '🔔': 'megaphone', '🎙️': 'music', '🎙': 'music', '📹': 'video', '🖥️': 'file', '💾': 'download', '📥': 'download', '📤': 'link',
+  '🛍️': 'bag', '🛍': 'bag', '🛒': 'bag', '👜': 'bag', '👛': 'bag', '📘': 'book', '📗': 'book', '📙': 'book', '📕': 'book', '📓': 'book', '📔': 'book',
+  '✓': 'check', '✔️': 'check', '✔': 'check', '☑️': 'check', '✗': 'x', '✘': 'x', '❎': 'x', '🗒️': 'file', '🗒': 'file', '🗄️': 'folder', '📃': 'file', '📑': 'file', '🧾': 'file',
+  '⭕': 'target', '🎪': 'sparkles', '🪄': 'wand', '🔖': 'tag', '📍': 'pin', '🚩': 'pin', '⏰': 'clock', '🕐': 'clock', '💥': 'flame', '🌸': 'sparkles',
+};
+// kelas yang isinya konten mentah (emoji = bagian konten, JANGAN diubah jadi ikon)
+const RAW_EMOJI_CLASS = new Set(['copybox', 's-head', 's-sub', 's-role', 'vo', 'ost', 'quote', 'cap', 'illo-title', 'day-card']);
+const EMOJI_KEYS = Object.keys(EMOJI_ICON).sort((a, b) => b.length - a.length); // multi-codepoint duluan
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+// deteksi emoji di AWAL teks → ganti jadi ikon garis. dipanggil dari el().
+function leadingEmojiToIcon(node, text, cls) {
+  if (RAW_EMOJI_CLASS.has(cls || '')) return false;
+  for (const emo of EMOJI_KEYS) {
+    if (text.startsWith(emo)) {
+      let rest = text.slice(emo.length);
+      const sized = (cls === 'e'); // .e = ikon besar (kartu) → biar CSS yang atur ukuran via span
+      node.innerHTML = '<span class="ico' + (sized ? ' ico-lg' : '') + '">' + svgIcon(EMOJI_ICON[emo]) + '</span>' + (rest ? '<span class="ico-t">' + esc(rest.replace(/^\s+/, ' ')) + '</span>' : '');
+      return true;
+    }
+  }
+  return false;
+}
+// Deteksi emoji piktografik (TIDAK termasuk panah ← → ↗ dst — itu glyph teks yang dipertahankan).
+const EMOJI_CLS = '\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{2B00}-\\u{2BFF}\\u{2190}-\\u{21FF}\\u{2900}-\\u{297F}';
+const EMOJI_PICT = '\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{2B00}-\\u{2BFF}';
+const EMOJI_TEST = new RegExp('[' + EMOJI_PICT + ']', 'u'); // cek cepat: ada emoji?
+// cluster emoji (base + variation selector / ZWJ / skin-tone)
+const EMOJI_ANY = new RegExp('(?:[' + EMOJI_PICT + '][\\u{FE0F}\\u{200D}\\u{1F3FB}-\\u{1F3FF}\\u{20E3}]*)+', 'gu');
+// sapu SEMUA emoji di teks elemen chrome → ikon garis. Yang kekenal → ikon; yang nggak → dibuang.
+// AMAN: cuma dijalankan di UI (bukan kelas konten mentah / caption hasil generate).
+function iconifyStatic(root) {
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const hits = []; let node;
+  while ((node = walker.nextNode())) { if (node.nodeValue && EMOJI_TEST.test(node.nodeValue)) hits.push(node); }
+  hits.forEach(t => {
+    // jangan sentuh kalau ada leluhur kelas konten mentah
+    let p = t.parentElement, raw = false;
+    while (p) { if (p.className && typeof p.className === 'string' && p.className.split(/\s+/).some(c => RAW_EMOJI_CLASS.has(c))) { raw = true; break; } p = p.parentElement; }
+    if (raw) return;
+    const s = t.nodeValue; const frag = document.createDocumentFragment();
+    let last = 0, m; EMOJI_ANY.lastIndex = 0;
+    while ((m = EMOJI_ANY.exec(s))) {
+      if (m.index > last) frag.append(document.createTextNode(s.slice(last, m.index)));
+      const cl = m[0], base = [...cl][0];
+      const name = EMOJI_ICON[cl] || EMOJI_ICON[base] || EMOJI_ICON[base + '️'];
+      if (name) { const sp = document.createElement('span'); sp.className = 'ico'; sp.innerHTML = svgIcon(name); frag.append(sp); }
+      // tak kekenal → dibuang (biar UI 100% bebas emoji)
+      last = m.index + cl.length;
+    }
+    if (last < s.length) frag.append(document.createTextNode(s.slice(last)));
+    if (t.parentNode) t.parentNode.replaceChild(frag, t);
+  });
+}
 // wrapper localStorage yang aman (auto try/catch + JSON)
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -24,7 +203,7 @@ const store = {
 const uid = () => 'b' + Math.random().toString(36).slice(2, 9); // id brand acak
 const sleep = ms => new Promise(r => setTimeout(r, ms)); // jeda async (animasi "lagi masak")
 // notifikasi kecil di bawah layar (auto hilang)
-function toast(msg, kind) { const t = $('#toast'); t.textContent = msg; t.classList.remove('ok', 'err'); if (kind) t.classList.add(kind); t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), kind === 'err' ? 3200 : 2200); }
+function toast(msg, kind) { const t = $('#toast'); t.textContent = msg; if (typeof iconifyStatic === 'function') iconifyStatic(t); t.classList.remove('ok', 'err'); if (kind) t.classList.add(kind); t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), kind === 'err' ? 3200 : 2200); }
 // salin teks ke clipboard (+ fallback kalau API diblokir)
 function copyText(text, label) {
   const done = () => toast((label || 'Teks') + ' disalin ✓');
@@ -443,19 +622,26 @@ function sanitize(text, f) {
 const MEGA_TAGS = ['fyp', 'foryou', 'foryoupage', 'viral', 'trending', 'instagood', 'love', 'like4like', 'follow', 'explore', 'reels', 'tiktok', 'skincare', 'makanan', 'fashion', 'indonesia'];
 // jadikan teks satu hashtag (huruf/angka saja, maks 3 kata digabung)
 function slugTag(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/).slice(0, 3).join(''); }
-// rakit 4-5 hashtag: niche + topik + branded + lokal
+// rakit hashtag: PRODUK yang dijual dulu (paling nyambung ke brand) + topik + niche + branded + lokal
 function buildHashtags(f, topic, rng) {
   const tags = [];
   const add = t => { const s = slugTag(t); if (s && s.length > 2 && s.length < 28 && !tags.includes(s)) tags.push(s); };
-  pickN(rng, f.bank.tags, 2).forEach(add);                         // niche
+  const STOP = /^(dan|yang|untuk|dengan|atau|the|and|for|buat|dari|paket|series|new|jual|beli|premium|original)$/i;
+  // 1) PRODUK/jasa yang dijual → hashtag paling relevan ke brand (frasa + kata kunci)
+  (f.products || []).slice(0, 3).forEach(pr => {
+    add(pr);                                                        // frasa produk, mis. #customjaswedding
+    String(pr).toLowerCase().split(/[\s,/&-]+/).filter(w => w.length >= 3 && !STOP.test(w)).slice(0, 2).forEach(add); // kata kunci, mis. #jas #wedding
+  });
   if (topic) add(topic);                                           // topik hari ini
+  pickN(rng, f.bank.tags, 2).forEach(add);                         // niche (buat jangkauan)
   add(f.name);                                                     // branded
   if (f.area && !/nasional|online|seluruh/i.test(f.area)) {        // lokal
     const kota = f.area.split(/[,&/]| dan /)[0].trim();
-    add((f.bank.tags[0] || 'info') + kota);
+    const base = (f.products && f.products[0]) ? slugTag(String(f.products[0]).split(/\s+/)[0]) : (f.bank.tags[0] || 'info');
+    add((base || 'info') + kota);
   }
-  while (tags.length < 4) add(pick(rng, f.bank.tags));
-  return tags.slice(0, 5).map(t => '#' + t);
+  while (tags.length < 4) add(pick(rng, f.bank.tags));             // pelengkap kalau masih kurang
+  return tags.slice(0, 6).map(t => '#' + t);
 }
 
 /* ── HOOK PATTERNS (dipakai script, carousel, caption, ide) ── */
@@ -904,8 +1090,43 @@ function genIdeas(c, daily, seedN) {
 }
 
 // Registry jenis konten
+// ── IKLAN (Meta Ads + TikTok Ads): materi paid deterministik dari fakta brand ──
+const AD_CTA_BTN = ['Belanja Sekarang', 'Pesan Sekarang', 'Kirim Pesan', 'Selengkapnya', 'Daftar', 'Dapatkan Penawaran'];
+function genAds(c, daily, seedN) {
+  const f = factsOf(c);
+  const t = ((daily && daily.topic) || '').trim();
+  const rng = mulberry(c.id + '|ads|' + t + '|' + (seedN || 0));
+  const clean = s => sanitize(String(s || '').trim().replace(/\s+/g, ' '), f);
+  const hook = makeHooks(f, t, rng, 1, daily && daily.hook)[0].text;
+  const offer = f.promo ? cap1(f.promo) : (f.price ? cap1(f.product) + ' mulai ' + f.price : cap1(f.product));
+  const proof = f.proof ? cap1(f.proof) : '';
+  const ctaBtn = pick(rng, AD_CTA_BTN);
+  // META: primary text (hook + value + CTA), headline benefit ≤40, description ≤30
+  const primary = clean(`${hook}. ${f.pain ? cap1(f.pain) + '? ' : ''}${offer}.${proof ? ' ' + proof + '.' : ''} ${f.desire ? cap1(f.desire) + '.' : ''} ${cap1(f.cta)}.`);
+  const headline = clean((f.usp ? cap1(f.usp) : cap1(f.product)).slice(0, 40));
+  const desc = clean((f.promo ? cap1(f.promo) : (f.desire ? cap1(f.desire) : 'Cocok buat kamu')).slice(0, 30));
+  // TIKTOK: hook-first, kelihatan organik (bukan iklan) di 3 detik pertama
+  const ttHook = clean(makeHooks(f, t, rng, 3, daily && daily.hook)[2].text);
+  const ttScript = [
+    `0–3 dtk — ${ttHook} (jangan kelihatan iklan)`,
+    `3–8 dtk — tunjukin ${lower1(f.product)} lagi dipakai / masalahnya kejawab`,
+    `8–15 dtk — ${f.usp ? lower1(f.usp) + '; ' : ''}${offer}`,
+    `15–20 dtk — ${clean(f.cta)} (teks di layar + suara)`,
+  ];
+  return {
+    type: 'ads', title: 'Iklan: ' + (t || f.product),
+    meta: { primary_text: primary, headline, description: desc, cta_button: ctaBtn, format: (daily && daily.platform === 'IG Feed') ? 'Single image / Feed' : 'Reels / Story 9:16' },
+    tiktok: { hook: ttHook, script: ttScript, caption: clean(`${hook}${f.promo ? ' — ' + lower1(f.promo) : ''}`), hashtags: buildHashtags(f, t, rng).slice(0, 5), cta_button: ctaBtn },
+    audience: clean(f.buyer ? cap1(f.buyer) : 'Sesuai pembeli idealmu') + (f.area ? ' · area ' + f.area : ''),
+    budget_hint: 'Mulai kecil (±Rp30–50rb/hari), 1 campaign 2–3 varian creative, diamkan 3–4 hari sebelum menilai. Matikan yang CTR/CPM jelek, gandakan yang menang.',
+    learning_note: 'Iklan menang di 3 detik pertama + satu penawaran jelas. Meta: primary text pendek, headline = benefit. TikTok: bikin kayak konten organik (hook dulu, jualan belakangan) — iklan yang "berasa iklan" langsung di-skip.',
+    compliance_notes: '—',
+  };
+}
+
 const TYPES = {
   script:     { e: '🎬', label: 'Script Video',      desc: 'Reels/TikTok: 3 hook + adegan + CTA', gen: genScript },
+  ads:        { e: '📣', label: 'Iklan Meta/TikTok', desc: 'Copy Meta Ads + skrip TikTok Ads', gen: genAds },
   carousel:   { e: '🎠', label: 'Carousel IG',       desc: 'Slide per slide + preview, siap desain', gen: genCarousel },
   caption:    { e: '✍️', label: 'Caption + Hashtag', desc: 'Panjang + pendek + 5 hook cadangan', gen: genCaption },
   storyboard: { e: '🎥', label: 'Storyboard',        desc: 'Shot list realistis, tinggal shoot pakai HP', gen: genStoryboard },
@@ -1123,7 +1344,8 @@ function compBench(rep) {
     tags: medianOf(S.map(s => s.medianTags)),
     promo: avg(S.map(s => s.promoShare)),
     varScore: r1(avg(S.map(s => s.varScore))),
-    gaps: (rep.gaps || []).slice(0, 3),
+    gaps: (rep.gaps || []).slice(0, 4),
+    actionIdeas: (rep.action_ideas || []).slice(0, 4), // ide konkret buat "include" ke Bikin Konten
   };
 }
 // bandingkan metrik 1 konten (dari rev.metrics) dengan acuan kompetitor → baris {v, label, text}
@@ -1386,27 +1608,34 @@ const HANDLE_POOL = [
   { h: 'matahari', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'busana', 'outfit', 'clothing'] },
   { h: 'zaloraid', d: 'fashion', kw: ['fashion', 'baju', 'pakaian', 'busana', 'outfit', 'clothing'] },
 ];
-// fallback per kategori (kalau teks jasa terlalu tipis buat dicocokkan)
-const CATEGORY_FALLBACK = {
-  skincare: ['somethincofficial', 'avoskinbeauty', 'npureofficial'],
-  fnb: ['kopikenangan.id', 'haus.indonesia', 'geprekbensu'],
-  fashion: ['erigostore', 'hijup', 'uniqloindonesia'],
-  edu: ['ruangguru', 'skillacademy.id', 'pahamify'],
-  service: [], other: [], // niche jasa/lainnya kelewat beragam → jangan paksa akun generik, arahkan ke pencarian
-};
-// Saran kompetitor DICOCOKKAN ke jasa/produk yang brand tawarkan (skor kata kunci), bukan cuma kategori.
+// KATEGORI brand (dipilih user) → domain pool yang PASTI relevan. Ini patokan utama, nggak bisa nyasar.
+const CAT_DOMAIN = { skincare: 'beauty', fnb: 'fnb', fashion: 'fashion', edu: 'edu' };
+// Buat kategori generik (service/other): tebak niche dari APA YANG DIJUAL, kata kunci SPESIFIK.
+// Urutan = prioritas → niche produk (beauty/fashion/fnb/edu) didahulukan sebelum layanan (logistik/finance/dst).
+const NICHE_HINTS = [
+  ['beauty', /\b(skincare|serum|kosmetik|makeup|kecantikan|sunscreen|parfum|salon|spa|facial|lipstik|toner|bedak|lulur)\b/i],
+  ['fashion', /\b(jas|jahit|konveksi|seragam|butik|kemeja|celana|setelan|tailor|baju|pakaian|busana|outfit|distro|hijab|gamis|fashion|clothing|sepatu|sandal|dress|kaos|jaket|batik)\b/i],
+  ['fnb', /\b(kopi|coffee|minuman|kuliner|makanan|resto|restoran|cafe|kafe|boba|snack|catering|kue|bakery|roti|dessert|jajanan|frozen)\b/i],
+  ['edu', /\b(kelas|kursus|les|bimbel|edukasi|belajar|pelatihan|coding|sekolah|webinar|bootcamp|akademi|sertifikasi|tutor)\b/i],
+  ['health', /\b(klinik|dokter|kesehatan|medis|apotek|obat|terapi|gym|fitness|herbal|suplemen|laboratorium)\b/i],
+  ['home', /\b(interior|furnitur|furniture|dekorasi|renovasi|mebel|perabot|properti|kontraktor|arsitek)\b/i],
+  ['finance', /\b(fintech|investasi|asuransi|reksadana|saham|pinjaman|kredit|akuntansi|pajak|paylater|perbankan)\b/i],
+  ['tech', /\b(software|aplikasi|saas|hosting|website|startup|developer|digital agency|sistem informasi)\b/i],
+  ['logistik', /\b(ekspedisi|kurir|cargo|kargo|logistik|forwarder|trucking|jasa kirim|jasa pengiriman)\b/i],
+  ['market', /\b(marketplace|e-?commerce|dropship|reseller|olshop)\b/i],
+];
+// Saran kompetitor: KATEGORI dulu (paling andal), baru tebak niche dari produk buat service/other.
+// Prinsip: mendingan KOSONG (arahkan ke Cari kompetitor) daripada kasih akun nyasar (mis. Pos Indonesia).
 function suggestCompetitors(c, extra) {
-  // cocokkan ke apa yang brand tawarkan (deskripsi bisnis + produk/jasa/USP/nama) + kategori — bukan tag generik bank
-  const text = ' ' + [extra || '', c.name, c.products, c.usp, c.painpoint, c.desire, c.category].join(' ').toLowerCase() + ' ';
-  const has = k => new RegExp('(^|[^a-z])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z]|$)').test(text); // token utuh, bukan substring
-  const scored = HANDLE_POOL.map(p => ({ h: p.h, d: p.d, s: p.kw.reduce((n, k) => n + (has(k) ? 1 : 0), 0) }))
-    .filter(x => x.s > 0).sort((a, b) => b.s - a.s);
-  // kunci ke domain pemenang → cuma akun se-niche, buang match lintas-domain (mis. fnb nyelip di hasil renovasi)
-  const topDomain = scored.length ? scored[0].d : null;
-  const top = scored.filter(x => x.d === topDomain).slice(0, MAX_COMP).map(x => x.h);
-  if (top.length >= 2) return top; // cukup relevan → pakai hasil cocokan ke jasanya
-  // kurang cocok → lengkapi dari fallback kategori (kalau ada); service/other sengaja kosong → arahkan ke pencarian
-  return [...new Set([...top, ...(CATEGORY_FALLBACK[c.category] || [])])].slice(0, MAX_COMP);
+  // 1) kategori jelas (skincare/fnb/fashion/edu) → langsung akun se-domain, banyak & pasti relevan
+  const catDom = CAT_DOMAIN[c.category];
+  if (catDom) return HANDLE_POOL.filter(p => p.d === catDom).map(p => p.h).slice(0, MAX_COMP);
+  // 2) service/other → tebak niche dari APA YANG DIJUAL (produk/nama/USP/deskripsi), bukan kata umum
+  const sell = ' ' + [extra || '', c.products, c.name, c.usp, c.desire].join(' ').toLowerCase() + ' ';
+  const hit = NICHE_HINTS.find(([, re]) => re.test(sell));
+  if (hit) return HANDLE_POOL.filter(p => p.d === hit[0]).map(p => p.h).slice(0, MAX_COMP);
+  // 3) niche nggak kebaca → JANGAN kasih akun ngawur. Kosong → UI arahin ke "Cari kompetitor" (isi manual).
+  return [];
 }
 // handle IG → nama brand buat ditampilkan & dipakai jadi kata kunci pencarian lintas platform
 function prettyBrand(handle) {
@@ -1570,19 +1799,42 @@ async function callAI(system, user) {
   return text;
 }
 
+// bersihkan input jadi @handle bersih: buang URL (ig/tiktok/yt), @, query, trailing slash, spasi
+const cleanHandle = s => String(s || '').trim()
+  .replace(/^https?:\/\//i, '').replace(/^www\./i, '')
+  .replace(/^(?:instagram|tiktok|youtube)\.com\//i, '')
+  .replace(/[?#].*$/, '').replace(/^@+/, '').replace(/\/+$/, '').split('/')[0].trim();
+
 /* ── BACKEND RISET (opsional): ambil data publik IG/TikTok via server ProdPilot (apps/api) ── */
-const risetApi = () => (store.get('ce3_risetapi', '') || '').trim().replace(/\/+$/, ''); // URL backend
+const DEFAULT_RISET_API = 'http://localhost:4000'; // default backend apps/api (fitur "Ambil otomatis")
+// URL backend: pakai yang disimpan user, kalau kosong fallback ke default localhost:4000.
+// Jadi "Ambil otomatis" langsung jalan begitu server riset hidup — user nggak perlu set manual dulu.
+const risetApi = () => ((store.get('ce3_risetapi', '') || '').trim() || DEFAULT_RISET_API).replace(/\/+$/, '');
 const hasRisetApi = () => !!risetApi();
 // tarik statistik kompetitor dari backend: GET /ig/:handle atau /tiktok/:handle
 async function fetchCompetitorStats(handle, platform) {
   const base = risetApi();
   if (!base) throw new Error('Set dulu Backend Riset di ⚙️ (URL server apps/api).');
   const h = String(handle || '').replace(/^@+/, '').trim();
-  if (!h) throw new Error('Isi handle kompetitornya dulu.');
+  if (!h) throw new Error('Isi handle akunnya dulu.');
   const root = /\/api\/v\d/.test(base) ? base : base + '/api/v1'; // prefix apps/api = /api/v1
   const path = platform === 'tiktok' ? '/tiktok/' : platform === 'youtube' ? '/youtube/' : '/ig/';
-  const res = await fetch(root + path + encodeURIComponent(h));
-  if (!res.ok) throw new Error('Backend ' + res.status + ': ' + (await res.text().catch(() => '')).slice(0, 120));
+  const platName = platform === 'tiktok' ? 'TikTok' : platform === 'youtube' ? 'YouTube' : 'Instagram';
+  let res;
+  try {
+    res = await fetch(root + path + encodeURIComponent(h));
+  } catch (e) {
+    throw new Error('Server riset belum jalan di ' + base + '. Jalankan sekali: buka Terminal di folder apps/api → ketik "npm run riset". Habis itu klik Ambil otomatis lagi. (' + String(e.message || e).slice(0, 40) + ')');
+  }
+  if (!res.ok) {
+    let raw = ''; try { raw = await res.text(); } catch {}
+    let msg = raw; try { const j = JSON.parse(raw); msg = j.message || j.error || raw; } catch {}
+    msg = String(msg || '').slice(0, 160);
+    // 502 = sumber eksternal (IG/TikTok/YT) yang nolak/gagal — bukan backend-mu mati
+    if (res.status === 502) throw new Error((msg || platName + ' gagal dibaca') + ' — ini dari ' + platName + ' (sering kejadian: rate-limit/blok/akun privat). Coba lagi 1–2 menit, cek ejaan @handle, atau isi manual.');
+    if (res.status === 404) throw new Error('Akun @' + h + ' nggak ketemu di ' + platName + '. Cek ejaan handle-nya.');
+    throw new Error('Backend ' + res.status + ': ' + (msg || 'error tak dikenal'));
+  }
   return res.json();
 }
 
@@ -2528,7 +2780,19 @@ function wizCompetitorTools() {
   row.append(el('button', { type: 'button', textContent: (wiz.showCompSearch ? '✕ Tutup pencarian' : '🔎 Cari kompetitor'), onclick: () => { wiz.showCompSearch = !wiz.showCompSearch; renderWizard(); } }));
   if (compsOf(wiz.draft).length) row.append(el('button', { class: 'ghost', type: 'button', textContent: '🗑️ Kosongkan', onclick: () => { setComps(wiz.draft, []); toast('Kolom kompetitor dikosongkan', 'ok'); renderWizard(); } }));
   box.append(row);
-  if (wiz.showCompSearch) { const p = renderIgSearchPanel(wiz.draft); p.style.marginTop = '12px'; box.append(p); }
+  if (wiz.showCompSearch) {
+    const p = renderIgSearchPanel(wiz.draft, null, h => {
+      const clean = cleanHandle(h);
+      if (!clean) return false;
+      const cur = compsOf(wiz.draft);
+      if (cur.some(x => x.replace(/^@+/, '').toLowerCase() === clean.toLowerCase())) return false; // dup
+      if (cur.length >= MAX_COMP) return false; // penuh
+      setComps(wiz.draft, [...cur, clean]);
+      saveWizDraft(); renderWizard();
+      return true;
+    });
+    p.style.marginTop = '12px'; box.append(p);
+  }
   return box;
 }
 // simpan draft onboarding (brand baru saja) → bisa dilanjut kalau tab ke-refresh
@@ -2970,26 +3234,17 @@ function renderReviewKonten(body, c) {
 
 /* ── TAB: BIKIN KONTEN ── */
 function renderBikin(body, c) {
-  body.append(stepLabel('1', 'Mau bikin apa? (boleh pilih lebih dari satu)'));
-  if (!Array.isArray(pickedTypes) || !pickedTypes.length) pickedTypes = [pickedType || 'script'];
-  const grid = el('div', { class: 'type-grid' });
-  Object.entries(TYPES).forEach(([id, t]) => {
-    const card = el('div', { class: 'type-card' + (pickedTypes.includes(id) ? ' on' : '') }, [
-      el('span', { class: 'chk', textContent: '✓' }),
-      el('div', { class: 'e', textContent: t.e }), el('h4', { textContent: t.label }), el('p', { textContent: t.desc }),
-    ]);
-    card.onclick = () => {
-      const idx = pickedTypes.indexOf(id);
-      if (idx >= 0) { if (pickedTypes.length > 1) pickedTypes.splice(idx, 1); } // sisakan minimal 1
-      else pickedTypes.push(id);
-      pickedType = pickedTypes[0]; // jaga kompat kode lama
-      grid.querySelectorAll('.type-card').forEach((x, i) => x.classList.toggle('on', pickedTypes.includes(Object.keys(TYPES)[i])));
-      syncForm();
-    };
-    grid.append(card);
-  });
-  body.append(grid);
-  body.append(el('div', { class: 'hint', style: 'margin-top:-6px;', textContent: 'Centang beberapa jenis buat digenerate sekaligus dengan topik yang sama.' }));
+  // Disederhanakan: Paket Lengkap = satu-satunya mode. Sekali klik → script + carousel + caption.
+  pickedTypes = ['paket']; pickedType = 'paket';
+  body.append(stepLabel('1', 'Paket konten'));
+  const pkCard = el('div', { class: 'card', style: 'display:flex; align-items:center; gap:14px;' }, [
+    el('span', { style: 'background:var(--pine-soft); color:var(--pine); width:44px; height:44px; border-radius:11px; display:inline-flex; align-items:center; justify-content:center; flex:none;', html: svgIcon('bolt', 22) }),
+    el('div', {}, [
+      el('b', { style: 'font-size:15.5px;', textContent: 'Paket Lengkap' }),
+      el('div', { class: 'tiny', style: 'margin-top:2px;', textContent: 'Sekali klik → Script Reels/TikTok + Carousel IG + Caption & hashtag, semua nyambung dari 1 topik. Pilih tujuan "Ads" di bawah kalau butuh materi iklan Meta/TikTok.' }),
+    ]),
+  ]);
+  body.append(pkCard);
 
   body.append(stepLabel('2', 'Topiknya apa? (wajib diisi)'));
   const form = el('div', { class: 'card' });
@@ -3001,6 +3256,33 @@ function renderBikin(body, c) {
   const topicSuggs = (c.promo ? [c.promo] : []).concat(bank.topics).slice(0, 6);
   topicSuggs.forEach(s => suggWrap.append(el('button', { textContent: s, onclick: e => { e.preventDefault(); topic.value = s; } })));
   form.append(suggWrap);
+
+  // ── LOOP riset→bikin: celah dari review kompetitor jadi ide topik siap pakai ──
+  const bench = (store.get('ce3_riset_' + c.id, {}) || {}).bench || null;
+  const gapLabels = bench ? (bench.gaps || []).map(g => String(g).replace(/\s*—.*$/, '').trim()).filter(Boolean) : [];
+  const gapIdeas = bench ? (bench.actionIdeas || []).filter(Boolean) : [];
+  if (gapLabels.length || gapIdeas.length) {
+    const gapBox = el('div', { class: 'gapbox' });
+    gapBox.append(el('div', { class: 'tiny', style: 'font-weight:700;', textContent: '💡 Celah dari review kompetitor' }));
+    gapBox.append(el('div', { class: 'tiny', style: 'margin:2px 0 8px; opacity:.85;', textContent: 'Konten yang ' + (bench.auto ? 'jarang digarap di niche ini' : bench.n + ' kompetitormu belum garap') + ' — klik buat pakai jadi topik, hasilnya ngambil sudut yang mereka tinggalin.' }));
+    if (gapLabels.length) {
+      const chips = el('div', { class: 'sugg' });
+      gapLabels.forEach(g => chips.append(el('button', { type: 'button', textContent: '＋ ' + g, title: 'Pakai jadi topik', onclick: e => { e.preventDefault(); topic.value = g; topic.focus(); topic.scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Topik diisi dari celah kompetitor ✓', 'ok'); } })));
+      gapBox.append(chips);
+    }
+    if (gapIdeas.length) {
+      gapBox.append(el('div', { class: 'tiny', style: 'font-weight:600; margin-top:8px;', textContent: 'Contoh sudut siap pakai:' }));
+      const ul = el('ul', { class: 'clean idea', style: 'margin-top:4px;' });
+      gapIdeas.slice(0, 3).forEach(idea => {
+        const li = el('li', {}, [document.createTextNode(idea + ' ')]);
+        li.append(el('a', { href: 'javascript:void 0', style: 'white-space:nowrap; font-weight:600; color:var(--pine);', textContent: '→ pakai', onclick: e => { e.preventDefault(); topic.value = idea.replace(/\s*[—:].*$/, '').replace(/[.:]$/, '').slice(0, 80); topic.focus(); topic.scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Topik diisi ✓', 'ok'); } }));
+        ul.append(li);
+      });
+      gapBox.append(ul);
+    }
+    gapBox.append(el('div', { class: 'tiny', style: 'margin-top:8px; opacity:.8;', html: 'Mau jadikan strategi tetap (biar tiap konten otomatis ngikut)? Buka <b>🎓 Pertajam profil</b> di tab 🔍 Riset.' }));
+    form.append(gapBox);
+  }
 
   // menu gaya hook (opsional): pilih satu tipe, generator pakai itu sebagai hook utama
   form.append(el('label', { textContent: '🪝 Gaya hook (opsional — pilih satu, sisanya kami atur)' }));
@@ -3030,8 +3312,9 @@ function renderBikin(body, c) {
     wrap.append(pills);
     return wrap;
   };
-  const goalDef = Math.max(0, GOALS.indexOf(c.goal));
-  form.append(mkPills('g_goal', 'Tujuannya?', GOALS, goalDef));
+  const BIKIN_GOALS = GOALS.concat(['Ads']); // + tujuan Ads (materi iklan Meta/TikTok)
+  const goalDef = Math.max(0, BIKIN_GOALS.indexOf(c.goal));
+  form.append(mkPills('g_goal', 'Tujuannya? (pilih "Ads" buat materi iklan Meta/TikTok)', BIKIN_GOALS, goalDef));
   const pfWrap = mkPills('g_platform', 'Buat platform mana?', ['IG Reels', 'TikTok', 'IG Feed'], 0);
   form.append(pfWrap);
   const durWrap = mkPills('g_durasi', 'Durasi video', ['15 detik', '30 detik', '45 detik'], 1);
@@ -3060,8 +3343,11 @@ function renderBikin(body, c) {
   const goBtn = el('button', { class: 'primary big', id: 'btnGo', textContent: '✨ Bikinin sekarang!' });
   goBtn.onclick = () => doGenerate(c);
   goBar.append(goBtn);
-  goBar.append(el('span', { class: 'tiny', textContent: 'gratis · instan · gaya ' + c.name }));
+  const auto10 = el('button', { class: 'big', id: 'btnAuto10', textContent: '🎯 Generate 10 & auto-bandingkan', title: 'Mesin bikin 10 varian script, nilai sendiri, pilih terbaik — tanpa input manusia' });
+  auto10.onclick = () => generate10(c);
+  goBar.append(auto10);
   body.append(goBar);
+  body.append(el('div', { class: 'tiny', style: 'margin-top:6px;', textContent: 'Bikinin = Paket Lengkap. Generate 10 = 10 varian script, dinilai & diperingkat otomatis (buat dipilih tanpa mikir).' }));
   body.append(el('div', { id: 'results' }));
 
   // riwayat generate (bisa dibuka ulang & dihapus)
@@ -3148,8 +3434,9 @@ const COOK_STEPS = ['Baca profil brand-mu…', 'Milih pola hook yang pas…', 'N
 async function doGenerate(c) {
   // kumpulkan semua jenis tercentang; 'paket' dibongkar jadi script+carousel+caption; buang duplikat
   const sel = (Array.isArray(pickedTypes) && pickedTypes.length) ? pickedTypes : [pickedType];
-  const types = [...new Set(sel.flatMap(t => t === 'paket' ? ['script', 'carousel', 'caption'] : [t]))];
   const daily = collectDaily();
+  const types = [...new Set(sel.flatMap(t => t === 'paket' ? ['script', 'carousel', 'caption'] : [t]))];
+  if (daily.goal === 'Ads') types.push('ads'); // tujuan Ads → tambah materi iklan Meta/TikTok
   // ── validasi wajib: topik & referensi visual tidak boleh kosong ──
   if (!daily.topic) {
     toast('Topik wajib diisi dulu ya ✗', 'err');
@@ -3191,6 +3478,70 @@ async function doGenerate(c) {
   } finally { btn.disabled = false; }
 }
 
+// ── OTOMASI: generate 10 varian script, nilai sendiri, peringkat otomatis → pilih terbaik tanpa input manusia ──
+async function generate10(c) {
+  const daily = collectDaily();
+  if (!daily.topic) { toast('Topik wajib diisi dulu ya ✗', 'err'); const t = $('#g_topic'); if (t) { t.focus(); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
+  if (getRefs(c).length < 1) { toast('Upload minimal 1 gambar referensi dulu ✗', 'err'); const rw = $('#g_refs_wrap'); if (rw) rw.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  const btn = $('#btnAuto10'), results = $('#results');
+  btn.disabled = true; const t0 = btn.textContent; btn.textContent = '⏳ nyusun 10…';
+  const f = factsOf(c);
+  try {
+    const items = [];
+    for (let i = 1; i <= 10; i++) {
+      // seed deterministik 1..10 → hasil bisa direproduksi; hook diputar biar 10-nya variatif
+      const dd = { ...daily, hook: daily.hook || HOOK_MENU[(i - 1) % HOOK_MENU.length][0] };
+      const d = genScript(c, dd, i);
+      const rev = reviewGenerated('script', d, f);
+      items.push({ i, seed: i, daily: dd, d, rev, score: rev ? rev.score : 0, hookText: (d.hooks && d.hooks[0] ? d.hooks[0].text : d.title) });
+      await sleep(30);
+    }
+    // ranking otomatis: skor tertinggi → hook terkuat sebagai pemecah seri
+    items.sort((a, b) => (b.score - a.score) || ((b.rev.metrics.hook || 0) - (a.rev.metrics.hook || 0)));
+    results.prepend(renderCompare10(c, daily, items));
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast('10 varian dinilai — #1 skor ' + items[0].score + ' ✓', 'ok');
+  } finally { btn.disabled = false; btn.textContent = t0; }
+}
+// kartu perbandingan 10 script: peringkat + skor + hook + buka/pakai, #1 ditandai terbaik
+function renderCompare10(c, daily, items) {
+  const card = resultShell('script', '10 Script — auto-diperingkat', 'tanpa input manusia');
+  card.append(el('div', { class: 'hint', style: 'margin:-4px 0 12px;', textContent: 'Mesin bikin 10 varian dari topik "' + daily.topic + '", menilai tiap satu (hook, pattern interrupt, alur, CTA, pacing), lalu memeringkat. #1 = terbaik menurut penilaian otomatis.' }));
+  const best = items[0];
+  // ringkasan pemenang
+  const win = el('div', { class: 'verdict', style: 'border-left-color:var(--pine); margin-bottom:14px;' }, [
+    el('div', { class: 'row between', style: 'align-items:center;' }, [
+      el('b', { textContent: '🏆 Terbaik — varian #' + best.i + ' · skor ' + best.score + '/10' }),
+      el('button', { class: 'primary', style: 'font-size:13px; padding:8px 14px;', textContent: '📄 Buka & pakai #1', onclick: () => { const r = $('#results'); r.prepend(renderResult('script', best.d, c, best.daily, best.seed)); pushHist(c, 'script', best.d.title || 'Script', best.daily, best.seed); r.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }),
+    ]),
+    el('div', { style: 'margin-top:6px;', textContent: best.hookText }),
+  ]);
+  card.append(win);
+  // tabel peringkat
+  const tbl = el('table', { class: 't' });
+  tbl.append(el('thead', {}, el('tr', {}, ['#', 'Skor', 'Hook pembuka', ''].map(h => el('th', { textContent: h })))));
+  const tb = el('tbody');
+  items.forEach((it, rank) => {
+    const scoreCls = it.score >= 7.5 ? 'cmp-win' : (it.score < 5 ? 'cmp-lose' : '');
+    tb.append(el('tr', {}, [
+      el('td', { html: rank === 0 ? '<b>🏆 1</b>' : '<b>' + (rank + 1) + '</b>' }),
+      el('td', { class: scoreCls, textContent: it.score.toFixed(1) }),
+      el('td', { textContent: it.hookText }),
+      el('td', {}, el('button', { style: 'font-size:12.5px; padding:6px 12px;', textContent: 'Buka', onclick: () => { const r = $('#results'); r.prepend(renderResult('script', it.d, c, it.daily, it.seed)); pushHist(c, 'script', it.d.title || 'Script', it.daily, it.seed); r.scrollIntoView({ behavior: 'smooth', block: 'start' }); } })),
+    ]));
+  });
+  tbl.append(tb);
+  card.append(el('div', { class: 'tscroll' }, tbl));
+  // export semua 10 (teks)
+  const exp = () => copyText(items.map((it, r) => '#' + (r + 1) + ' (skor ' + it.score + ') — ' + it.hookText + '\n' + fmtScript(it.d)).join('\n\n──────────\n\n'), '10 script');
+  card.append(el('div', { class: 'row', style: 'margin-top:14px;' }, [
+    el('button', { class: 'primary', textContent: '📋 Salin 10 script', onclick: exp }),
+    el('button', { textContent: '⬇️ PDF 10 script', onclick: () => downloadDocPDF(slugTag(c.name) + '-10script', '10 Script diperingkat — ' + c.name, items.map((it, r) => '#' + (r + 1) + ' · SKOR ' + it.score + '/10\n' + fmtScript(it.d)).join('\n\n════════\n\n')) }),
+  ]));
+  card.append(learnBox('Otomasi ini menilai pakai rubrik yang sama dengan reviewer (hook 3 detik, pattern interrupt, alur lengkap, 1 CTA, pacing). Ambil #1, atau intip 2–3 teratas buat pilih angle favoritmu — 10 detik, tanpa nulis dari nol.'));
+  return card;
+}
+
 /* ── FORMAT SALIN ── */
 // format script jadi teks polos buat disalin
 function fmtScript(d) {
@@ -3221,7 +3572,24 @@ function fmtStoryboard(d) {
 function fmtIdeas(d) {
   return ['🗓️ RENCANA SEMINGGU', '', ...d.ideas.map(i => `${i.day} · ${i.pillar} · ${i.format}\n  Hook: ${i.hook}\n  Konsep: ${i.concept}\n  CTA: ${i.cta}`)].join('\n\n');
 }
-const FMT = { script: fmtScript, carousel: fmtCarousel, caption: fmtCaption, storyboard: fmtStoryboard, ideas: fmtIdeas }; // registry formatter per jenis
+// format iklan (Meta + TikTok) jadi teks polos buat disalin
+function fmtAds(d) {
+  return ['📣 IKLAN — ' + d.title, '',
+    '═ META ADS ═',
+    'Primary text: ' + d.meta.primary_text,
+    'Headline: ' + d.meta.headline,
+    'Description: ' + d.meta.description,
+    'Tombol CTA: ' + d.meta.cta_button + '  |  Format: ' + d.meta.format, '',
+    '═ TIKTOK ADS ═',
+    'Hook: ' + d.tiktok.hook,
+    ...d.tiktok.script.map(s => '  ' + s),
+    'Caption: ' + d.tiktok.caption,
+    'Hashtag: ' + d.tiktok.hashtags.map(h => '#' + h).join(' '),
+    'Tombol CTA: ' + d.tiktok.cta_button, '',
+    'Audiens: ' + d.audience,
+    'Budget: ' + d.budget_hint].join('\n');
+}
+const FMT = { script: fmtScript, carousel: fmtCarousel, caption: fmtCaption, storyboard: fmtStoryboard, ideas: fmtIdeas, ads: fmtAds }; // registry formatter per jenis
 
 /* ── RENDER HASIL ── */
 // kerangka kartu hasil (ikon + judul + badge + tombol tutup)
@@ -3269,7 +3637,42 @@ function renderResult(type, data, c, daily, seed) {
   if (type === 'caption') return renderCaption(data, c, daily);
   if (type === 'storyboard') return renderStoryboard(data, c, daily);
   if (type === 'ideas') return renderIdeas(data, c, daily);
+  if (type === 'ads') return renderAds(data, c, daily);
   return resultShell(type, 'Hmm, jenis ini belum ada');
+}
+// render hasil iklan: kolom Meta Ads + kolom TikTok Ads + audiens/budget
+function renderAds(d, c, daily) {
+  const card = resultShell('ads', d.title, 'Materi iklan');
+  const field = (label, val, mono) => el('div', { style: 'margin-bottom:10px;' }, [
+    el('div', { class: 'tiny', style: 'font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3); margin-bottom:3px;', textContent: label }),
+    el('div', { style: 'font-size:14.5px; line-height:1.5;' + (mono ? '' : ''), textContent: val }),
+    copyChip(val, label),
+  ]);
+  const grid = el('div', { class: 'grid-2' });
+  // Meta
+  const meta = el('div', { class: 'card', style: 'background:var(--bg-2);' });
+  meta.append(el('div', { class: 'row between', style: 'margin-bottom:10px;' }, [el('b', { textContent: '📘 Meta Ads (FB/IG)' }), el('span', { class: 'badge pine', textContent: d.meta.format })]));
+  meta.append(field('Primary text', d.meta.primary_text));
+  meta.append(field('Headline', d.meta.headline));
+  meta.append(field('Description', d.meta.description));
+  meta.append(el('div', { class: 'tiny', style: 'margin-top:2px;', html: 'Tombol CTA: <b>' + d.meta.cta_button + '</b>' }));
+  // TikTok
+  const tt = el('div', { class: 'card', style: 'background:var(--bg-2);' });
+  tt.append(el('div', { class: 'row between', style: 'margin-bottom:10px;' }, [el('b', { textContent: '🎵 TikTok Ads' }), el('span', { class: 'badge pine', textContent: 'Spark / In-feed' })]));
+  tt.append(field('Hook (3 detik pertama)', d.tiktok.hook));
+  const ul = el('ul', { class: 'clean num', style: 'margin-top:0;' }); d.tiktok.script.forEach(s => ul.append(el('li', { textContent: s }))); tt.append(ul);
+  tt.append(field('Caption', d.tiktok.caption));
+  tt.append(el('div', { class: 'tiny', style: 'margin-top:2px;', html: d.tiktok.hashtags.map(h => '#' + h).join(' ') + '  ·  Tombol: <b>' + d.tiktok.cta_button + '</b>' }));
+  grid.append(meta, tt);
+  card.append(grid);
+  // audiens + budget
+  card.append(el('div', { class: 'verdict', style: 'margin-top:14px;' }, [
+    el('div', {}, [el('b', { textContent: '🎯 Saran audiens: ' }), document.createTextNode(d.audience)]),
+    el('div', { style: 'margin-top:4px;' }, [el('b', { textContent: '💸 Budget & uji: ' }), document.createTextNode(d.budget_hint)]),
+  ]));
+  card.append(actionsBar('ads', d, c, daily));
+  card.append(learnBox(d.learning_note));
+  return card;
 }
 // render hasil script: 3 pilihan hook + timeline adegan berdurasi + chip + catatan
 function renderScript(d, c, daily) {
@@ -3475,6 +3878,39 @@ function engagementFrom(folStr, raw) {
   const rows = posts.map((p, i) => ({ i: i + 1, likes: p.likes, comments: p.comments, views: p.views, eng: eng[i], er: followers ? eng[i] / followers * 100 : 0, viral: median > 0 && eng[i] >= median * 2, best: eng[i] === maxEng && maxEng > 0 }));
   return { n: posts.length, followers, totalViews, totalLikes, avgEng, erAvg, median, rows, viralCount: rows.filter(r => r.viral).length };
 }
+// normalisasi data eng tersimpan ({followers,data,platform,agg}) → objek siap-render, atau null kalau kosong.
+// dipakai buat nampilin engagement/viral/ER kompetitor & akun pribadi INLINE di perbandingan.
+function engOf(eng) {
+  if (!eng) return null;
+  const plat = eng.platform || 'instagram';
+  if ((plat === 'tiktok' || plat === 'youtube')) return eng.agg ? { platform: plat, agg: eng.agg } : null;
+  const igRep = engagementFrom(eng.followers, eng.data);
+  return igRep.n ? { platform: 'instagram', igRep } : null;
+}
+// ER (%) & jumlah konten viral dari objek engOf — buat baris adu di tabel perbandingan. null = data belum ada.
+function engER(e) {
+  if (!e) return null;
+  if (e.igRep) return e.igRep.erAvg || null;
+  if (e.agg && e.agg.engagementPct != null) return e.agg.engagementPct;
+  return null;
+}
+function engViral(e) {
+  if (!e) return null;
+  if (e.igRep) return e.igRep.viralCount;
+  if (e.agg && e.agg.posts) {
+    const vv = e.agg.posts.filter(p => p.views != null).map(p => p.views);
+    const s = [...vv].sort((a, b) => a - b), med = s.length ? s[Math.floor((s.length - 1) / 2)] : 0;
+    return vv.filter(v => med > 0 && v >= med * 2).length;
+  }
+  return null;
+}
+// render objek engOf jadi kartu engagement sesuai platform-nya
+function renderEngOf(e, handle) {
+  if (!e) return null;
+  if (e.platform === 'tiktok') return renderTiktokAggregate(e.agg);
+  if (e.platform === 'youtube') return renderYoutubeResult(e.agg);
+  return renderEngagementResult(e.igRep, handle);
+}
 // render hasil engagement: kartu statistik + tabel per post + tanda viral/best
 // KENAPA sebuah post IG viral + apa yang bisa ditiru — disimpulkan dari SINYAL ANGKA (bukan caption)
 function viralWhyIG(r, rep) {
@@ -3539,7 +3975,7 @@ function renderEngagementResult(rep, handle) {
   const virals = rep.rows.filter(r => r.viral);
   const vbox = el('div', { class: 'verdict' });
   if (virals.length) {
-    vbox.append(el('div', {}, el('b', { textContent: '🔥 Kenapa ' + virals.length + ' konten ini viral & apa yang bisa ditiru' })));
+    vbox.append(el('div', { class: 'viral-head' }, el('b', { textContent: '🔥 Kenapa ' + virals.length + ' konten ini viral & apa yang bisa ditiru' })));
     virals.forEach(r => {
       const ins = viralWhyIG(r, rep);
       vbox.append(el('div', { style: 'margin-top:7px;' }, [el('b', { textContent: 'Post #' + r.i + ' — ' }), document.createTextNode(ins.head)]));
@@ -3612,7 +4048,7 @@ function renderYoutubeResult(d) {
   const virals = posts.filter(p => median > 0 && p.views >= median * 2);
   if (virals.length) {
     const vbox = el('div', { class: 'verdict' });
-    vbox.append(el('div', {}, el('b', { textContent: '🔥 Kenapa ' + virals.length + ' video ini viral & apa yang bisa ditiru' })));
+    vbox.append(el('div', { class: 'viral-head' }, el('b', { textContent: '🔥 Kenapa ' + virals.length + ' video ini viral & apa yang bisa ditiru' })));
     virals.forEach(p => {
       const ins = viralWhyYT(p, median);
       vbox.append(el('div', { style: 'margin-top:7px;' }, [el('b', { textContent: '“' + (p.title || 'video').slice(0, 46) + '” — ' }), document.createTextNode(ins.head)]));
@@ -3679,7 +4115,7 @@ function renderPosting(body, c) {
     const cb = el('input', { type: 'checkbox', style: 'width:18px; height:18px; flex:0 0 auto; margin:0; accent-color:var(--pine,#4a7c59);' }); cb.checked = picked[k];
     cb.onchange = () => { picked[k] = cb.checked; };
     row.append(cb, el('span', { style: 'font-weight:600;', textContent: label }),
-      el('span', { class: 'tiny', style: 'font-weight:400; color:' + (credOk[k] ? 'var(--pine,#4a7c59)' : '#b2664a') + ';', textContent: credOk[k] ? '✓ token siap' : '⚠ butuh ' + need + ' (⚙️)' }));
+      el('span', { class: 'tiny', style: 'font-weight:400; color:' + (credOk[k] ? 'var(--pine,#4a7c59)' : '#b2664a') + ';', textContent: credOk[k] ? '✓ token siap' : '⚠ butuh ' + need + ' — atur di Setelan' }));
     platRow.append(row);
   });
   card.append(platRow);
@@ -3842,7 +4278,7 @@ function renderRiset(body, c) {
   // render ulang panel pencarian + catatan saran
   function refreshSearchNote() {
     const s = suggestCompetitors(c);
-    searchWrap.innerHTML = ''; searchWrap.append(renderIgSearchPanel(c));
+    searchWrap.innerHTML = ''; searchWrap.append(renderIgSearchPanel(c, null, h => { const ok = addCompetitor(h); if (ok) { drawComps(); if (typeof drawRecos === 'function') drawRecos(); } return ok; }));
     noteWrap.innerHTML = ''; noteWrap.append(el('div', { class: 'hint', style: 'margin:2px 0;', html: s.length
       ? '✨ <b>Saran kompetitor dicocokkan ke jasa/produk brand-mu</b> (akun asli & terverifikasi) — sudah terisi di bawah. Ganti/hapus kalau kurang pas.'
       : '🔎 Belum ada akun yang pas. Pakai <b>chip pencarian</b> di atas → salin @handle pesaing aslinya ke kolom bawah.' }));
@@ -3852,10 +4288,11 @@ function renderRiset(body, c) {
   function regen() { fillSuggested(); drawComps(); if (typeof drawRecos === 'function') drawRecos(); refreshSearchNote(); toast('Saran kompetitor diisi ✓', 'ok'); }
   const compsWrap = el('div');
   // box engagement per kompetitor: input followers + data per-post → hitung total view/viral/ER
-  function compEngagementBox(cp) {
+  function compEngagementBox(cp, mine) {
     cp.eng = cp.eng || { followers: '', data: '', platform: saved.cmpPlatform || 'instagram' };
     if (!cp.eng.platform) cp.eng.platform = saved.cmpPlatform || 'instagram';
     const box = el('details', { class: 'adv', style: 'margin-top:8px;' });
+    if (mine) box.open = true; // akunku: langsung kebuka
     box.append(el('summary', { textContent: '📊 Total view · konten viral · engagement' }));
     const inner = el('div', { style: 'padding-top:10px;' });
     const out = el('div');
@@ -3868,8 +4305,10 @@ function renderRiset(body, c) {
       platRow.append(bb);
     });
     inner.append(platRow);
-    // penegasan: kotak ini punya KOMPETITOR, bukan akun user
-    inner.append(el('div', { class: 'tiny', style: 'margin-bottom:8px; color:var(--pine);', html: '📌 Angka di kotak ini dari akun <b>kompetitor</b> ini (handle di atas) — <b>bukan akunmu</b>. Tiap kompetitor punya kotak sendiri, jadi yang keluar satu per kompetitor.' }));
+    // penegasan: kotak ini punya siapa (akunku vs kompetitor)
+    inner.append(el('div', { class: 'tiny', style: 'margin-bottom:8px; color:var(--' + (mine ? 'gold' : 'pine') + ');', html: mine
+      ? '✅ Ini <b>akunmu</b> — cek engagement-mu sendiri, lalu bandingin angkanya (ER, konten viral) sama kompetitor di bawah.'
+      : '📌 Angka di kotak ini dari akun <b>kompetitor</b> ini (handle di atas) — <b>bukan akunmu</b>. Tiap kompetitor punya kotak sendiri, jadi yang keluar satu per kompetitor.' }));
     // baris tombol otomatis (kalau backend diset) + petunjuk
     inner.append(el('div', { class: 'tiny', style: 'margin-bottom:8px;', html: hasRisetApi()
       ? 'Klik <b>Ambil otomatis</b> → tarik followers & engagement langsung dari akun publik mereka. Atau isi manual di bawah.'
@@ -3887,14 +4326,21 @@ function renderRiset(body, c) {
         const plat = cp.eng.platform || 'instagram';
         const d = await fetchCompetitorStats(cp.handle, plat);
         cp.eng.followers = String(d.followers || ''); fol.value = cp.eng.followers;
-        if (plat === 'tiktok') { persist(); out.innerHTML = ''; out.append(renderTiktokAggregate(d)); }
-        else if (plat === 'youtube') { persist(); out.innerHTML = ''; out.append(renderYoutubeResult(d)); }
+        if (plat === 'tiktok') { persist(); out.innerHTML = ''; out.append(renderTiktokAggregate(d)); toast('Data TikTok terambil ✓', 'ok'); }
+        else if (plat === 'youtube') { persist(); out.innerHTML = ''; out.append(renderYoutubeResult(d)); toast('Data YouTube terambil ✓', 'ok'); }
         else {
           cp.eng.data = (d.posts || []).map(p => (p.likes || 0) + ',' + (p.comments || 0) + ',' + (p.views || 0)).join('\n');
-          ta.value = cp.eng.data; persist(); compute();
+          ta.value = cp.eng.data; persist();
+          if ((d.posts || []).length) { compute(); toast('Data IG terambil ✓', 'ok'); }
+          else { // IG cuma kasih followers (API diblok / akun privat) → panduan, bukan "isi 1 baris"
+            const hh = (cp.handle || 'akun').replace(/^@+/, '').trim();
+            out.innerHTML = '';
+            out.append(el('div', { class: 'eng-who' }, [el('b', { textContent: '📸 @' + hh }), el('a', { class: 'chip golink', href: 'https://www.instagram.com/' + encodeURIComponent(hh) + '/', target: '_blank', rel: 'noopener noreferrer', textContent: '↗ cek profil IG' })]));
+            out.append(el('div', { class: 'hint', style: 'color:var(--gold);', html: '✓ Followers <b>' + fmtCount(d.followers || 0) + '</b> keisi otomatis. ' + (d.note || 'Angka per-post IG nggak kebaca — isi like,komen,view per baris di bawah, lalu Hitung engagement.') }));
+            toast('Followers terambil ✓ — per-post isi manual', 'ok');
+          }
         }
-        toast('Data ' + plat + ' terambil ✓', 'ok');
-      } catch (e) { toast('Gagal ambil: ' + String(e.message || e).slice(0, 70), 'err'); }
+      } catch (e) { toast('Gagal ambil data', 'err'); out.innerHTML = ''; out.append(el('div', { class: 'hint', style: 'color:var(--coral-dark, #b2664a);', textContent: '⚠️ ' + String(e.message || e) })); }
       auto.disabled = false; auto.textContent = t0;
     } });
     inner.append(fol, ta, el('div', { class: 'row', style: 'gap:8px;' }, [btn, auto]), out);
@@ -3946,6 +4392,21 @@ function renderRiset(body, c) {
   }
   drawRecos();
   cmpCard.append(recoWrap);
+  // ── engagement AKUNKU: cek akun sendiri buat dibandingin langsung sama kompetitor ──
+  saved.myHandle = saved.myHandle || saved.handle || c.social || '';
+  saved.myEng = saved.myEng || { followers: '', data: '', platform: saved.cmpPlatform || 'instagram' };
+  const myCp = { handle: saved.myHandle, eng: saved.myEng };
+  const myCard = el('div', { class: 'card', style: 'margin:12px 0; border:1.5px solid var(--gold);' });
+  myCard.append(el('div', { class: 'row between', style: 'align-items:center; gap:8px; flex-wrap:wrap;' }, [
+    el('b', { textContent: '📊 Cek engagement akunku' }),
+    el('span', { class: 'tiny', style: 'opacity:.75;', textContent: 'akun kamu sendiri — buat dibandingin sama kompetitor' }),
+  ]));
+  const myH = el('input', { type: 'text', placeholder: '@handle akunmu (mis. @brandkamu)', value: saved.myHandle, style: 'margin:8px 0;' });
+  myH.oninput = () => { saved.myHandle = myH.value; myCp.handle = myH.value; if (!c.social) { c.social = myH.value; saveClient(c); } persist(); };
+  myCard.append(myH);
+  myCard.append(el('div', { class: 'tiny', style: 'margin-bottom:6px;', html: hasRisetApi() ? 'Klik <b>Ambil otomatis</b> di dalam → tarik followers & engagement akunmu langsung. Atau isi manual.' : 'Isi followers + like/komen/view postinganmu → <b>Hitung engagement</b>. (Aktifkan <b>Ambil otomatis</b> dengan set Backend Riset di ⚙️.)' }));
+  myCard.append(compEngagementBox(myCp, true));
+  cmpCard.append(myCard);
   drawComps();
   cmpCard.append(compsWrap);
   const cmpOut = el('div');
@@ -4015,10 +4476,13 @@ function renderRiset(body, c) {
     const rep = compareReport(c, saved.myPosts || '', comps, auto, realHandles);
     rep.platform = saved.cmpPlatform || 'instagram'; // platform buat preview embed
     rep.fetched = fetched; // data backend per handle (buat embed video YouTube / stats TikTok)
+    // engagement per kompetitor + akun pribadi (manual ATAU auto backend) → ditampilkan INLINE di perbandingan
+    rep.engagement = {}; saved.comps.forEach(cp => { const e = engOf(cp.eng); if (e) rep.engagement[(cp.handle || '').replace(/^@+/, '').trim().toLowerCase()] = e; });
+    rep.myEngagement = engOf(saved.myEng); rep.myHandle = saved.myHandle || c.social || '';
     saved.bench = compBench(rep); persist(); // simpan acuan → dipakai tab Review Konten buat "kamu vs kompetitor"
     cmpOut.innerHTML = '';
     if (autoEng) cmpOut.append(autoEng); // angka real di atas analisis pola
-    cmpOut.append(renderCompare(rep, c));
+    cmpOut.append(renderCompare(rep, c, h => { const ok = addCompetitor(h); if (ok) { drawComps(); if (typeof drawRecos === 'function') drawRecos(); } return ok; }));
     cmpOut.scrollIntoView({ behavior: 'smooth', block: 'start' });
     toast(auto ? 'Pola niche dianalisis ✓' : 'Perbandingan siap ✓', 'ok');
   };
@@ -4058,7 +4522,7 @@ function renderAudit(d, c) {
     box.append(el('b', { textContent: sec.title }));
     sec.items.forEach(txt => {
       const item = el('button', { class: 'audit-item', type: 'button' }, [
-        el('span', { class: 'box', textContent: '✓' }),
+        el('span', { class: 'box', html: svgIcon('check') }),
         el('span', { class: 'lbl', textContent: txt }),
       ]);
       item.onclick = () => { const on = item.classList.toggle('done'); done += on ? 1 : -1; upd(); };
@@ -4221,17 +4685,37 @@ function igSearchLinks(c, extra) {
   return links;
 }
 // panel "Cari kompetitor di Instagram" — chip link yang buka pencarian IG asli (pakai deskripsi bisnis kalau ada)
-function renderIgSearchPanel(c, extra) {
+function renderIgSearchPanel(c, extra, onAdd) {
   const box = el('div', { class: 'igsearch' });
   box.append(el('b', { style: 'display:block;', textContent: '🔎 Cari kompetitor di Instagram' }));
-  box.append(el('div', { class: 'tiny', style: 'margin:3px 0 10px;', html: 'Klik salah satu → pencarian Instagram asli kebuka di tab baru (kamu lagi login). Intip akun yang muncul, <b>salin @handle-nya</b>, tempel di kolom kompetitor bawah → preview feed aslinya langsung tampil.' }));
+  box.append(el('div', { class: 'tiny', style: 'margin:3px 0 10px;', html: onAdd
+    ? 'Klik salah satu → pencarian IG kebuka di tab baru. Intip akun yang muncul, <b>salin @handle-nya</b>, lalu tempel langsung di kotak bawah → <b>Tambah</b> (nggak perlu scroll cari slot).'
+    : 'Klik salah satu → pencarian Instagram asli kebuka di tab baru (kamu lagi login). Intip akun yang muncul, <b>salin @handle-nya</b>, tempel di kolom kompetitor bawah → preview feed aslinya langsung tampil.' }));
   const chips = el('div', { class: 'row', style: 'flex-wrap:wrap; gap:8px;' });
   igSearchLinks(c, extra).forEach(l => chips.append(el('a', { class: 'chip golink', href: l.url, target: '_blank', rel: 'noopener noreferrer', textContent: l.label })));
   box.append(chips);
+  // isi @handle LANGSUNG dari sini (nggak perlu scroll ke slot kompetitor) — dukung banyak handle sekaligus
+  if (typeof onAdd === 'function') {
+    box.append(el('div', { class: 'tiny', style: 'margin:12px 0 4px; font-weight:600;', textContent: 'Udah nemu akunnya? Tempel @handle-nya di sini:' }));
+    const rowc = el('div', { class: 'row', style: 'gap:8px; flex-wrap:wrap; align-items:stretch;' });
+    const inp = el('input', { type: 'text', placeholder: '@handle atau instagram.com/handle (boleh banyak, pisah koma)', style: 'flex:1 1 220px; margin:0;' });
+    const doAdd = () => {
+      const handles = String(inp.value || '').split(/[\s,\n]+/).map(cleanHandle).filter(Boolean);
+      if (!handles.length) { inp.focus(); return; }
+      let n = 0; handles.forEach(h => { if (onAdd(h)) n++; });
+      if (n) { inp.value = ''; toast('+' + n + ' kompetitor ditambah ✓', 'ok'); }
+      else toast('Handle sudah ada / slot penuh', 'err');
+      inp.focus();
+    };
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } };
+    rowc.append(inp, el('button', { type: 'button', class: 'primary', style: 'flex:0 0 auto;', textContent: '➕ Tambah', onclick: doAdd }));
+    box.append(rowc);
+    box.append(el('div', { class: 'tiny', style: 'margin-top:4px; opacity:.75;', textContent: 'URL lengkap juga boleh — @-nya & instagram.com/-nya kami rapikan otomatis.' }));
+  }
   return box;
 }
 // render hasil banding kompetitor (tabel skor + tiru/kelemahan + celah + bank hook + langkah menang)
-function renderCompare(d, c) {
+function renderCompare(d, c, onAdd) {
   const card = el('div', { class: 'card result-card' });
   card.append(el('div', { class: 'result-head' }, [
     el('span', { class: 'e', textContent: '🥊' }),
@@ -4239,24 +4723,30 @@ function renderCompare(d, c) {
   ]));
   if (d.autoDetected) card.append(el('div', { class: 'hint', style: 'margin:0 0 12px;', html: '🔍 <b>Analisis POLA niche</b> (bukan akun asli) — 3 pola konten tipikal. Buat preview feed asli, isi @handle kompetitor aslimu di kolom di atas.' }));
   const tbl = el('table', { class: 't' });
-  const cols = [{ label: c.name + (d.mineAuto ? ' (kamu · contoh ProdPilot)' : ' (kamu)'), a: d.mine }].concat(d.competitors.map(cp => ({ label: cp.handle, a: cp.scores })));
+  const eKey = h => String(h || '').replace(/^@+/, '').trim().toLowerCase();
+  const cols = [{ label: c.name + (d.mineAuto ? ' (kamu · contoh ProdPilot)' : ' (kamu)'), a: d.mine, eng: d.myEngagement }]
+    .concat(d.competitors.map(cp => ({ label: cp.handle, a: cp.scores, eng: (d.engagement || {})[eKey(cp.handle)] })));
   tbl.append(el('thead', {}, el('tr', {}, [el('th', { textContent: 'Aspek' })].concat(cols.map(col => el('th', { textContent: col.label }))))));
   const tb = el('tbody');
+  const hasEng = cols.some(col => col.eng); // ada minimal 1 kolom (kamu / kompetitor) punya angka engagement
   // metrik + arah "lebih baik" ('up' makin tinggi bagus, 'down' makin rendah bagus). null = netral
   const metrics = [
-    { label: 'Skor total', num: a => a ? a.overall : null, fmt: v => v, dir: 'up' },
-    { label: 'Hook 3 detik', num: a => a ? a.hookScore : null, fmt: v => v, dir: 'up' },
-    { label: 'CTA', num: a => a ? a.ctaCoverage * 100 : null, fmt: v => Math.round(v) + '%', dir: 'up' },
-    { label: 'Hashtag (median)', num: a => a ? a.medianTags : null, fmt: v => v, dir: null },
-    { label: 'Porsi jualan', num: a => a ? a.promoShare * 100 : null, fmt: v => Math.round(v) + '%', dir: 'down' },
-  ];
+    { label: 'Skor total', num: (a) => a ? a.overall : null, fmt: v => v, dir: 'up' },
+    { label: 'Hook 3 detik', num: (a) => a ? a.hookScore : null, fmt: v => v, dir: 'up' },
+    { label: 'CTA', num: (a) => a ? a.ctaCoverage * 100 : null, fmt: v => Math.round(v) + '%', dir: 'up' },
+    { label: 'Hashtag (median)', num: (a) => a ? a.medianTags : null, fmt: v => v, dir: null },
+    { label: 'Porsi jualan', num: (a) => a ? a.promoShare * 100 : null, fmt: v => Math.round(v) + '%', dir: 'down' },
+  ].concat(hasEng ? [
+    { label: '📈 Engagement rate', num: (a, col) => engER(col.eng), fmt: v => v.toFixed(2) + '%', dir: 'up' },
+    { label: '🔥 Konten viral', num: (a, col) => engViral(col.eng), fmt: v => String(v), dir: 'up' },
+  ] : []);
   const wins = [], losses = [];
   metrics.forEach(m => {
     const tr = el('tr');
     tr.append(el('td', { html: '<b>' + m.label + '</b>' }));
-    const compVals = d.competitors.map(cp => m.num(cp.scores)).filter(v => v != null);
+    const compVals = cols.slice(1).map(col => m.num(col.a, col)).filter(v => v != null);
     cols.forEach((col, ci) => {
-      const v = m.num(col.a);
+      const v = m.num(col.a, col);
       let disp = v == null ? '—' : String(m.fmt(v)), cls = '';
       // KOLOM KAMU (ci===0): adu vs kompetitor terbaik → ▲ unggul / ▼ ketinggalan
       if (ci === 0 && v != null && m.dir && compVals.length) {
@@ -4279,6 +4769,15 @@ function renderCompare(d, c) {
     el('div', { class: 'tiny', style: 'margin-top:4px;', textContent: '▲/▼ = kolom kamu dibanding ' + vs + '.' + (d.competitors.some(cp => cp.archetype) ? ' Kompetitor di sini = POLA niche, bukan akun asli — isi @handle asli mereka buat preview & angka nyata.' : '') }),
   ].filter(Boolean)));
   if (d.mineAuto) card.append(el('div', { class: 'hint', style: 'margin-top:8px;', textContent: 'Kolom "kamu" diisi otomatis dari contoh konten ProdPilot untuk brand-mu (jadi patokan target). Mau pakai data akun aslimu? Tempel caption-mu di kotak "Caption akunmu" di Review Akun, terus bandingkan lagi.' }));
+  // 📊 engagement · konten viral · statistik AKUN PRIBADI-mu — biar side-by-side sama kompetitor di bawah
+  if (d.myEngagement) {
+    const mb = el('details', { class: 'adv', open: true, style: 'margin-top:10px; border-color:var(--gold);' });
+    mb.append(el('summary', { html: '📊 Engagement · konten viral · statistik <b>akunmu</b> ' + (d.myHandle ? ('(' + (d.myHandle.replace(/^@?/, '@')) + ')') : '') }));
+    mb.append(renderEngOf(d.myEngagement, d.myHandle || 'akunmu'));
+    card.append(mb);
+  } else {
+    card.append(el('div', { class: 'hint', style: 'margin-top:10px;', html: '📊 Engagement <b>akun pribadimu</b> belum diisi — isi di kartu <b>📊 Cek engagement akunku</b> (di atas, border emas) biar kolom "kamu" ikut punya angka ER & konten viral buat diadu.' }));
+  }
   d.competitors.forEach((cp) => {
     card.append(el('div', { class: 'divider' }));
     // arketipe = pola (bukan akun asli) → label biasa; kompetitor asli (dari caption) → handle link
@@ -4290,6 +4789,18 @@ function renderCompare(d, c) {
     card.append(el('div', { class: 'tiny', style: 'margin-top:10px;', textContent: 'Pola hook mereka: ' + cp.hook_patterns.join(' · ') }));
     const ul1 = el('ul', { class: 'clean good' }); cp.tiru_adaptasi.forEach(t => ul1.append(el('li', { textContent: 'Tiru-adaptasi: ' + t }))); card.append(ul1);
     const ul2 = el('ul', { class: 'clean bad' }); cp.kelemahan.forEach(t => ul2.append(el('li', { textContent: t }))); card.append(ul2);
+    // 📊 engagement · konten viral · statistik kompetitor ini (real backend / manual) — INLINE di perbandingan
+    if (!cp.archetype) {
+      const eng = (d.engagement || {})[eKey(cp.handle)];
+      if (eng) {
+        const eb = el('details', { class: 'adv', open: true, style: 'margin-top:10px;' });
+        eb.append(el('summary', { textContent: '📊 Engagement · konten viral · statistik ' + cp.handle }));
+        eb.append(renderEngOf(eng, cp.handle));
+        card.append(eb);
+      } else {
+        card.append(el('div', { class: 'hint', style: 'margin-top:10px;', html: '📊 Angka engagement/konten viral <b>' + cp.handle + '</b> belum diisi. Isi followers + like/komen/view di box <b>📊 Total view · konten viral · engagement</b> kompetitor ini (di atas), atau set <b>Backend Riset</b> di ⚙️ biar ketarik otomatis.' }));
+      }
+    }
   });
   // ── PREVIEW ASLI dari handle yang kamu masukin (embed resmi sesuai platform) ──
   const plat = d.platform || 'instagram';
@@ -4303,7 +4814,7 @@ function renderCompare(d, c) {
     card.append(grid);
   } else {
     card.append(el('div', { class: 'hint', style: 'margin-top:4px; margin-bottom:12px;', html: 'Belum ada handle. Isi @handle kompetitor ' + PLABEL.n + ' aslimu di kolom kompetitor → bandingkan lagi. Preview aslinya bakal tampil di sini.' }));
-    if (plat === 'instagram') card.append(renderIgSearchPanel(c));
+    if (plat === 'instagram') card.append(renderIgSearchPanel(c, null, onAdd));
   }
   if (d.gaps.length) {
     card.append(el('b', { style: 'display:block; margin-top:18px;', textContent: '🕳️ Celah yang belum digarap siapa pun:' }));
@@ -4380,15 +4891,14 @@ function renderProfil(body, c) {
 function refreshModeBadge() {
   const b = $('#modeBadge');
   if (hasAI()) {
-    b.className = 'badge coral'; b.textContent = '🤖 AI aktif';
+    b.className = 'badge coral'; b.innerHTML = '<span class="ico">' + svgIcon('bot') + '</span><span class="ico-t"> AI aktif</span>';
     b.title = 'Model: ' + aiResolvedModel() + ' — hasil disempurnakan AI, fallback ke lokal kalau gagal';
   } else {
-    b.className = 'badge pine'; b.textContent = '⚡ instan';
-    b.title = 'Mode: mesin lokal (instan & privat). Isi kunci di ⚙️ untuk pakai AI.';
+    b.className = 'badge pine'; b.innerHTML = '<span class="ico">' + svgIcon('bolt') + '</span><span class="ico-t"> instan</span>';
+    b.title = 'Mode: mesin lokal (instan & privat). Isi kunci di setelan untuk pakai AI.';
   }
 }
-// buka dialog setelan AI (isi field dari storage)
-const DEFAULT_RISET_API = 'http://localhost:4000'; // default backend apps/api
+// buka dialog setelan AI (isi field dari storage). DEFAULT_RISET_API didefinisikan di atas (dekat risetApi).
 // kandidat URL server yang dicoba saat "Deteksi server"
 const RISET_API_CANDIDATES = ['http://localhost:4000', 'http://127.0.0.1:4000', 'http://localhost:3001', 'http://localhost:4055', 'http://localhost:8080'];
 // cek satu URL: server hidup kalau fetch-nya nyampai (respons apa pun, termasuk 404) sebelum timeout
@@ -4483,5 +4993,8 @@ $('#btnSaveSettings').onclick = () => {
 
 /* ═══════════════════════ BOOT ═══════════════════════ */
 $('#logoHome').onclick = () => { wiz = null; renderHome(); };
+// ganti emoji di markup statis (header + dialog pengaturan) jadi ikon garis
+iconifyStatic(document.querySelector('header.top'));
+document.querySelectorAll('dialog').forEach(iconifyStatic);
 refreshModeBadge();
 renderHome();

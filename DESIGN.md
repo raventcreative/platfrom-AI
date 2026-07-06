@@ -1,79 +1,102 @@
-# design.md — Design System Content Engine
+# DESIGN.md — Design System Content Engine
 
-Arah visual: **editorial hangat** — terinspirasi produk seperti sandcastles.ai (bersih, whitespace
-lega, tipografi jadi bintang) tapi dengan identitas sendiri: pasir + pinus + koral, serif display,
-tekstur grain halus. Sengaja menjauh dari template AI generik (gradien ungu, glassmorphism).
+Arah visual: **Clean SaaS** — terinspirasi produk seperti sandcastles.ai: latar near-white, teks
+charcoal, **satu aksen** (pine green), whitespace lega, flat & modern. Tipografi jadi bintang lewat
+display grotesk mewah. **Nol emoji di UI** — semua ikon = garis SVG (stroke) yang konsisten. Emoji
+hanya boleh muncul di dalam **konten yang di-generate** (caption sosmed), bukan chrome aplikasi.
 
-Implementasi: CSS variables di `prototype/content-engine.html` (blok `:root`).
+Sengaja menjauh dari look "vibecoding" / template AI generik (gradien ungu, glassmorphism, emoji
+sebagai ikon, tombol offset-shadow mainan).
+
+Implementasi: CSS variables di `prototype/content-engine.html` (blok `:root`), disinkron ke
+`apps/web/public/app.css` lewat `node prototype/build-app.mjs`. Landing Next.js pakai token yang
+sama di `apps/web/app/globals.css`.
+
+## Prinsip color theory
+
+- **1 hue netral + 1 aksen.** Netral = skala abu dingin (charcoal → slate → muted). Aksen tunggal =
+  **pine** (`#1C5B43`) untuk aksi, state aktif, dan hal positif. Tidak ada warna aksen kedua yang
+  bersaing.
+- **Semantik hemat.** Coral (atensi), gold (peringatan), red (destruktif) — hanya untuk makna, tidak
+  pernah dekoratif. Jangan dua warna semantik dalam satu elemen.
+- **Kontras dulu.** Teks utama pada latar ≈ AAA (>12:1). Warna tidak pernah jadi satu-satunya penanda
+  (skor selalu ada angkanya, status selalu ada label/ikon).
 
 ## Warna
 
 | Token | Hex | Pakai untuk |
 |---|---|---|
-| `--bg` | `#F6F0E3` | latar utama (pasir hangat) |
-| `--bg-2` | `#FBF7EC` | latar input/permukaan sekunder |
-| `--card` | `#FFFEF9` | kartu |
-| `--ink` | `#1C1712` | teks utama, tombol terpilih |
-| `--ink-2` / `--ink-3` | `#6C6151` / `#A2947E` | teks sekunder / tersier |
-| `--line` / `--line-2` | `#E9DECA` / `#D9CCAE` | border halus / border input |
-| `--pine` | `#1C5B43` | **primary**: CTA, progress, skor bagus |
-| `--pine-dark` | `#113D2C` | shadow-offset tombol primary |
-| `--coral` | `#E4572E` | aksen: badge pola hook, logo dot, skor rendah |
-| `--gold` | `#A16207` | peringatan lembut, kotak "Biar makin jago" |
-| `--red` | `#B93434` | destruktif (hapus) |
+| `--bg` | `#FBFBFA` | latar halaman (near-white) |
+| `--bg-2` | `#F3F4F2` | permukaan input / sekunder |
+| `--card` | `#FFFFFF` | kartu |
+| `--ink` | `#14181F` | teks utama (charcoal), tab/pill aktif |
+| `--ink-2` / `--ink-3` | `#5A626F` / `#8B94A1` | teks sekunder / tersier |
+| `--line` / `--line-2` | `#EAECEF` / `#DBDEE4` | garis rambut / border kontrol |
+| `--pine` | `#1C5B43` | **aksen tunggal**: CTA, aktif, skor bagus, ikon fitur |
+| `--pine-dark` / `--pine-soft` | `#144330` / `#E8F1EC` | hover primary / latar aksen lembut |
+| `--coral` (+ `-dark`/`-soft`) | `#C6553A` | semantik atensi (hemat) |
+| `--gold` (+ `-soft`) | `#B07A16` | peringatan lembut |
+| `--red` (+ `-soft`) | `#C13B36` | destruktif (hapus) |
 
-Aturan: pine = aksi & positif, coral = sorotan & atensi (jangan dipakai dua-duanya di satu elemen),
-gold = edukasi/peringatan. Skor meter: <5 coral, 5–7.5 gold, >7.5 pine.
+Meter skor: <5 coral, 5–7.5 gold, >7.5 pine — **angka selalu ditampilkan**.
 
-## Tipografi
+## Tipografi (mewah, sans-first)
 
-- **Display/serif**: `Fraunces` (opsz 9–144; weight 700/900; italic untuk penekanan `em.fancy`
-  berwarna pine). Dipakai: h1–h4, judul hasil, headline slide, angka skor besar.
-- **Body/sans**: `Plus Jakarta Sans` (400–800). Dipakai: semua teks lain, tombol, label.
-- Skala: hero `clamp(36px, 6.4vw, 62px)` weight 900; judul section 20px; body 15.5px/1.6;
-  tiny 12.5px. Letter-spacing negatif tipis di serif (−.015em).
+- **Display**: `Bricolage Grotesque` (weight 700/800, opsz) — grotesk editorial yang mewah, dipakai
+  untuk h1–h4, judul hasil, nama brand, angka besar. Letter-spacing rapat (−.025 s/d −.035em).
+- **Body/UI**: `Inter` (400–800) — sans premium, legibilitas tinggi, tabular untuk angka. Body 15px/1.6,
+  letter-spacing −.006em.
+- Token: `--serif` = Bricolage (nama dipertahankan demi kompatibilitas, isinya sans), `--sans` = Inter.
+- Skala: hero `clamp(38px, 6.6vw, 66px)` w800; judul section 20px; tiny 12.5px.
+- `em.fancy` = pine + bold (bukan italic) untuk penekanan di headline.
 
-## Bentuk & kedalaman
+## Bentuk & kedalaman (flat)
 
-- Radius: kartu 22px, input/kotak 16px, tombol & pill 999px (penuh).
-- Shadow: dua level (`--sh-1` istirahat, `--sh-2` hover) — lembut, warna ink transparan.
-- **Tombol offset-shadow**: `box-shadow: 0 3px 0 <warna-dark>` + naik 1.5px saat hover, turun saat
-  ditekan — kesan taktil tanpa berat.
-- Grain: overlay `feTurbulence` SVG (opacity .35, multiply) di `body::before` — mencegah flat.
+- Radius: kartu 14px (`--r-lg`), input/kontrol/tombol 10px (`--r-md`), pill/tab/chip 999px.
+- **Flat.** Shadow dua level halus (`--sh-1` istirahat, `--sh-2` hover) berwarna ink-transparan
+  dingin. **Tidak ada** offset-shadow taktil, **tidak ada** grain overlay, **tidak ada** translateY
+  saat hover — feedback lewat perubahan warna latar/border.
+- Border = garis rambut 1px. Fokus input: ring pine `0 0 0 4px rgba(28,91,67,.13)`.
+
+## Sistem ikon (garis SVG — WAJIB, bukan emoji)
+
+- Sumber: objek `ICONS` (path Lucide-style, viewBox 24) + `svgIcon(name)` di `content-engine.html`.
+  Stroke **1.75** = kesan garis halus/mewah, `currentColor`, cap/join round. Landing punya set kecil
+  yang sama di `page.tsx` (komponen `Icon`).
+- **Konversi otomatis**: `el()` + `iconifyStatic()` menyapu emoji di `textContent`/`html`/toast/markup
+  statis → ikon. Emoji yang **kekenal** (`EMOJI_ICON`) jadi ikon; yang tak kenal **dibuang** supaya UI
+  100% bebas emoji. Panah teks (`←` `→` `↗`) sengaja **tidak** disentuh (glyph tipografi, bukan emoji).
+- **Konten mentah dilindungi**: kelas di `RAW_EMOJI_CLASS` (`copybox`, `s-head`, `s-sub`, `quote`,
+  `day-card`, dst) dilewati → emoji di caption hasil generate tetap utuh.
+- **Tile ikon mewah**: ikon prominen (feature band, type-card, cat-card, result-head) duduk di kotak
+  tint `--pine-soft` radius 11px → kesan premium, bukan glyph telanjang.
+- Menambah ikon: tambah entri `ICONS[name]` (path) lalu map `EMOJI_ICON['🙂'] = 'name'`. Untuk React,
+  tambah ke `PATHS` di `page.tsx`.
 
 ## Komponen inti
 
 | Komponen | Ciri |
 |---|---|
-| **Pill selector** | pilihan sekali-tap; state aktif = ink solid teks pasir |
-| **Chip saran** (`.sugg`) | border putus-putus, tap-to-fill — pengganti ngetik di onboarding & topik |
-| **Step label** | angka bulat pine + judul tebal ("1 · Mau bikin apa?") |
-| **Type card** | emoji besar + judul + deskripsi 2 baris; hover terangkat; aktif = pine-soft |
-| **Timeline adegan** (`.beat`) | kolom waktu (badge `0–3s`) + visual/VO/teks-di-layar |
-| **Phone preview** (`.phone`) | rasio 4:5, border ink + offset shadow; slide dengan role label, headline serif, arahan visual italic |
-| **Meter skor** | label + bar + angka; warna mengikuti nilai — angka selalu ditampilkan, bukan warna doang |
-| **Learn box** (`.learn`) | latar gold-soft "💡 Biar makin jago:" — edukasi di tiap hasil |
-| **Kalender minggu** (`.week`) | 7 kartu hari: pillar badge, hook serif, konsep, format + CTA |
-| **Wizard** | satu pertanyaan per layar, progress bar pine, emoji besar, Enter = lanjut |
+| **Tombol** | flat; default = border garis rambut + hover latar `--bg-2`; `.primary` = pine solid; radius 10px |
+| **Tab / Pill** | pill 999px; aktif = `--ink` solid teks putih; hover = border menegas |
+| **Chip / Badge** | pill kecil; badge pine/coral/gold untuk status |
+| **Type card** | tile ikon pine-soft + judul + desc; checkbox SVG (centang muncul saat aktif); aktif = border+ring pine |
+| **Meter skor** | label + bar + angka; warna ikut nilai, angka selalu tampil |
+| **Kartu hasil** | `result-head` = tile ikon + judul; konten di `copybox` (emoji konten aman) |
+| **Timeline `.beat`** | kolom waktu (badge `0–3s`) + visual/VO/teks-di-layar |
+| **Phone preview** | rasio 4:5, border garis rambut + `--sh-2` (bukan offset shadow) |
+| **Learn box** | latar gold-soft, edukasi "Biar makin jago" di tiap hasil |
 
 ## Motion
 
-- Masuk view: `rise` 380ms cubic-bezier(.2,.7,.3,1) — naik 14px + fade.
-- Pop elemen (emoji wizard, slide preview): `pop` 250–400ms.
-- Orb "lagi nyusun": pulse 1.1s + teks tahapan berganti tiap ~380ms (proses generate dibuat terasa
-  ±1.2 detik agar hasil terasa "dikerjakan", padahal instan).
-- Hover kartu: translateY(−3px) + shadow naik, 130ms.
+Hemat & halus: `rise` (fade+geser 14px) saat view masuk, `pop` untuk slide/checkbox. Transisi warna
+120–150ms. Tidak ada bounce/translateY taktil pada tombol.
 
-## Voice UI (microcopy)
+## Checklist saat menambah UI
 
-- Bahasa Indonesia santai-sopan, kalimat pendek, tanpa jargon: "Bikinin sekarang!", "Yang bocor",
-  "Quick wins minggu ini", "kosongin = kami pilihkan".
-- Selalu jelaskan *kenapa* (hook punya "Kenapa works:", hasil punya catatan pembelajaran).
-- Emoji sebagai penanda fungsi (🎬 🎠 ✍️ 🎥 🗓️ 🩺 🥊), bukan hiasan acak.
-- Standar: siapa pun — termasuk yang gaptek — paham layar dalam sekali baca.
-
-## Responsif
-
-- Breakpoint tunggal 680px: grid 2 kolom → 1, meter menyempit, phone preview center.
-- Semua grid `auto-fill/minmax` — tidak ada lebar fix di atas 250px; tabel lebar dibungkus
-  `.tscroll` (scroll horizontal lokal, halaman tidak pernah scroll samping).
+1. Pakai token warna (jangan hex mentah). Aksen = pine saja; coral/gold/red hanya semantik.
+2. **Jangan tulis emoji sebagai ikon.** Pakai `icon(name)` / `svgIcon(name)`, atau biarkan emoji-mu
+   otomatis dikonversi — pastikan glyph-nya ada di `EMOJI_ICON`.
+3. Display pakai `--serif` (Bricolage), teks lain `--sans` (Inter).
+4. Flat: border garis rambut, shadow halus, radius sesuai skala. Tanpa offset-shadow/grain.
+5. Setelah ubah prototype: `node prototype/build-app.mjs` untuk sinkron ke `apps/web/public/`.

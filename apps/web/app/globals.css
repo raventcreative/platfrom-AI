@@ -2,44 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design system: Clean SaaS (selaras dengan prototype content-engine) ──
+   near-white + charcoal + 1 aksen pine, sans-first (Inter), display Bricolage Grotesque,
+   flat, hairline borders, ikon garis (bukan emoji). Lihat DESIGN.md. */
 :root {
-  --bg: #f6f0e3;
-  --bg-2: #fbf7ec;
-  --card: #fffef9;
-  --ink: #1c1712;
-  --ink-2: #6c6151;
-  --ink-3: #a2947e;
-  --line: #e9deca;
-  --line-2: #d9ccae;
-  --pine: #1c5b43;
-  --pine-dark: #113d2c;
-  --pine-soft: #e1eee6;
-  --coral: #e4572e;
-  --coral-dark: #bf3e1a;
-  --coral-soft: #fbe8df;
-  --serif: 'Fraunces', Georgia, serif;
-  --sans: 'Plus Jakarta Sans', -apple-system, 'Segoe UI', sans-serif;
+  --bg: #fbfbfa;
+  --bg-2: #f3f4f2;
+  --card: #ffffff;
+  --ink: #14181f;
+  --ink-2: #5a626f;
+  --ink-3: #8b94a1;
+  --line: #eaecef;
+  --line-2: #dbdee4;
+  --pine: #014bdf;
+  --pine-dark: #0139ab;
+  --pine-soft: #e8eefd;
+  --coral: #c6553a;
+  --coral-dark: #a8442d;
+  --coral-soft: #f6e9e4;
+  --serif: 'Bricolage Grotesque', 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --sans: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --sh-1: 0 1px 2px rgba(20, 24, 31, 0.04), 0 1px 3px rgba(20, 24, 31, 0.05);
+  --sh-2: 0 4px 12px rgba(20, 24, 31, 0.07), 0 12px 30px rgba(20, 24, 31, 0.08);
 }
 
 body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* ── tipografi display ── */
 .font-serif-display {
   font-family: var(--serif);
-  font-weight: 900;
-  letter-spacing: -0.015em;
+  font-weight: 800;
+  letter-spacing: -0.035em;
 }
 .font-serif-em {
   font-family: var(--serif);
-  font-style: italic;
-  font-weight: 600;
+  font-weight: 800;
   color: var(--pine);
 }
+
+/* ── ikon garis (SVG stroke, pengganti emoji) ── */
+.ico { display: inline-flex; align-items: center; justify-content: center; flex: none; line-height: 0; }
+.ico svg { width: 1.05em; height: 1.05em; stroke-width: 1.75; }
 
 /* ── topbar / header ── */
 .ce-topbar {
@@ -49,26 +59,32 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 24px;
-  background: rgba(246, 240, 227, 0.85);
-  backdrop-filter: blur(12px);
+  padding: 12px clamp(16px, 4vw, 44px);
+  background: rgba(251, 251, 250, 0.8);
+  backdrop-filter: saturate(1.4) blur(14px);
   border-bottom: 1px solid var(--line);
 }
 .ce-logo {
   font-family: var(--serif);
-  font-weight: 900;
-  font-size: 20px;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.03em;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
-.ce-logo-dot { color: var(--coral); }
-.ce-tagline { font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+.ce-logo-dot { color: var(--pine); }
+.ce-tagline { font-size: 12.5px; color: var(--ink-3); }
 
 /* ── badge & kicker ── */
 .ce-badge-pine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border-radius: 999px;
-  padding: 4px 12px;
+  padding: 5px 12px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   background: var(--pine-soft);
   color: var(--pine);
 }
@@ -77,70 +93,87 @@ body {
   align-items: center;
   gap: 8px;
   border-radius: 999px;
-  padding: 7px 16px;
+  padding: 6px 14px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   background: var(--pine-soft);
   color: var(--pine);
-  border: 1px solid #c9ded2;
+  border: 1px solid #cfddfb;
 }
 
 /* ── hero ── */
-.ce-hero { max-width: 56rem; margin: 0 auto; padding: 40px 20px 96px; text-align: center; }
-.ce-hero h1 { margin: 24px auto 0; max-width: 42rem; font-size: clamp(34px, 6vw, 60px); line-height: 1.1; }
-.ce-lead { margin: 16px auto 0; max-width: 34rem; font-size: clamp(15px, 2vw, 18px); color: var(--ink-2); }
-.ce-note { margin-top: 12px; font-size: 12px; color: var(--ink-3); }
+.ce-hero { max-width: 60rem; margin: 0 auto; padding: clamp(28px, 6vw, 60px) 20px 104px; text-align: center; }
+.ce-hero h1 { margin: 24px auto 0; max-width: 46rem; font-size: clamp(38px, 6.6vw, 66px); line-height: 1.08; }
+.ce-lead { margin: 18px auto 0; max-width: 36rem; font-size: clamp(16px, 2.2vw, 19px); line-height: 1.55; color: var(--ink-2); }
+.ce-note { margin-top: 14px; font-size: 12.5px; color: var(--ink-3); }
 
-/* ── tombol ── */
-.ce-cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 32px; }
+/* ── tombol: flat modern ── */
+.ce-cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 30px; }
 .ce-btn {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 16px 28px;
-  font-size: 16px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 13px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
-.ce-btn-primary { background: var(--pine); color: #fff; box-shadow: 0 3px 0 var(--pine-dark); }
-.ce-btn-primary:hover { background: #20684d; }
-.ce-btn-outline { background: var(--card); color: var(--ink); border: 1.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.ce-btn-primary { background: var(--pine); color: #fff; }
+.ce-btn-primary:hover { background: var(--pine-dark); }
+.ce-btn-outline { background: var(--card); color: var(--ink); border-color: var(--line-2); }
+.ce-btn-outline:hover { background: var(--bg-2); border-color: var(--ink-3); }
 
 /* ── feature grid ── */
 .ce-feat-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin-top: 48px;
+  margin-top: 52px;
 }
 @media (min-width: 640px) {
   .ce-feat-grid { grid-template-columns: repeat(5, 1fr); }
 }
 .ce-feat {
-  border-radius: 16px;
-  padding: 16px 14px;
+  border-radius: 12px;
+  padding: 20px 16px;
   text-align: center;
   background: var(--card);
   border: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(28, 23, 18, 0.05);
 }
-.ce-feat .e { font-size: 26px; }
-.ce-feat b { display: block; margin-top: 8px; font-size: 13px; }
-.ce-feat span { display: block; margin-top: 2px; font-size: 11px; line-height: 1.4; color: var(--ink-3); }
+.ce-feat .e {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: var(--pine-soft);
+  color: var(--pine);
+}
+.ce-feat .e svg { width: 21px; height: 21px; stroke-width: 1.75; }
+.ce-feat b { display: block; margin-top: 12px; font-size: 13.5px; letter-spacing: -0.01em; }
+.ce-feat span { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.45; color: var(--ink-3); }
 
 /* ── workspace ── */
 .ce-ws-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 16px clamp(16px, 4vw, 44px);
   background: var(--card);
   border-bottom: 1px solid var(--line);
 }
 .ce-back {
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
   padding: 6px 12px;
   font-size: 14px;
   font-weight: 600;
@@ -149,6 +182,7 @@ body {
   border: none;
   cursor: pointer;
 }
+.ce-back:hover { background: var(--bg-2); color: var(--ink); }
 .ce-ws-sub { font-size: 12px; color: var(--ink-3); }
 
 /* ── chat bubbles ── */
@@ -157,23 +191,25 @@ body {
   max-width: 80%;
   white-space: pre-wrap;
   word-break: break-word;
-  border-radius: 16px;
-  padding: 8px 16px;
+  border-radius: 12px;
+  padding: 9px 16px;
   text-align: left;
   font-size: 14px;
+  line-height: 1.55;
 }
 .ce-bubble-user { background: var(--pine); color: #fff; }
-.ce-bubble-bot { background: #fff; border: 1px solid var(--line); }
+.ce-bubble-bot { background: var(--card); border: 1px solid var(--line); }
 .ce-send {
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 9px 16px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #fff;
   background: var(--pine);
   border: none;
   cursor: pointer;
 }
+.ce-send:hover { background: var(--pine-dark); }
 .ce-send:disabled { opacity: 0.5; cursor: default; }
-.ce-input { transition: border-color 0.15s; }
-.ce-input:focus { border-color: var(--pine); outline: none; }
+.ce-input { transition: border-color 0.15s, box-shadow 0.15s; }
+.ce-input:focus { border-color: var(--pine); box-shadow: 0 0 0 4px rgba(1, 75, 223, 0.14); outline: none; }

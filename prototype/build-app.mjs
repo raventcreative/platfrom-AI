@@ -15,6 +15,11 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { createHash } from 'node:crypto';
+
+// versi pendek dari isi file → dipakai cache-busting (?v=…) di app.html.
+// Berubah cuma kalau isinya berubah → browser wajib ambil versi baru, tapi tetap bisa di-cache selama sama.
+const ver = s => createHash('sha1').update(s).digest('hex').slice(0, 8);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, 'content-engine.html');
@@ -28,14 +33,16 @@ let html = await readFile(SRC, 'utf8');
 // 1) CSS keluar → app.css
 const styleM = html.match(/<style>([\s\S]*?)<\/style>/i);
 if (!styleM) { console.error('❌ Blok <style> tidak ditemukan'); process.exit(1); }
-await writeFile(OUT_CSS, styleM[1].replace(/^\n/, ''), 'utf8');
-html = html.replace(styleM[0], '<link rel="stylesheet" href="app.css" />');
+const cssBody = styleM[1].replace(/^\n/, '');
+await writeFile(OUT_CSS, cssBody, 'utf8');
+html = html.replace(styleM[0], '<link rel="stylesheet" href="app.css?v=' + ver(cssBody) + '" />');
 
 // 2) JS keluar → app.js (ambil <script> yang inline, tanpa atribut src)
 const scriptM = html.match(/<script>([\s\S]*?)<\/script>/i);
 if (!scriptM) { console.error('❌ Blok <script> inline tidak ditemukan'); process.exit(1); }
-await writeFile(OUT_JS, scriptM[1].replace(/^\n/, ''), 'utf8');
-html = html.replace(scriptM[0], '<script src="app.js"></script>');
+const jsBody = scriptM[1].replace(/^\n/, '');
+await writeFile(OUT_JS, jsBody, 'utf8');
+html = html.replace(scriptM[0], '<script src="app.js?v=' + ver(jsBody) + '"></script>');
 
 // 3) validasi: app.html tidak boleh punya <style> atau <script> inline lagi
 if (/<style[\s>]/i.test(html)) { console.error('❌ Masih ada <style> di app.html'); process.exit(1); }
